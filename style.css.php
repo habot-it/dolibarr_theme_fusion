@@ -1,0 +1,657 @@
+<?php
+/* Copyright (C) 2026  Fusion theme
+ *
+ * Theme "fusion" — derived from eldy. It reuses every component style of eldy
+ * (tables, forms, cards, badges, …) and only overrides the application shell so
+ * that the two Dolibarr menus (horizontal top + vertical left) are merged into a
+ * SINGLE responsive navigation:
+ *   - landscape : one retractable left sidebar
+ *   - portrait  : one top bar + slide-in drawer
+ * The DOM merge itself is done by theme/fusion/fusion.js (auto-loaded when the
+ * constant ALLOW_THEME_JS = 1).
+ *
+ * IMPORTANT: no output must be produced before eldy's style.css.php is included,
+ * because it is the one that calls top_httphead('text/css') (HTTP headers).
+ */
+
+// Reuse the whole eldy stylesheet (this also bootstraps Dolibarr and sets the
+// text/css content-type). __DIR__ inside eldy keeps resolving to the eldy dir.
+require __DIR__.'/../eldy/style.css.php';
+?>
+
+/* =======================================================================
+ *  FUSION — unified responsive shell overrides
+ *  Everything is scoped under html.fusion (class added by fusion.js as soon
+ *  as it runs, so the legacy menus are hidden before they can flash).
+ * ======================================================================= */
+
+<?php
+// Application name, exposed to fusion.js through a CSS custom property.
+$fz_appname = getDolGlobalString('MAIN_APPLICATION_TITLE');
+if ($fz_appname === '') {
+	$fz_appname = defined('DOL_APPLICATION_TITLE') ? constant('DOL_APPLICATION_TITLE') : 'Dolibarr';
+}
+$fz_appname = trim(preg_replace('/[\r\n\t]+/', ' ', ltrim((string) $fz_appname, '+')));
+?>
+html.fusion{
+	--fz-appname: <?php echo json_encode($fz_appname, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;   /* read by fusion.js */
+	/* ---- geometry ---- */
+	--fz-sb-w: 268px;            /* expanded sidebar width            */
+	--fz-sb-w-collapsed: 66px;   /* icons-only sidebar width          */
+	--fz-topbar-h: 54px;         /* portrait top bar height           */
+	--fz-radius: 10px;
+
+	/* ---- sidebar palette : derived from Dolibarr's configured menu colors ----
+	   --colorbackhmenu1   = configured "top menu background"  (Setup > Display)
+	   --colortextbackhmenu = configured top-menu text color
+	   Defaults to eldy's navy (38,60,92) so the look is unchanged out of the box;
+	   a configured brand color (e.g. orange) is honored. Hover/active use neutral
+	   white overlays so they read on ANY background color (navy, orange, teal…). */
+	--fz-nav-bg: var(--colorbackhmenu1, #0f172a);
+	--fz-nav-bg2: color-mix(in srgb, var(--colorbackhmenu1, #111c33) 82%, #000);
+	--fz-nav-fg: var(--colortextbackhmenu, #dbe3ef);
+	--fz-nav-fg-dim: color-mix(in srgb, var(--colortextbackhmenu, #9fb0ca) 62%, transparent);
+	--fz-nav-hover: rgba(255,255,255,.10);
+	--fz-nav-active-bg: rgba(255,255,255,.16);
+	--fz-accent: var(--colorbackhmenu1, #2563eb);
+	--fz-accent-fg: #ffffff;
+	--fz-star: #f5b301;
+
+	--fz-content-bg: #f4f6fb;
+	--fz-surface: #ffffff;
+	--fz-border: #e6e9f0;
+	--fz-text: #1f2733;
+	--fz-text-dim: #67707e;
+	--fz-topbar-bg: #ffffff;
+}
+
+/*
+ * Dark palette — redefines BOTH the fusion shell vars (--fz-*) AND eldy's own
+ * theme variables (--color*) so the WHOLE app switches, not just the sidebar.
+ * Applied when the user forces dark, or chooses "auto" and the OS is dark.
+ */
+html.fusion[data-fz-mode="dark"]{
+	/* shell (sidebar keeps a subtle tint of the configured brand color) */
+	--fz-nav-bg: color-mix(in srgb, var(--colorbackhmenu1, #0a0f1a) 22%, #0a0c12);
+	--fz-nav-bg2: color-mix(in srgb, var(--colorbackhmenu1, #0d1422) 16%, #07080f);
+	--fz-nav-hover: rgba(255,255,255,.08);
+	--fz-content-bg:#1d1e20; --fz-surface:#26272b; --fz-border:#3a3b3e;
+	--fz-text:#dcdcdc; --fz-text-dim:#9aa0a8; --fz-topbar-bg:#26272b;
+	/* eldy core */
+	--colorbackhmenu1:#3d3e40; --colorbackvmenu1:#2b2c2e; --colorbacktitle1:#3b3c3e;
+	--colorbacktabcard1:#1d1e20; --colorbacktabactive:rgb(220,220,220);
+	--colorbacklineimpair1:#38393d; --colorbacklineimpair2:#2b2d2f;
+	--colorbacklinepair1:#38393d; --colorbacklinepair2:#2b2d2f;
+	--colorbacklinepairhover:#2b2d2f; --colorbacklinepairchecked:#0e5ccd;
+	--colorbackbody:#1d1e20; --colorbackmobilemenu:#080808; --colorbackgrey:#0f0f0f;
+	--tooltipbgcolor:#2b2d2f; --colortexttitlenotab:rgb(220,220,220);
+	--colortexttitlenotab2:rgb(220,220,220); --colortexttitle:rgb(220,220,220);
+	--colortext:rgb(220,220,220); --colortextlink:#4390dc; --colortexttitlelink:#4390dc;
+	--colortextbackhmenu:rgb(220,220,220); --colortextbackvmenu:rgb(220,220,220);
+	--tooltipfontcolor:rgb(220,220,220); --listetotal:rgb(245,83,158);
+	--inputbackgroundcolor:rgb(70,70,70); --inputbackgroundcolordisabled:rgb(60,60,60);
+	--inputcolordisabled:rgb(140,140,140); --inputbordercolor:rgb(120,120,120);
+	--oddevencolor:rgb(220,220,220); --colorboxstatsborder:rgb(65,100,138);
+	--dolgraphbg:#1d1e20; --fieldrequiredcolor:rgb(250,183,59);
+	--colortextbacktab:rgb(220,220,220); --colorboxiconbg:rgb(36,38,39);
+	--refidnocolor:rgb(220,220,220); --tableforfieldcolor:rgb(220,220,220);
+	--colorblack:#fff; --colorwhite:#000;
+}
+html.fusion[data-fz-mode="dark"] body,
+html.fusion[data-fz-mode="dark"] button{ color:#bbb; }
+
+@media (prefers-color-scheme: dark){
+	html.fusion[data-fz-mode="auto"]{
+		--fz-nav-bg: color-mix(in srgb, var(--colorbackhmenu1, #0a0f1a) 22%, #0a0c12);
+		--fz-nav-bg2: color-mix(in srgb, var(--colorbackhmenu1, #0d1422) 16%, #07080f);
+		--fz-nav-hover: rgba(255,255,255,.08);
+		--fz-content-bg:#1d1e20; --fz-surface:#26272b; --fz-border:#3a3b3e;
+		--fz-text:#dcdcdc; --fz-text-dim:#9aa0a8; --fz-topbar-bg:#26272b;
+		--colorbackhmenu1:#3d3e40; --colorbackvmenu1:#2b2c2e; --colorbacktitle1:#3b3c3e;
+		--colorbacktabcard1:#1d1e20; --colorbacktabactive:rgb(220,220,220);
+		--colorbacklineimpair1:#38393d; --colorbacklineimpair2:#2b2d2f;
+		--colorbacklinepair1:#38393d; --colorbacklinepair2:#2b2d2f;
+		--colorbacklinepairhover:#2b2d2f; --colorbacklinepairchecked:#0e5ccd;
+		--colorbackbody:#1d1e20; --colorbackmobilemenu:#080808; --colorbackgrey:#0f0f0f;
+		--tooltipbgcolor:#2b2d2f; --colortexttitlenotab:rgb(220,220,220);
+		--colortexttitlenotab2:rgb(220,220,220); --colortexttitle:rgb(220,220,220);
+		--colortext:rgb(220,220,220); --colortextlink:#4390dc; --colortexttitlelink:#4390dc;
+		--colortextbackhmenu:rgb(220,220,220); --colortextbackvmenu:rgb(220,220,220);
+		--tooltipfontcolor:rgb(220,220,220); --listetotal:rgb(245,83,158);
+		--inputbackgroundcolor:rgb(70,70,70); --inputbackgroundcolordisabled:rgb(60,60,60);
+		--inputcolordisabled:rgb(140,140,140); --inputbordercolor:rgb(120,120,120);
+		--oddevencolor:rgb(220,220,220); --colorboxstatsborder:rgb(65,100,138);
+		--dolgraphbg:#1d1e20; --fieldrequiredcolor:rgb(250,183,59);
+		--colortextbacktab:rgb(220,220,220); --colorboxiconbg:rgb(36,38,39);
+		--refidnocolor:rgb(220,220,220); --tableforfieldcolor:rgb(220,220,220);
+		--colorblack:#fff; --colorwhite:#000;
+	}
+	html.fusion[data-fz-mode="auto"] body,
+	html.fusion[data-fz-mode="auto"] button{ color:#bbb; }
+}
+
+/* ---------------------------------------------------------------------- *
+ *  Hide the legacy menus (their useful nodes are moved into the sidebar)  *
+ * ---------------------------------------------------------------------- */
+html.fusion header#id-top,
+html.fusion .side-nav,
+html.fusion #id-left{
+	display: none !important;
+}
+/* In case some pages keep a clearer div between header and container */
+html.fusion body#mainbody > div[style*="clear"]{ display:none !important; }
+
+/* ---------------------------------------------------------------------- *
+ *  Content area : leave room for the fixed sidebar (landscape)            *
+ * ---------------------------------------------------------------------- */
+/* Offset the container by the sidebar width and constrain its width.
+   Force block layout: with the left-menu cell removed, #id-right (a lone
+   display:table-cell) would otherwise shrink-to-fit and leave a void at right. */
+html.fusion #id-container{
+	display: block !important;
+	margin-left: var(--fz-sb-w) !important;
+	width: calc(100% - var(--fz-sb-w)) !important;
+	box-sizing: border-box !important;
+	transition: margin-left .22s ease, width .22s ease;
+	background: var(--fz-content-bg);
+}
+html.fusion.fz-collapsed #id-container{
+	margin-left: var(--fz-sb-w-collapsed) !important;
+	width: calc(100% - var(--fz-sb-w-collapsed)) !important;
+}
+html.fusion #id-right{
+	display: block !important;
+	width: auto !important;
+	float: none !important;
+	margin-left: 0 !important;
+	box-sizing: border-box;
+	min-height: 100vh;
+}
+html.fusion body#mainbody{ background: var(--fz-content-bg); }
+
+/* Neutralize 3rd-party module layout hacks that reserve the legacy left-menu
+   width (e.g. timemoto: "#id-container{padding-left:260px}" on .page-index /
+   .page-manager). The 2-id selector (body#mainbody + #id-container) outranks
+   their 1-id selectors. Only the padding is killed here; the margin/width offset
+   stays in the orientation-aware rules so portrait (drawer) is not affected. */
+html.fusion body#mainbody #id-container{ padding-left: 0 !important; padding-right: 0 !important; }
+html.fusion body#mainbody #id-right{ width: auto !important; max-width: none !important; }
+
+/* ====================================================================== *
+ *  THE SIDEBAR (single unified menu)                                      *
+ * ====================================================================== */
+#fz-sidebar{
+	position: fixed; top:0; left:0; bottom:0;
+	width: var(--fz-sb-w);
+	display: flex; flex-direction: column;
+	background: var(--fz-nav-bg);
+	color: var(--fz-nav-fg);
+	z-index: 1200;
+	box-shadow: 2px 0 14px rgba(10,16,32,.10);
+	transition: width .22s ease, transform .22s ease;
+	font-family: inherit;
+}
+html.fz-collapsed #fz-sidebar{ width: var(--fz-sb-w-collapsed); }
+/* never underline links anywhere in the menu (eldy underlines on hover) */
+html.fusion #fz-sidebar a,html.fusion #fz-sidebar a:link,html.fusion #fz-sidebar a:visited,
+html.fusion #fz-sidebar a:hover,html.fusion #fz-sidebar a:focus,html.fusion #fz-sidebar a:active,
+html.fusion #fz-sidebar a *,html.fusion #fz-sidebar a:hover *,
+html.fusion #fz-sidebar .dropdown-toggle,html.fusion #fz-sidebar .dropdown-toggle:hover,
+html.fusion #fz-topbar a,html.fusion #fz-topbar a:hover{
+	text-decoration:none !important;text-decoration-line:none !important}
+/* THE fix: eldy does ".alogin:hover,.atoplogin:hover{text-decoration:underline!important}".
+   The underline is set on the CONTAINER (#topmenu-login-dropdown / search / +/star all have
+   class .atoplogin) and PROPAGATES to child text — a child text-decoration:none can't undo it.
+   So we must neutralize it on the .atoplogin/.alogin element itself. */
+html.fusion #fz-sidebar .atoplogin:hover,html.fusion #fz-sidebar .alogin:hover,
+html.fusion #fz-sidebar .atoplogin:focus,html.fusion #fz-topbar .atoplogin:hover{
+	text-decoration:none !important;text-decoration-line:none !important}
+/* ultra-specific safety net for the user toggle (3 ids) + kill any border underline */
+html.fusion #fz-sidebar #fz-user a,html.fusion #fz-sidebar #fz-user a:hover,
+html.fusion #fz-sidebar #fz-user a:focus,html.fusion #fz-sidebar #fz-user a:active,
+html.fusion #fz-sidebar #fz-user a span,html.fusion #fz-sidebar #fz-user a:hover span,
+html.fusion #fz-sidebar #fz-user .atoploginusername{
+	text-decoration:none !important;text-decoration-line:none !important;border-bottom:0 !important}
+
+/* Brand + collapse button */
+#fz-brand{
+	height: var(--fz-topbar-h); flex:0 0 auto;
+	display:flex; align-items:center; gap:10px; padding:0 14px;
+	border-bottom:1px solid rgba(255,255,255,.06);
+}
+#fz-brand .fz-logo{
+	width:32px;height:32px;border-radius:8px;flex:0 0 auto;
+	display:flex;align-items:center;justify-content:center;overflow:hidden;
+	background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:800;
+}
+#fz-brand .fz-logo img{max-width:100%;max-height:100%}
+/* When a real company logo is configured, show it as-is (no gradient background) */
+#fz-brand .fz-logo.has-logo{background:none;border-radius:0}
+#fz-brand .fz-brand-name{font-weight:700;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+#fz-brand .fz-collapse{
+	margin-left:auto;border:0;cursor:pointer;color:#fff;
+	background:var(--colorbackhmenu1, #2563eb);
+	width:30px;height:30px;border-radius:8px;font-size:14px;display:flex;align-items:center;justify-content:center;
+	transition:background .15s ease;
+}
+#fz-brand .fz-collapse:hover{background:color-mix(in srgb, var(--colorbackhmenu1, #2563eb) 88%, #fff)}
+/* animate the chevron : points left when open, flips right when collapsed */
+#fz-brand .fz-collapse i{transition:transform .28s ease}
+html.fz-collapsed #fz-brand .fz-collapse i{transform:rotate(180deg)}
+
+
+/* Tools row (search + quick add), reusing Dolibarr nodes */
+#fz-tools{padding:10px 12px 6px;display:flex;flex-direction:column;gap:8px;align-items:stretch;flex:0 0 auto;position:relative}
+#fz-tools .fz-tools-search{width:100%;min-width:0}
+#fz-tools .fz-tools-search input,
+#fz-tools .fz-tools-search .select2-container{width:100% !important}
+/* ---- Native search (#blockvmenusearch): the select2 "Search into …" combo,
+   or a plugin search (ATM) — themed to sit in the sidebar ------------------- */
+#fz-tools #blockvmenusearch{position:relative;width:100% !important;box-sizing:border-box;
+	background:none !important;border:0 !important;border-top:0 !important;padding:0 !important;margin:0 !important}
+#fz-tools #blockvmenusearch::before{content:"\f002";font-family:"Font Awesome 5 Free";font-weight:900;
+	position:absolute;left:11px;top:18px;transform:translateY(-50%);color:var(--fz-nav-fg-dim);font-size:13px;z-index:2;pointer-events:none}
+#fz-tools #blockvmenusearch .select2-container,#fz-tools .vmenusearchselectcombo{width:100% !important;box-sizing:border-box}
+#fz-tools .select2-container--default .select2-selection--single{
+	height:36px !important;display:flex !important;align-items:center;border-radius:9px !important;
+	background:rgba(255,255,255,.10) !important;border:1px solid rgba(255,255,255,.10) !important}
+#fz-tools .select2-container--default .select2-selection--single .select2-selection__rendered{
+	color:var(--fz-nav-fg) !important;line-height:normal !important;padding-left:32px !important;padding-right:24px !important}
+#fz-tools .select2-container--default .select2-selection--single .select2-selection__placeholder{color:var(--fz-nav-fg-dim) !important}
+#fz-tools .select2-container--default .select2-selection--single .select2-selection__arrow{height:34px !important;right:6px}
+/* old-search-form fallback (plain input) */
+#fz-tools #blockvmenusearch input[type="text"]{width:100% !important;box-sizing:border-box;height:36px;
+	border-radius:9px;padding:6px 10px 6px 32px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.10);color:#fff}
+/* icon row sits BELOW the search field */
+#fz-tools .fz-tools-extra{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:flex-start}
+#fz-tools .fz-tools-extra a,
+#fz-tools .fz-tools-extra .login_block_elem{color:var(--fz-nav-fg) !important}
+/* loupe button : only shown when the sidebar is collapsed */
+#fz-search-toggle{display:none;flex:0 0 auto;width:40px;height:38px;border:0;border-radius:9px;
+	background:rgba(255,255,255,.10);color:var(--fz-nav-fg);cursor:pointer;align-items:center;justify-content:center;font-size:15px}
+#fz-search-toggle:hover{background:rgba(255,255,255,.18)}
+
+/* Scrollable nav */
+#fz-nav{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:6px 8px 14px}
+.fz-sec-label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--fz-nav-fg-dim);
+	padding:14px 12px 6px;white-space:nowrap;overflow:hidden}
+
+/* A navigation group = one old top-menu section */
+.fz-group{margin:1px 0}
+.fz-head{
+	display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;
+	color:var(--fz-nav-fg);text-decoration:none;white-space:nowrap;cursor:pointer;position:relative;
+}
+.fz-head:hover{background:var(--fz-nav-hover);color:#fff}
+.fz-head .fz-ic{width:20px;flex:0 0 20px;text-align:center;font-size:15px}
+.fz-head .fz-label{flex:1;overflow:hidden;text-overflow:ellipsis}
+.fz-head .fz-chev{font-size:11px;color:var(--fz-nav-fg-dim);transition:transform .18s ease}
+.fz-group.fz-open > .fz-head .fz-chev{transform:rotate(90deg)}
+.fz-group.fz-active > .fz-head{background:var(--fz-nav-active-bg);color:#fff}
+.fz-group.fz-active > .fz-head::before{content:"";position:absolute;left:-8px;top:6px;bottom:6px;width:3px;
+	border-radius:0 3px 3px 0;background:var(--fz-nav-fg)}
+
+/* Submenu (old left-menu of the active section, moved here) */
+.fz-sub{max-height:0;overflow:hidden;margin:2px 0 2px 14px;
+	border-left:2px solid rgba(255,255,255,.22);padding-left:4px}
+/* subtle dark panel behind the open submenu improves text contrast on vivid colours */
+.fz-group.fz-open > .fz-sub{max-height:none;overflow:visible;background:rgba(0,0,0,.06);border-radius:0 8px 8px 0}
+
+/* Re-skin + compact the Dolibarr left-menu nodes moved inside .fz-sub.
+   eldy emits: .blockvmenu > .menu_titre(a.vmenu) + .menu_top + .menu_contenu(&nbsp;* a.vsmenu <br>)* + .menu_end
+   The legacy <br> and decorative spacers are removed; each .menu_contenu becomes a tight row. */
+.fz-sub .blockvmenu,.fz-sub .menu_titre,.fz-sub .menu_contenu,
+.fz-sub .blockvmenuend,.fz-sub .blockvmenupair,.fz-sub .blockvmenuimpair{
+	background:none !important;border:0 !important;margin:0 !important;width:auto !important;
+	min-height:0 !important;line-height:1.3 !important}
+.fz-sub .menu_top,.fz-sub .menu_end{display:none !important}       /* decorative spacers */
+.fz-sub br{display:none !important}                                /* legacy line breaks */
+
+/* Section heading (.menu_titre) */
+/* pull the section sub-titles (Products, Services, Warehouses…) left, out of the
+   submenu indent, so they sit under the main group icon while children stay indented */
+.fz-sub .menu_titre{position:relative;padding:7px 12px !important;margin-left:-15px !important;border-radius:7px}
+/* highlight the whole section-title row on hover, like the child rows */
+.fz-sub .menu_titre:hover{background:var(--fz-nav-hover)}
+.fz-sub .menu_titre a.vmenu::after{content:"";position:absolute;inset:0}
+.fz-sub .menu_titre a.vmenu,.fz-sub .menu_titre span.vmenu{
+	display:flex;align-items:center;gap:7px;color:var(--fz-nav-fg) !important;font-weight:600 !important;
+	text-decoration:none;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fz-sub .menu_titre:hover a.vmenu,.fz-sub .menu_titre:hover .fas,
+.fz-sub .menu_titre:hover .far,.fz-sub .menu_titre:hover .fa{color:#fff !important}
+.fz-sub .menu_titre .fas,.fz-sub .menu_titre .far,.fz-sub .menu_titre .fa{color:var(--fz-nav-fg-dim) !important}
+
+/* Sub-item rows (.menu_contenu). a.vsmenu stays inline so the &nbsp; indentation
+   keeps showing the hierarchy on the same line; ::after makes the whole row clickable. */
+.fz-sub .menu_contenu{position:relative;display:block !important;padding:4px 10px 4px 30px !important;border-radius:7px}
+.fz-sub .menu_contenu:hover{background:var(--fz-nav-hover) !important}
+.fz-sub .menu_contenu a.vsmenu,.fz-sub .menu_contenu span.vsmenu{
+	display:inline !important;color:color-mix(in srgb, var(--colortextbackhmenu, #fff) 85%, transparent) !important;
+	text-decoration:none;font-size:13px;font-weight:400 !important;white-space:nowrap}
+.fz-sub .menu_contenu:hover a.vsmenu{color:#fff !important}
+.fz-sub .menu_contenu a.vsmenu::after{content:"";position:absolute;inset:0}
+.fz-sub .vsmenudisabled{color:var(--fz-nav-fg-dim) !important;opacity:.6}
+.fz-sub .menu_titre img,.fz-sub .menu_contenu img{filter:none}
+
+/* Favorites (bookmark module) section */
+#fz-fav .fz-head .fz-ic{color:var(--fz-star)}
+#fz-fav a{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:7px;
+	color:var(--fz-nav-fg) !important;text-decoration:none;font-size:13px;white-space:nowrap;overflow:hidden}
+#fz-fav a:hover{background:var(--fz-nav-hover);color:#fff !important}
+#fz-fav a .fa-star,#fz-fav .fas{color:var(--fz-star) !important}
+
+/* Footer (help/version + user) */
+#fz-foot{flex:0 0 auto;border-top:1px solid rgba(255,255,255,.08);padding:8px;position:relative}
+#fz-foot .blockvmenuhelp,#fz-foot #blockvmenuhelp{background:none !important;border:0 !important;
+	padding:0 6px 6px !important;font-size:11px}
+#fz-foot a{color:var(--fz-nav-fg-dim) !important}
+#fz-user{display:flex;align-items:center;gap:10px;padding:6px;border-radius:10px;min-width:0}
+#fz-user .login_block_user,#fz-user .login_block_elem{
+	display:flex;align-items:center;gap:10px;color:var(--fz-nav-fg) !important;
+	width:100%;min-width:0;height:auto !important;line-height:normal !important;float:none !important}
+/* toggle (on the sidebar colour) = white text, no underline */
+#fz-user .login-dropdown-a,#fz-user .login-dropdown-a span,#fz-user .atoploginusername{
+	color:var(--fz-nav-fg) !important;text-decoration:none !important}
+/* dropdown popup (on a light surface) = dark text, including inner spans/labels */
+#fz-user .dropdown-menu,#fz-user .dropdown-menu a,#fz-user .dropdown-menu span,
+#fz-user .dropdown-menu b,#fz-user .dropdown-menu p,#fz-user .dropdown-menu small,
+#fz-user .dropdown-menu .button-top-menu-dropdown{color:var(--fz-text) !important}
+#fz-user img.photouserphoto,#fz-user .photologin{width:34px;height:34px;border-radius:50%;object-fit:cover}
+
+/* ---------- collapsed (icons only) ---------- */
+html.fz-collapsed #fz-brand .fz-brand-name,
+html.fz-collapsed .fz-head .fz-label,
+html.fz-collapsed .fz-head .fz-chev,
+html.fz-collapsed .fz-sec-label,
+html.fz-collapsed .fz-sub,
+html.fz-collapsed #fz-fav a .fz-favlabel,
+html.fz-collapsed #fz-foot .blockvmenuhelp,
+html.fz-collapsed #fz-user .atoploginusername,
+html.fz-collapsed #fz-user .hideonsmartphone{display:none !important}
+html.fz-collapsed .fz-head{justify-content:center;padding:11px 0}
+html.fz-collapsed .fz-head .fz-ic{font-size:17px}
+html.fz-collapsed #fz-user{justify-content:center;padding-left:0;padding-right:0}
+html.fz-collapsed #fz-user .login_block_user{justify-content:center}
+html.fz-collapsed #fz-user #topmenu-login-dropdown{width:44px;padding:0}
+html.fz-collapsed #fz-user #topmenu-login-dropdown > a{
+	display:flex;align-items:center;justify-content:center;gap:0;width:44px;height:44px;padding:5px;box-sizing:border-box}
+/* collapsed user : show ONLY the centered avatar (hide the name + any caret/arrow) */
+html.fz-collapsed #fz-user .login-dropdown-a > *:not(img):not(.photo){display:none !important}
+html.fz-collapsed #fz-user .dropdown-toggle::after,
+html.fz-collapsed #fz-user .dropdown-toggle::before{content:none !important;display:none !important;border:0 !important}
+
+/* collapsed tools : stack icons in the narrow rail; search becomes a flyout */
+html.fz-collapsed #fz-tools{flex-direction:column;align-items:center;gap:6px;justify-content:center}
+html.fz-collapsed #fz-search-toggle{display:flex}
+html.fz-collapsed #fz-tools .fz-tools-extra{margin-left:0;flex-direction:column;gap:6px}
+html.fz-collapsed #fz-tools .fz-tools-search{
+	position:absolute;left:calc(100% + 6px);top:6px;width:0;opacity:0;overflow:visible;
+	pointer-events:none;transition:width .22s ease,opacity .18s ease;z-index:1600}
+html.fz-collapsed.fz-search-open #fz-tools .fz-tools-search{width:264px;opacity:1;pointer-events:auto}
+/* search flyout and +/star dropdowns are mutually exclusive in collapsed mode */
+html.fz-collapsed.fz-search-open #fz-tools .fz-tools-extra .dropdown-menu{display:none !important}
+/* the flyout itself is the light card (content-agnostic: works for the select2
+   combo or a plugin search) */
+html.fz-collapsed.fz-search-open #fz-tools .fz-tools-search{
+	background:var(--fz-surface);border:1px solid var(--fz-border);border-radius:10px;
+	box-shadow:0 14px 36px rgba(0,0,0,.4);padding:8px;box-sizing:border-box;
+	max-height:calc(100vh - var(--fz-topbar-h) - 20px);overflow:visible}
+html.fz-collapsed #fz-tools .fz-tools-search #blockvmenusearch::before{color:var(--fz-text-dim)}
+html.fz-collapsed #fz-tools .fz-tools-search .select2-selection--single,
+html.fz-collapsed #fz-tools .fz-tools-search input{
+	background:var(--fz-content-bg) !important;border:1px solid var(--fz-border) !important;color:var(--fz-text) !important}
+html.fz-collapsed #fz-tools .fz-tools-search input::placeholder{color:var(--fz-text-dim) !important}
+html.fz-collapsed #fz-tools .fz-tools-search .search-dropdown-header::before{color:var(--fz-text-dim) !important}
+html.fz-collapsed #fz-tools .fz-tools-search .select2-selection__rendered{color:var(--fz-text) !important}
+html.fz-collapsed #fz-tools .fz-tools-search .select2-selection__placeholder{color:var(--fz-text-dim) !important}
+/* couple the input and its scope list as ONE panel inside the flyout card:
+   keep the list ALWAYS in normal flow in collapsed mode (no display toggling), so
+   the flyout's own opacity/width transition fades them in AND out TOGETHER — they
+   never appear nor disappear one after the other. */
+html.fz-collapsed #fz-tools .search-dropdown-body{
+	display:block !important;position:static !important;left:auto !important;right:auto !important;top:auto !important;
+	margin-top:6px !important;background:none !important;border:0 !important;box-shadow:none !important;
+	padding:0 !important;max-height:50vh;overflow:auto}
+/* +, star, import dropdowns fly out to the right when collapsed */
+html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;right:auto !important;top:0 !important;width:260px !important}
+/* tooltip flyout when collapsed */
+html.fz-collapsed .fz-head[data-fzlabel]:hover::after{
+	content:attr(data-fzlabel);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
+	background:#1b2740;color:#fff;padding:6px 10px;border-radius:7px;white-space:nowrap;font-size:12px;
+	box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:1400}
+
+/* ====================================================================== *
+ *  PORTRAIT TOP BAR (only shown in narrow / portrait mode)               *
+ * ====================================================================== */
+#fz-topbar{
+	display:none;
+	position:fixed;top:0;left:0;right:0;height:var(--fz-topbar-h);z-index:1100;
+	background:var(--fz-topbar-bg);border-bottom:1px solid var(--fz-border);
+	align-items:center;gap:10px;padding:0 12px;color:var(--fz-text);
+}
+#fz-topbar .fz-burger{background:none;border:0;font-size:18px;color:var(--fz-text);cursor:pointer;
+	width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+#fz-topbar .fz-burger:hover{background:rgba(127,127,127,.12)}
+#fz-topbar .fz-tb-title{font-weight:700;color:var(--fz-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+#fz-scrim{position:fixed;inset:0;background:rgba(7,12,25,.5);opacity:0;visibility:hidden;
+	transition:opacity .2s ease;z-index:1150}
+
+/* ---------------------------------------------------------------------- *
+ *  RESPONSIVE SWITCH  →  narrow / portrait : sidebar becomes a drawer     *
+ * ---------------------------------------------------------------------- */
+@media only screen and (max-width: 920px){
+	html.fusion #fz-topbar{display:flex}
+	html.fusion #fz-sidebar{transform:translateX(-100%);width:var(--fz-sb-w);box-shadow:0 0 40px rgba(0,0,0,.45)}
+	html.fusion.fz-drawer #fz-sidebar{transform:translateX(0)}
+	html.fusion.fz-drawer #fz-scrim{opacity:1;visibility:visible}
+	html.fusion #id-container{margin-left:0 !important;width:100% !important;padding-top:var(--fz-topbar-h) !important}
+	html.fusion #id-right{margin-left:0 !important}
+	/* never use the icons-only mode in portrait */
+	html.fusion.fz-collapsed #fz-sidebar{width:var(--fz-sb-w)}
+	html.fusion.fz-collapsed #fz-brand .fz-brand-name,
+	html.fusion.fz-collapsed .fz-head .fz-label,
+	html.fusion.fz-collapsed .fz-head .fz-chev,
+	html.fusion.fz-collapsed .fz-sec-label,
+	html.fusion.fz-collapsed .fz-sub,
+	html.fusion.fz-collapsed #fz-tools .fz-tools-search{display:block !important}
+	html.fusion.fz-collapsed #fz-user .atoploginusername,
+	html.fusion.fz-collapsed #fz-user .hideonsmartphone{display:inline-block !important}
+	html.fz-collapsed .fz-head{justify-content:flex-start;padding:9px 12px}
+	html.fusion.fz-collapsed #fz-user{padding:6px;justify-content:flex-start}
+	html.fusion.fz-collapsed #fz-user #topmenu-login-dropdown{width:100%;padding:0 5px}
+	html.fusion.fz-collapsed #fz-user #topmenu-login-dropdown > a{
+		width:100%;height:auto;justify-content:flex-start}
+	html.fusion #fz-brand .fz-collapse{display:none}
+	/* tools always inline in the drawer (no loupe / no flyout in portrait) */
+	html.fusion #fz-search-toggle{display:none !important}
+	html.fusion #fz-tools{flex-direction:column !important;align-items:stretch !important}
+	html.fusion #fz-tools .fz-tools-search{position:static !important;width:100% !important;opacity:1 !important;pointer-events:auto !important}
+	html.fusion #fz-tools .fz-tools-search #topmenu-global-search-dropdown{background:none !important;border:0 !important;
+		box-shadow:none !important;padding:0 !important;width:100% !important}
+	html.fusion #fz-tools .fz-tools-extra{flex-direction:row !important;justify-content:flex-start !important}
+	html.fusion #fz-tools .dropdown-menu{left:8px !important;right:8px !important;width:auto !important;top:calc(100% + 6px) !important}
+}
+
+/* On very small screens, drop the content side padding a bit */
+@media only screen and (max-width: 480px){
+	html.fusion #id-right{padding-left:6px !important;padding-right:6px !important}
+}
+
+/* ====================================================================== *
+ *  Controls and dropdowns                                                *
+ * ====================================================================== */
+
+/* Contrast safety : force readable text on every nav entry */
+.fz-head,.fz-head .fz-label{color:var(--fz-nav-fg) !important;opacity:1}
+.fz-head .fz-ic{color:var(--fz-nav-fg-dim);opacity:1}
+.fz-group.fz-active > .fz-head,.fz-group.fz-active > .fz-head .fz-label,
+.fz-group.fz-active > .fz-head .fz-ic{color:#fff !important}
+.fz-head:hover,.fz-head:hover .fz-label,.fz-head:hover .fz-ic{color:#fff !important}
+
+/* Color-mode segmented control */
+.fz-modes{display:flex;gap:4px;margin:6px;padding:3px;border-radius:9px;background:rgba(255,255,255,.06)}
+@media only screen and (min-width: 921px){
+	html.fz-collapsed .fz-modes{display:none}
+}
+.fz-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;
+	border:0;background:none;color:var(--fz-nav-fg-dim);padding:6px 4px;border-radius:7px;font-size:12px;
+	font-family:inherit;transition:background .15s ease,color .15s ease}
+.fz-mode-btn:hover{color:#fff}
+.fz-mode-btn.is-active{background:rgba(255,255,255,.20);color:#fff}
+.fz-mode-btn .fz-mode-lbl{font-size:12px}
+
+/* ---- User dropdown : make it open UPWARD and inside the sidebar ------- */
+#fz-user{position:relative}
+#fz-user #topmenu-login-dropdown{position:static !important;width:100%}
+#fz-user #topmenu-login-dropdown > a{
+	display:flex;align-items:center;gap:10px;padding:6px;border-radius:10px;width:100%;min-width:0;overflow:hidden;
+	color:var(--fz-nav-fg) !important;text-decoration:none}
+#fz-user #topmenu-login-dropdown > a:hover{background:var(--fz-nav-hover)}
+#fz-user .photouserphoto,#fz-user .dropdown-user-image{width:34px !important;height:34px !important;
+	border-radius:50% !important;object-fit:cover}
+#fz-user .atoploginusername{
+	color:var(--fz-nav-fg) !important;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* the panel itself */
+#fz-user .dropdown-menu{
+	position:absolute !important;left:0;right:0;bottom:54px;top:auto !important;box-sizing:border-box;
+	width:auto !important;min-width:0 !important;max-height:70vh;overflow:auto;
+	display:none;background:var(--fz-surface);color:var(--fz-text);
+	border:1px solid var(--fz-border);border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.45);
+	padding:10px;z-index:1500;font-size:13px}
+#fz-user #topmenu-login-dropdown.open .dropdown-menu{display:block !important}
+#fz-user .dropdown-menu a,#fz-user .dropdown-menu .button-top-menu-dropdown{color:var(--fz-text) !important}
+#fz-user .dropdown-menu .user-header{text-align:center;border-bottom:1px solid var(--fz-border);padding-bottom:8px;margin-bottom:8px}
+#fz-user .dropdown-menu .user-footer{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--fz-border);
+	padding-top:8px;margin-top:8px}
+#fz-user .dropdown-menu .user-footer .button-top-menu-dropdown{border:1px solid var(--fz-border);
+	border-radius:7px;padding:6px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+#fz-user .dropdown-menu .pull-left,#fz-user .dropdown-menu .pull-right{float:none !important}
+html.fz-collapsed #fz-user .dropdown-menu{
+	left:calc(100% + 8px) !important;right:auto !important;bottom:0;width:280px !important;
+	max-width:calc(100vw - var(--fz-sb-w-collapsed) - 20px)}
+@media only screen and (max-width: 920px){
+	html.fusion.fz-collapsed #fz-user .dropdown-menu{
+		left:6px !important;right:6px !important;bottom:54px;width:auto !important;max-width:none}
+}
+
+/* ---- Native global search, shown inline in the sidebar --------------- */
+#fz-tools #topmenu-global-search-dropdown{position:static;width:100%;min-width:0;display:block}
+#fz-tools #topmenu-global-search-dropdown > a.dropdown-toggle{display:none} /* hide magnifier toggle */
+#fz-tools #topmenu-global-search-dropdown .dropdown-menu.dropdown-search{
+	display:block !important;position:static !important;background:none !important;border:0 !important;
+	box-shadow:none !important;padding:0 !important;margin:0 !important;width:auto !important;min-width:0 !important}
+#fz-tools .search-dropdown-header{position:relative;padding:0}
+#fz-tools .search-dropdown-header::before{content:"\f002";font-family:"Font Awesome 5 Free";font-weight:900;
+	position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--fz-nav-fg-dim);font-size:13px;pointer-events:none}
+#fz-tools #top-global-search-input{
+	width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.06);
+	border-radius:9px;padding:8px 10px 8px 32px;color:#fff;font-size:13px;outline:none}
+#fz-tools #top-global-search-input::placeholder{color:var(--fz-nav-fg-dim)}
+/* force every inner wrapper of the native search to span its full slot width
+   (.fz-tools-search itself is excluded: its width is flex/flyout-controlled) */
+#fz-tools #topmenu-global-search-dropdown,
+#fz-tools #topmenu-global-search-dropdown .dropdown-menu.dropdown-search,
+#fz-tools #top-menu-action-search,
+#fz-tools .search-dropdown-header,
+#fz-tools #top-global-search-input{width:100% !important;max-width:none !important;min-width:0 !important;box-sizing:border-box !important}
+#fz-tools #top-menu-action-search,
+#fz-tools .search-dropdown-header{margin:0 !important;padding:0 !important;display:block !important}
+#fz-tools .fz-fallback-search{
+	display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);
+	border:1px solid rgba(255,255,255,.06);border-radius:9px;padding:7px 10px;box-sizing:border-box}
+#fz-tools .fz-fallback-search-icon{color:var(--fz-nav-fg-dim);opacity:.65}
+#fz-tools .fz-fallback-search input{
+	flex:1;min-width:0;background:none;border:0;outline:0;color:#fff;font-size:13px;font-family:inherit}
+html.fz-collapsed #fz-tools .fz-tools-search .fz-fallback-search{
+	width:264px;background:var(--fz-surface);border-color:var(--fz-border);
+	box-shadow:0 14px 36px rgba(0,0,0,.4);padding:8px}
+html.fz-collapsed #fz-tools .fz-fallback-search input{color:var(--fz-text)}
+@media only screen and (max-width: 920px){
+	html.fusion.fz-collapsed #fz-tools #top-global-search-input{
+		background:rgba(255,255,255,.07);color:#fff;border-color:rgba(255,255,255,.06)}
+	html.fusion.fz-collapsed #fz-tools #top-global-search-input::placeholder{color:var(--fz-nav-fg-dim)}
+	html.fusion.fz-collapsed #fz-tools .fz-tools-search .fz-fallback-search{
+		width:100%;background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.06);
+		box-shadow:none;padding:7px 10px}
+	html.fusion.fz-collapsed #fz-tools .fz-fallback-search input{color:#fff}
+}
+/* the per-type scope list appears only while the field is focused */
+#fz-tools .search-dropdown-body{display:none}
+#fz-tools #topmenu-global-search-dropdown:focus-within .search-dropdown-body{
+	display:block;position:absolute;left:8px;right:8px;top:calc(100% + 6px);z-index:1500;padding:12px 14px;
+	background:var(--fz-surface);color:var(--fz-text);border:1px solid var(--fz-border);border-radius:10px;
+	box-shadow:0 12px 34px rgba(0,0,0,.4);max-height:60vh;overflow:auto;width:auto !important;box-sizing:border-box}
+@media only screen and (min-width: 921px){
+	html.fz-collapsed #fz-tools #topmenu-global-search-dropdown:focus-within .search-dropdown-body{
+		position:static !important;left:auto;right:auto;top:auto;margin-top:8px;padding:4px 0 0;
+		background:transparent;border:0;border-radius:0;box-shadow:none;max-height:none;overflow:visible}
+}
+#fz-tools .global-search-item{display:flex !important;align-items:center;gap:8px;width:100%;text-align:left;
+	background:none;border:0;cursor:pointer;padding:7px 10px;margin:0;border-radius:7px;color:var(--fz-text);font-size:13px}
+#fz-tools .global-search-item .pictofixedwidth{
+	flex:0 0 28px;width:28px !important;min-width:28px;max-width:28px;
+	display:inline-flex !important;align-items:center;justify-content:center;text-align:center !important;
+	margin:0 !important;padding:0 !important;line-height:1 !important}
+#fz-tools .global-search-item img.pictofixedwidth,
+#fz-tools .global-search-item svg.pictofixedwidth{
+	height:20px !important;object-fit:contain}
+#fz-tools .global-search-item:hover,#fz-tools .global-search-item:focus{background:var(--fz-content-bg)}
+
+/* ---- Quick-add (+) / bookmark (star) dropdowns ----------------------- */
+#fz-tools .fz-tools-extra .dropdown{position:static}
+#fz-tools .fz-tools-extra > div > a.dropdown-toggle{color:var(--fz-nav-fg) !important;font-size:15px;
+	width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;text-decoration:none}
+#fz-tools .fz-tools-extra > div > a.dropdown-toggle:hover{background:var(--fz-nav-hover)}
+#fz-tools .dropdown-menu{
+	position:absolute !important;left:8px;right:8px;top:calc(100% + 6px) !important;bottom:auto;box-sizing:border-box;
+	width:auto !important;min-width:0 !important;max-height:62vh;overflow:auto;padding:6px;
+	background:var(--fz-surface);color:var(--fz-text);border:1px solid var(--fz-border);
+	border-radius:10px;box-shadow:0 12px 34px rgba(0,0,0,.4);z-index:1500}
+#fz-tools #topmenu-quickadd-dropdown .dropdown-menu{padding:0 !important}
+/* compact every inner row */
+#fz-tools .dropdown-menu br{display:none !important}
+#fz-tools .dropdown-menu .dropdown-body,
+#fz-tools .dropdown-menu .quickadd-body,
+#fz-tools .dropdown-menu .bookmark-body{
+	border-top:0 !important;border-bottom:0 !important}
+#fz-tools #topmenu-quickadd-dropdown .dropdown-body,
+#fz-tools #topmenu-quickadd-dropdown .quickadd-body,
+#fz-tools #topmenu-quickadd-dropdown .dropdown-quickadd-list{
+	border:0 !important;box-shadow:none !important;outline:0 !important}
+#fz-tools #topmenu-quickadd-dropdown .quickadd-body{padding:12px 14px !important;box-sizing:border-box}
+#fz-tools .dropdown-menu a,#fz-tools .dropdown-menu .top-menu-dropdown-link,
+#fz-tools .dropdown-menu .dropdown-item,#fz-tools .dropdown-menu button.dropdown-item{
+	display:flex !important;align-items:center;gap:8px;width:100%;box-sizing:border-box;text-align:left;
+	padding:7px 10px !important;margin:0 !important;border:0;background:none;border-radius:7px;
+	color:var(--fz-text) !important;text-decoration:none;font-size:13px;line-height:1.3 !important;cursor:pointer}
+#fz-tools .dropdown-menu a:hover,#fz-tools .dropdown-menu .dropdown-item:hover{background:var(--fz-content-bg)}
+#fz-tools .dropdown-menu .dropdown-search-input{width:100%;box-sizing:border-box;padding:8px 10px;margin:0 0 6px;
+	border:1px solid var(--fz-border);border-radius:8px;background:var(--fz-surface);color:var(--fz-text);font-size:13px}
+#fz-tools .dropdown-menu hr,#fz-tools .dropdown-menu .divider{margin:6px 0;border-color:var(--fz-border)}
+
+/* Favorites links inherit readable color */
+#blockvmenubookmarks a,#blockvmenubookmarks span{color:var(--fz-nav-fg) !important}
+
+/* ====================================================================== *
+ *  Custom thin scrollbars (sidebar, dropdowns, and whole app)            *
+ * ====================================================================== */
+/* Sidebar : light thumb on the dark navy */
+#fz-nav,#fz-tools .dropdown-menu,#fz-tools .search-dropdown-body,#fz-user .dropdown-menu{
+	scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent}
+#fz-nav::-webkit-scrollbar,#fz-tools .dropdown-menu::-webkit-scrollbar,
+#fz-tools .search-dropdown-body::-webkit-scrollbar,#fz-user .dropdown-menu::-webkit-scrollbar{width:8px;height:8px}
+#fz-nav::-webkit-scrollbar-track{background:transparent}
+#fz-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+#fz-nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.34);background-clip:padding-box;border:2px solid transparent}
+
+/* Whole application content : themed thin scrollbars */
+html.fusion #id-right,html.fusion #id-container,html.fusion body#mainbody,
+html.fusion .div-table-responsive,html.fusion .div-table-responsive-no-min{
+	scrollbar-width:thin;scrollbar-color:var(--fz-text-dim) transparent}
+html.fusion ::-webkit-scrollbar{width:11px;height:11px}
+html.fusion ::-webkit-scrollbar-track{background:transparent}
+html.fusion ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fz-text-dim) 55%,transparent);
+	border-radius:8px;border:3px solid transparent;background-clip:padding-box}
+html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);background-clip:padding-box;border:3px solid transparent}
+/* keep the navy sidebar's own scrollbars on the light-thumb rule above */
+#fz-sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);background-clip:padding-box;border:2px solid transparent}
