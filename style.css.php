@@ -245,8 +245,9 @@ html.fz-collapsed #fz-brand .fz-collapse{left:calc(var(--fz-sb-w-collapsed) - 14
 #fz-brand .fz-collapse i{transition:transform .28s ease}
 html.fz-collapsed #fz-brand .fz-collapse i{transform:rotate(180deg)}
 
-/* collapsed brand : logo centered (the slide handle is fixed, out of flow) */
-html.fz-collapsed #fz-brand{justify-content:center;padding:0}
+/* collapsed brand : keep the logo at the exact same spot as expanded (no jump
+   when toggling). The slide handle is fixed/out of flow; the name is hidden. */
+html.fz-collapsed #fz-brand{padding:0 14px}
 html.fz-collapsed #fz-brand .fz-logo{margin:0}
 
 
@@ -291,9 +292,10 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 .fz-head{
 	display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;
 	color:var(--fz-nav-fg);text-decoration:none;white-space:nowrap;cursor:pointer;position:relative;
+	transition:padding .22s ease;
 }
 .fz-head:hover{background:var(--fz-nav-hover);color:#fff}
-.fz-head .fz-ic{width:20px;flex:0 0 20px;text-align:center;font-size:15px}
+.fz-head .fz-ic{width:20px;flex:0 0 20px;text-align:center;font-size:15px;transition:font-size .22s ease}
 .fz-head .fz-label{flex:1;overflow:hidden;text-overflow:ellipsis}
 .fz-head .fz-chev{font-size:11px;color:var(--fz-nav-fg-dim);transition:transform .18s ease}
 .fz-group.fz-open > .fz-head .fz-chev{transform:rotate(90deg)}
@@ -384,7 +386,9 @@ html.fz-collapsed #fz-fav a .fz-favlabel,
 html.fz-collapsed #fz-foot .blockvmenuhelp,
 html.fz-collapsed #fz-user .atoploginusername,
 html.fz-collapsed #fz-user .hideonsmartphone{display:none !important}
-html.fz-collapsed .fz-head{justify-content:center;padding:11px 0}
+/* symmetric padding centers the lone icon AND lets it slide there (animatable),
+   instead of snapping via justify-content during the horizontal collapse */
+html.fz-collapsed .fz-head{padding:11px 15px}
 html.fz-collapsed .fz-head .fz-ic{font-size:17px}
 html.fz-collapsed #fz-user{justify-content:center;padding-left:0;padding-right:0}
 html.fz-collapsed #fz-user .login_block_user{justify-content:center}
