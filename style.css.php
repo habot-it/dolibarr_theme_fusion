@@ -228,16 +228,26 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 /* When a real company logo is configured, show it as-is (no gradient background) */
 #fz-brand .fz-logo.has-logo{background:none;border-radius:0}
 #fz-brand .fz-brand-name{font-weight:700;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+/* Slide button = a floating round handle straddling the sidebar's right edge,
+   protruding onto the white content. Identical in both modes (only its left
+   position slides with the sidebar width). position:fixed so it isn't clipped. */
 #fz-brand .fz-collapse{
-	margin-left:auto;border:0;cursor:pointer;color:#fff;
+	position:fixed;left:calc(var(--fz-sb-w) - 14px);top:13px;z-index:1300;
+	border:0;cursor:pointer;color:#fff;
 	background:var(--colorbackhmenu1, #2563eb);
-	width:30px;height:30px;border-radius:8px;font-size:14px;display:flex;align-items:center;justify-content:center;
-	transition:background .15s ease;
+	width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;
+	box-shadow:0 2px 8px rgba(0,0,0,.28);
+	transition:left .22s ease,background .15s ease;
 }
-#fz-brand .fz-collapse:hover{background:color-mix(in srgb, var(--colorbackhmenu1, #2563eb) 88%, #fff)}
+html.fz-collapsed #fz-brand .fz-collapse{left:calc(var(--fz-sb-w-collapsed) - 14px)}
+#fz-brand .fz-collapse:hover{background:color-mix(in srgb, var(--colorbackhmenu1, #2563eb) 86%, #fff)}
 /* animate the chevron : points left when open, flips right when collapsed */
 #fz-brand .fz-collapse i{transition:transform .28s ease}
 html.fz-collapsed #fz-brand .fz-collapse i{transform:rotate(180deg)}
+
+/* collapsed brand : logo centered (the slide handle is fixed, out of flow) */
+html.fz-collapsed #fz-brand{justify-content:center;padding:0}
+html.fz-collapsed #fz-brand .fz-logo{margin:0}
 
 
 /* Tools row (search + quick add), reusing Dolibarr nodes */
@@ -524,8 +534,9 @@ html.fz-collapsed .fz-head[data-fzlabel]:hover::after{
 #fz-user .dropdown-menu .user-footer{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--fz-border);
 	padding-top:8px;margin-top:8px}
 #fz-user .dropdown-menu .user-footer .button-top-menu-dropdown{border:1px solid var(--fz-border);
-	border-radius:7px;padding:6px 10px;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-#fz-user .dropdown-menu .pull-left,#fz-user .dropdown-menu .pull-right{float:none !important}
+	border-radius:7px;height:36px;min-width:36px;box-sizing:border-box;padding:0 14px;text-decoration:none;
+	display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1}
+#fz-user .dropdown-menu .pull-left,#fz-user .dropdown-menu .pull-right{float:none !important;display:flex}
 html.fz-collapsed #fz-user .dropdown-menu{
 	left:calc(100% + 8px) !important;right:auto !important;bottom:0;width:280px !important;
 	max-width:calc(100vw - var(--fz-sb-w-collapsed) - 20px)}
