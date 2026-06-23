@@ -68,7 +68,11 @@
 		// Brand bar (reuse company logo if present in the top menu)
 		var brand = el("div"); brand.id = "fz-brand";
 		var logoImg = $(".menulogocontainer img.mycompany");
-		var logo = el("div", "fz-logo" + (logoImg ? " has-logo" : ""));
+		// logo is a link to the home page (real "Home" menu URL when available)
+		var homeA = document.querySelector("#mainmenutd_home a[href]");
+		var logo = el("a", "fz-logo" + (logoImg ? " has-logo" : ""));
+		logo.setAttribute("href", homeA ? homeA.getAttribute("href") : "/index.php?mainmenu=home");
+		logo.title = appName;
 		if (logoImg) {
 			var img = logoImg.cloneNode(false);
 			img.removeAttribute("id");
