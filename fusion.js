@@ -38,6 +38,10 @@
 		cron: "fa-clock", externalsite: "fa-external-link-alt", ecm: "fa-folder-open"
 	};
 
+	// Honour the OS "reduce motion" setting: fold/unfold instantly instead of animating.
+	var REDUCE = false;
+	try { REDUCE = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
 	function $(sel, ctx) { return (ctx || document).querySelector(sel); }
 	function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
 	function el(tag, cls, html) {
@@ -167,7 +171,8 @@
 
 		if (vmenu && activeGroup) {
 			fillSubFromRoot(activeGroup.querySelector(".fz-sub"), document);
-			activeGroup.classList.add("fz-open", "fz-active");
+			activeGroup.classList.add("fz-active");
+			setGroupOpen(activeGroup, true, false); // open instantly, no load-time flash
 		}
 
 		// ---- 4. Favorites / bookmark section ----------------------------------
@@ -257,8 +262,9 @@
 			var sub = group.querySelector(".fz-sub");
 			if (sub && sub.children.length) {
 				ev.preventDefault();
-				if (!group.classList.contains("fz-open")) closeOtherGroups(group);
-				group.classList.toggle("fz-open");
+				var willOpen = !group.classList.contains("fz-open");
+				if (willOpen) closeOtherGroups(group);
+				setGroupOpen(group, willOpen, true);
 				return;
 			}
 			var href = head.getAttribute("href");
@@ -307,11 +313,43 @@
 		return sub.children.length > 0;
 	}
 
+	// Fold/unfold a group's submenu with a height animation. CSS can't animate to
+	// max-height:auto, so we drive the pixel height from scrollHeight and hand back
+	// to "none" once open (lets long menus grow freely). `animate=false` is used for
+	// the initial active section so it doesn't flash on page load.
+	function setGroupOpen(group, open, animate) {
+		var sub = group.querySelector(".fz-sub");
+		if (!sub) { group.classList.toggle("fz-open", open); return; }
+		// drop any pending end-handler from a previous, still-running animation
+		if (sub._fzEnd) { sub.removeEventListener("transitionend", sub._fzEnd); sub._fzEnd = null; }
+		if (!animate || REDUCE) {
+			group.classList.toggle("fz-open", open);
+			sub.style.maxHeight = open ? "none" : "0px";
+			return;
+		}
+		if (open) {
+			group.classList.add("fz-open");
+			sub.style.maxHeight = sub.scrollHeight + "px";
+			sub._fzEnd = function (e) {
+				if (e.target !== sub || e.propertyName !== "max-height") return;
+				sub.style.maxHeight = "none"; // release the cap so the menu can grow
+				sub.removeEventListener("transitionend", sub._fzEnd); sub._fzEnd = null;
+			};
+			sub.addEventListener("transitionend", sub._fzEnd);
+		} else {
+			// from "none" -> fixed px (reflow) -> 0 so the collapse has a start height
+			sub.style.maxHeight = sub.scrollHeight + "px";
+			void sub.offsetHeight;
+			group.classList.remove("fz-open");
+			sub.style.maxHeight = "0px";
+		}
+	}
+
 	// Accordion: keep a single section unfolded at a time by collapsing every
 	// other open group (the one passed in is left untouched).
 	function closeOtherGroups(keep) {
 		$all(".fz-group.fz-open").forEach(function (g) {
-			if (g !== keep) g.classList.remove("fz-open");
+			if (g !== keep) setGroupOpen(g, false, true);
 		});
 	}
 
@@ -326,7 +364,7 @@
 			.then(function (html) {
 				var doc = new DOMParser().parseFromString(html, "text/html");
 				group.classList.remove("fz-loading");
-				if (fillSubFromRoot(sub, doc)) { closeOtherGroups(group); group.classList.add("fz-open"); }
+				if (fillSubFromRoot(sub, doc)) { closeOtherGroups(group); setGroupOpen(group, true, true); }
 				else window.location.href = href;
 			})
 			.catch(function () {
