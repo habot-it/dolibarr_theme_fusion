@@ -106,7 +106,6 @@
 		tools.appendChild(extraSlot);
 
 		var nav = el("nav"); nav.id = "fz-nav";
-		nav.appendChild(el("div", "fz-sec-label", "Navigation"));
 
 		var foot = el("div"); foot.id = "fz-foot";
 
