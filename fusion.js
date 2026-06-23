@@ -166,17 +166,7 @@
 		var helpBlock = vmenu ? vmenu.querySelector("#blockvmenuhelp") : null;
 
 		if (vmenu && activeGroup) {
-			var sub = activeGroup.querySelector(".fz-sub");
-			$all(".blockvmenu", vmenu).forEach(function (b) {
-				if (b.id === "blockvmenusearch" || b.id === "blockvmenubookmarks") return;
-				sub.appendChild(b);
-			});
-			// also catch any stray vmenu blocks not matched above
-			$all("#id-left .vmenu > div", document).forEach(function (b) {
-				if (/blockvmenusearch|blockvmenubookmarks|blockvmenuhelp/.test(b.id || "")) return;
-				if (b.parentNode === sub) return;
-				if (b.classList.contains("blockvmenu") || b.classList.contains("blockvmenuend")) sub.appendChild(b);
-			});
+			fillSubFromRoot(activeGroup.querySelector(".fz-sub"), document);
 			activeGroup.classList.add("fz-open", "fz-active");
 		}
 
@@ -255,15 +245,26 @@
 			if (e.key === "Escape") ROOT.classList.remove("fz-drawer", "fz-search-open");
 		});
 
-		// group expand/collapse (only toggle when it has a loaded submenu; otherwise just navigate)
+		// Main-menu click: expand the submenu instead of navigating. The active
+		// section already has its submenu in the DOM; other sections are fetched
+		// on demand (their left menu only exists server-side for the open section).
 		nav.addEventListener("click", function (ev) {
-			var chev = ev.target.closest(".fz-chev");
 			var head = ev.target.closest(".fz-head");
 			if (!head) return;
+			if (head.getAttribute("target")) return; // opens elsewhere -> let it through
 			var group = head.closest(".fz-group");
-			var hasSub = group && group.querySelector(".fz-sub") && group.querySelector(".fz-sub").children.length > 0;
-			if (chev && hasSub) { ev.preventDefault(); group.classList.toggle("fz-open"); return; }
-			// no loaded submenu -> let the link navigate (server will render that section)
+			if (!group) return;
+			var sub = group.querySelector(".fz-sub");
+			if (sub && sub.children.length) {
+				ev.preventDefault();
+				if (!group.classList.contains("fz-open")) closeOtherGroups(group);
+				group.classList.toggle("fz-open");
+				return;
+			}
+			var href = head.getAttribute("href");
+			if (!href || href === "#") return;
+			ev.preventDefault();
+			loadSub(group, sub, href);
 		});
 
 		// keep the page title in the portrait top bar in sync
@@ -282,6 +283,56 @@
 		if (ICONS[code]) return '<i class="fas ' + ICONS[code] + '"></i>';
 		// 3) fallback
 		return '<i class="fas fa-puzzle-piece"></i>';
+	}
+
+	// Move every left-menu (.vmenu) block found under `root` into the group's
+	// submenu container `sub`. `root` is the live document for the active section,
+	// or a parsed AJAX document for sections loaded on demand. Search/bookmarks/
+	// help blocks are skipped (they live elsewhere in the shell). Returns true if
+	// at least one entry was added.
+	function fillSubFromRoot(sub, root) {
+		var vmenu = root.querySelector(".vmenu");
+		if (vmenu) {
+			$all(".blockvmenu", vmenu).forEach(function (b) {
+				if (b.id === "blockvmenusearch" || b.id === "blockvmenubookmarks") return;
+				sub.appendChild(b);
+			});
+		}
+		// also catch any stray vmenu blocks not matched above
+		$all("#id-left .vmenu > div", root).forEach(function (b) {
+			if (/blockvmenusearch|blockvmenubookmarks|blockvmenuhelp/.test(b.id || "")) return;
+			if (b.parentNode === sub) return;
+			if (b.classList.contains("blockvmenu") || b.classList.contains("blockvmenuend")) sub.appendChild(b);
+		});
+		return sub.children.length > 0;
+	}
+
+	// Accordion: keep a single section unfolded at a time by collapsing every
+	// other open group (the one passed in is left untouched).
+	function closeOtherGroups(keep) {
+		$all(".fz-group.fz-open").forEach(function (g) {
+			if (g !== keep) g.classList.remove("fz-open");
+		});
+	}
+
+	// Fetch a section's page in the background, lift its left menu into the group's
+	// submenu and open it — no full navigation. Falls back to navigating when the
+	// section has no submenu of its own or the request fails.
+	function loadSub(group, sub, href) {
+		if (group.classList.contains("fz-loading")) return;
+		group.classList.add("fz-loading");
+		fetch(href, { credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } })
+			.then(function (r) { return r.text(); })
+			.then(function (html) {
+				var doc = new DOMParser().parseFromString(html, "text/html");
+				group.classList.remove("fz-loading");
+				if (fillSubFromRoot(sub, doc)) { closeOtherGroups(group); group.classList.add("fz-open"); }
+				else window.location.href = href;
+			})
+			.catch(function () {
+				group.classList.remove("fz-loading");
+				window.location.href = href;
+			});
 	}
 
 	function makeFallbackSearch() {

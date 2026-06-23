@@ -297,6 +297,9 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 .fz-head .fz-label{flex:1;overflow:hidden;text-overflow:ellipsis}
 .fz-head .fz-chev{font-size:11px;color:var(--fz-nav-fg-dim);transition:transform .18s ease}
 .fz-group.fz-open > .fz-head .fz-chev{transform:rotate(90deg)}
+/* on-demand submenu fetch: pulse the chevron while loading */
+.fz-group.fz-loading > .fz-head .fz-chev{animation:fz-pulse .8s ease-in-out infinite}
+@keyframes fz-pulse{50%{opacity:.25}}
 .fz-group.fz-active > .fz-head{background:var(--fz-nav-active-bg);color:#fff}
 .fz-group.fz-active > .fz-head::before{content:"";position:absolute;left:-8px;top:6px;bottom:6px;width:3px;
 	border-radius:0 3px 3px 0;background:var(--fz-nav-fg)}
