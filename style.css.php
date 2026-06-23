@@ -302,10 +302,10 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 	border-radius:0 3px 3px 0;background:var(--fz-nav-fg)}
 
 /* Submenu (old left-menu of the active section, moved here) */
-.fz-sub{max-height:0;overflow:hidden;margin:2px 0 2px 14px;
+.fz-sub{max-height:0;overflow:hidden;margin:2px 14px 2px 14px;
 	border-left:2px solid rgba(255,255,255,.22);padding-left:4px}
 /* subtle dark panel behind the open submenu improves text contrast on vivid colours */
-.fz-group.fz-open > .fz-sub{max-height:none;overflow:visible;background:rgba(0,0,0,.06);border-radius:0 8px 8px 0}
+.fz-group.fz-open > .fz-sub{max-height:none;overflow:visible;background:rgba(0,0,0,.06)}
 
 /* Re-skin + compact the Dolibarr left-menu nodes moved inside .fz-sub.
    eldy emits: .blockvmenu > .menu_titre(a.vmenu) + .menu_top + .menu_contenu(&nbsp;* a.vsmenu <br>)* + .menu_end
