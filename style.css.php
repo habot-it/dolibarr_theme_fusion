@@ -217,7 +217,6 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 #fz-brand{
 	height: var(--fz-topbar-h); flex:0 0 auto;
 	display:flex; align-items:center; gap:10px; padding:0 17px;
-	border-bottom:1px solid rgba(255,255,255,.06);
 }
 #fz-brand .fz-logo{
 	width:32px;height:32px;border-radius:8px;flex:0 0 auto;
@@ -360,7 +359,7 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 #fz-fav a .fa-star,#fz-fav .fas{color:var(--fz-star) !important}
 
 /* Footer (help/version + user) */
-#fz-foot{flex:0 0 auto;border-top:1px solid rgba(255,255,255,.08);padding:8px;position:relative}
+#fz-foot{flex:0 0 auto;padding:8px;position:relative}
 #fz-foot .blockvmenuhelp,#fz-foot #blockvmenuhelp{background:none !important;border:0 !important;
 	padding:0 6px 6px !important;font-size:11px}
 #fz-foot a{color:var(--fz-nav-fg-dim) !important}
@@ -614,10 +613,15 @@ html.fz-collapsed #fz-tools .fz-fallback-search input{color:var(--fz-text)}
 		box-shadow:none;padding:7px 10px}
 	html.fusion.fz-collapsed #fz-tools .fz-fallback-search input{color:#fff}
 }
-/* the per-type scope list appears only while the field is focused */
+/* the per-type scope list appears only while the field is focused.
+   It anchors to #fz-tools (position:relative): the inner search wrappers collapse
+   to ~0 height (Bootstrap's .dropdown-menu is out of flow) so % offsets are
+   unreliable. top is therefore a fixed offset = #fz-tools padding-top (10px) +
+   search field height (~36px) + 6px gap = the field's bottom + 6px. It overlays
+   the +/star row below the field, which is the wanted "just under the field" look. */
 #fz-tools .search-dropdown-body{display:none}
 #fz-tools #topmenu-global-search-dropdown:focus-within .search-dropdown-body{
-	display:block;position:absolute;left:8px;right:8px;top:calc(100% + 6px);z-index:1500;padding:12px 14px;
+	display:block;position:absolute;left:8px;right:8px;top:52px;z-index:1500;padding:12px 14px;
 	background:var(--fz-surface);color:var(--fz-text);border:1px solid var(--fz-border);border-radius:10px;
 	box-shadow:0 12px 34px rgba(0,0,0,.4);max-height:60vh;overflow:auto;width:auto !important;box-sizing:border-box}
 @media only screen and (min-width: 921px){
