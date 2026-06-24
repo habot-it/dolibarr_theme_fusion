@@ -216,7 +216,7 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 /* Brand + collapse button */
 #fz-brand{
 	height: var(--fz-topbar-h); flex:0 0 auto;
-	display:flex; align-items:center; gap:10px; padding:0 14px;
+	display:flex; align-items:center; gap:10px; padding:0 17px;
 	border-bottom:1px solid rgba(255,255,255,.06);
 }
 #fz-brand .fz-logo{
@@ -245,9 +245,10 @@ html.fz-collapsed #fz-brand .fz-collapse{left:calc(var(--fz-sb-w-collapsed) - 14
 #fz-brand .fz-collapse i{transition:transform .28s ease}
 html.fz-collapsed #fz-brand .fz-collapse i{transform:rotate(180deg)}
 
-/* collapsed brand : keep the logo at the exact same spot as expanded (no jump
-   when toggling). The slide handle is fixed/out of flow; the name is hidden. */
-html.fz-collapsed #fz-brand{padding:0 14px}
+/* collapsed brand : same padding as expanded (figé, no jump) and, for a 32px logo
+   in the 66px rail, 17px sides center it exactly — matching the avatar/icons (33px).
+   The slide handle is fixed/out of flow; the name is hidden. */
+html.fz-collapsed #fz-brand{padding:0 17px}
 html.fz-collapsed #fz-brand .fz-logo{margin:0}
 
 
@@ -363,7 +364,7 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 #fz-foot .blockvmenuhelp,#fz-foot #blockvmenuhelp{background:none !important;border:0 !important;
 	padding:0 6px 6px !important;font-size:11px}
 #fz-foot a{color:var(--fz-nav-fg-dim) !important}
-#fz-user{display:flex;align-items:center;gap:10px;padding:6px;border-radius:10px;min-width:0}
+#fz-user{display:flex;align-items:center;gap:10px;padding:6px 0;border-radius:10px;min-width:0}
 #fz-user .login_block_user,#fz-user .login_block_elem{
 	display:flex;align-items:center;gap:10px;color:var(--fz-nav-fg) !important;
 	width:100%;min-width:0;height:auto !important;line-height:normal !important;float:none !important}
@@ -374,7 +375,7 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 #fz-user .dropdown-menu,#fz-user .dropdown-menu a,#fz-user .dropdown-menu span,
 #fz-user .dropdown-menu b,#fz-user .dropdown-menu p,#fz-user .dropdown-menu small,
 #fz-user .dropdown-menu .button-top-menu-dropdown{color:var(--fz-text) !important}
-#fz-user img.photouserphoto,#fz-user .photologin{width:34px;height:34px;border-radius:50%;object-fit:cover}
+#fz-user img.photouserphoto,#fz-user .photologin{width:34px;height:34px;box-sizing:border-box;border-radius:50%;object-fit:cover}
 
 /* ---------- collapsed (icons only) ---------- */
 html.fz-collapsed #fz-brand .fz-brand-name,
@@ -390,11 +391,23 @@ html.fz-collapsed #fz-user .hideonsmartphone{display:none !important}
    instead of snapping via justify-content during the horizontal collapse */
 html.fz-collapsed .fz-head{padding:11px 15px}
 html.fz-collapsed .fz-head .fz-ic{font-size:17px}
-html.fz-collapsed #fz-user{justify-content:center;padding-left:0;padding-right:0}
-html.fz-collapsed #fz-user .login_block_user{justify-content:center}
-html.fz-collapsed #fz-user #topmenu-login-dropdown{width:44px;padding:0}
-html.fz-collapsed #fz-user #topmenu-login-dropdown > a{
-	display:flex;align-items:center;justify-content:center;gap:0;width:44px;height:44px;padding:5px;box-sizing:border-box}
+/* user avatar : eldy forces `padding:0 3px 0 4px !important` on .login_block_elem,
+   which shoved the avatar ~4px right in flex-start (expanded) while the collapsed
+   centering hid it — that asymmetry was the jump. Neutralize that padding and the
+   wrapper gaps so the avatar's left edge is the SAME in both modes: foot 8px + the
+   <a> padding 8px = 16px → 16 + 34 + 16 = the 66px rail. So it is centered when
+   collapsed AND figé (no jump) when expanding, with plain flex-start everywhere. */
+/* Zero every eldy gap/padding in the chain so the avatar sits at a FIXED left edge
+   (foot 8px + <a> padding 8px = 16px) in BOTH modes. 16 + 34 (avatar) + 16 = the
+   66px rail → centered when collapsed AND, being flex-start (left-anchored), it
+   never moves during the width animation. We deliberately do NOT use
+   justify-content:center: that isn't animatable, so it would snap the avatar to the
+   middle of the still-wide container at the start of the collapse and swing back. */
+#fz-user,
+#fz-user .login_block_user,
+#fz-user .login_block_elem,
+#fz-user #topmenu-login-dropdown{gap:0}
+#fz-user .login_block_elem{padding:0 !important}
 /* collapsed user : show ONLY the centered avatar (hide the name + any caret/arrow) */
 html.fz-collapsed #fz-user .login-dropdown-a > *:not(img):not(.photo){display:none !important}
 html.fz-collapsed #fz-user .dropdown-toggle::after,
@@ -522,13 +535,13 @@ html.fz-collapsed .fz-head[data-fzlabel]:hover::after{
 
 /* ---- User dropdown : make it open UPWARD and inside the sidebar ------- */
 #fz-user{position:relative}
-#fz-user #topmenu-login-dropdown{position:static !important;width:100%}
+#fz-user #topmenu-login-dropdown{position:static !important;width:100%;padding:0}
 #fz-user #topmenu-login-dropdown > a{
-	display:flex;align-items:center;gap:10px;padding:6px;border-radius:10px;width:100%;min-width:0;overflow:hidden;
+	display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:10px;width:100%;box-sizing:border-box;min-width:0;overflow:hidden;
 	color:var(--fz-nav-fg) !important;text-decoration:none}
 #fz-user #topmenu-login-dropdown > a:hover{background:var(--fz-nav-hover)}
 #fz-user .photouserphoto,#fz-user .dropdown-user-image{width:34px !important;height:34px !important;
-	border-radius:50% !important;object-fit:cover}
+	box-sizing:border-box !important;border-radius:50% !important;object-fit:cover}
 #fz-user .atoploginusername{
 	color:var(--fz-nav-fg) !important;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* the panel itself */
@@ -540,12 +553,17 @@ html.fz-collapsed .fz-head[data-fzlabel]:hover::after{
 	padding:10px;z-index:1500;font-size:13px}
 #fz-user #topmenu-login-dropdown.open .dropdown-menu{display:block !important}
 #fz-user .dropdown-menu a,#fz-user .dropdown-menu .button-top-menu-dropdown{color:var(--fz-text) !important}
-#fz-user .dropdown-menu .user-header{text-align:center;border-bottom:1px solid var(--fz-border);padding-bottom:8px;margin-bottom:8px}
+/* eldy hard-codes light #f9f9f9 / #f4f4f4 backgrounds + black text on these blocks,
+   which breaks the themed (esp. dark) panel — re-skin them with theme variables. */
+#fz-user .dropdown-menu .user-header{text-align:center;border-bottom:1px solid var(--fz-border);padding-bottom:8px;margin-bottom:8px;
+	background:transparent !important;color:var(--fz-text) !important}
 #fz-user .dropdown-menu .user-footer{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--fz-border);
-	padding-top:8px;margin-top:8px}
-#fz-user .dropdown-menu .user-footer .button-top-menu-dropdown{border:1px solid var(--fz-border);
+	padding-top:8px;margin-top:8px;background:transparent !important}
+#fz-user .dropdown-menu .user-footer .button-top-menu-dropdown{border:1px solid var(--fz-border) !important;
+	background:var(--fz-content-bg) !important;color:var(--fz-text) !important;
 	border-radius:7px;height:36px;min-width:36px;box-sizing:border-box;padding:0 14px;text-decoration:none;
 	display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1}
+#fz-user .dropdown-menu .user-footer .button-top-menu-dropdown:hover{background:var(--fz-border) !important;color:var(--fz-text) !important}
 #fz-user .dropdown-menu .pull-left,#fz-user .dropdown-menu .pull-right{float:none !important;display:flex}
 html.fz-collapsed #fz-user .dropdown-menu{
 	left:calc(100% + 8px) !important;right:auto !important;bottom:0;width:280px !important;
@@ -635,6 +653,11 @@ html.fz-collapsed #fz-tools .fz-fallback-search input{color:var(--fz-text)}
 #fz-tools .dropdown-menu .quickadd-body,
 #fz-tools .dropdown-menu .bookmark-body{
 	border-top:0 !important;border-bottom:0 !important}
+/* eldy hard-codes light #f9f9f9 backgrounds on the bookmark header/footer, which
+   breaks the themed (esp. dark) panel — blend them into the panel surface. */
+#fz-tools .dropdown-menu .bookmark-header,
+#fz-tools .dropdown-menu .dropdown-header,
+#fz-tools .dropdown-menu .bookmark-footer{background:transparent !important;color:var(--fz-text) !important;border-color:var(--fz-border) !important}
 #fz-tools #topmenu-quickadd-dropdown .dropdown-body,
 #fz-tools #topmenu-quickadd-dropdown .quickadd-body,
 #fz-tools #topmenu-quickadd-dropdown .dropdown-quickadd-list{
