@@ -642,9 +642,22 @@ html.fz-collapsed #fz-tools .fz-fallback-search input{color:var(--fz-text)}
 
 /* ---- Quick-add (+) / bookmark (star) dropdowns ----------------------- */
 #fz-tools .fz-tools-extra .dropdown{position:static}
-#fz-tools .fz-tools-extra > div > a.dropdown-toggle{color:var(--fz-nav-fg) !important;font-size:15px;
-	width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;text-decoration:none}
-#fz-tools .fz-tools-extra > div > a.dropdown-toggle:hover{background:var(--fz-nav-hover)}
+/* every tool = an identical 34x34 centered button: the +/star dropdown toggles AND
+   the module-builder/print/help links (.login_block_elem) AND plugin icons (.login),
+   so they all sit perfectly aligned on the row */
+#fz-tools .fz-tools-extra > div > a.dropdown-toggle,
+#fz-tools .fz-tools-extra > .login_block_elem,
+#fz-tools .fz-tools-extra > .login{color:var(--fz-nav-fg) !important;font-size:15px;flex:0 0 auto;
+	width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;text-decoration:none;box-sizing:border-box}
+/* the module-builder/print/help glyphs are wrapped in an <a> inside .login_block_elem
+   — make it fill the square so the whole button is clickable and the icon centered */
+#fz-tools .fz-tools-extra > .login_block_elem > a,
+#fz-tools .fz-tools-extra > .login > a{display:flex;align-items:center;justify-content:center;
+	width:100%;height:100%;color:inherit !important;text-decoration:none}
+#fz-tools .fz-tools-extra .helppresentcircle{display:none !important} /* stray help arrow overlay */
+#fz-tools .fz-tools-extra > div > a.dropdown-toggle:hover,
+#fz-tools .fz-tools-extra > .login_block_elem:hover,
+#fz-tools .fz-tools-extra > .login:hover{background:var(--fz-nav-hover)}
 #fz-tools .dropdown-menu{
 	position:absolute !important;left:8px;right:8px;top:calc(100% + 6px) !important;bottom:auto;box-sizing:border-box;
 	width:auto !important;min-width:0 !important;max-height:62vh;overflow:auto;padding:6px;

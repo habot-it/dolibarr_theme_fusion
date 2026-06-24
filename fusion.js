@@ -203,6 +203,19 @@
 				extraSlot.appendChild(n);
 			});
 		}
+		// the "other" top-right tools (module builder, print, help, and any plugin
+		// icons added via the printTopRightMenu hook) are .login_block_elem / .login,
+		// not .dropdown, so they were dropped. Bring them too — but keep the logout
+		// (it goes to the footer) and the version label out of the icon row.
+		var loginOther = $(".login_block_other");
+		if (loginOther) {
+			Array.prototype.slice.call(loginOther.children).forEach(function (n) {
+				if (n.nodeType !== 1 || n.closest("#fz-tools")) return;
+				if (n.classList.contains("logout-btn") || n.querySelector("a[href*='logout']")) return;
+				if (n.querySelector(".aversion")) return; // version label, not an icon
+				extraSlot.appendChild(n);
+			});
+		}
 
 		// ---- 6. Footer : help/version + user dropdown -------------------------
 		var userBlock = $(".login_block_user");
