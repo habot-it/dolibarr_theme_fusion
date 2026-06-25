@@ -548,7 +548,44 @@ html.fz-collapsed .fz-head[data-fzlabel]:hover::after{
 /* Color-mode segmented control */
 .fz-modes{display:flex;gap:4px;margin:6px;padding:3px;border-radius:9px;background:rgba(255,255,255,.06)}
 @media only screen and (min-width: 921px){
-	html.fz-collapsed .fz-modes{display:none}
+	html.fz-collapsed .fz-modes{
+		display:block;position:relative;width:40px;height:40px;margin:4px auto 8px;padding:0;
+		background:transparent;border-radius:10px;outline:none;overflow:visible;z-index:1510;cursor:pointer}
+	html.fz-collapsed .fz-modes::before{
+		content:"\f042";font-family:"Font Awesome 5 Free";font-weight:900;
+		position:absolute;inset:0;display:grid;place-items:center;
+		width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.10);
+		color:var(--fz-nav-fg);font-size:16px;line-height:1;box-sizing:border-box}
+	html.fz-collapsed[data-fz-mode="light"] .fz-modes::before{content:"\f185"}
+	html.fz-collapsed[data-fz-mode="dark"] .fz-modes::before{content:"\f186"}
+	html.fz-collapsed .fz-modes:hover::before,
+	html.fz-collapsed .fz-modes:focus-visible::before,
+	html.fz-collapsed .fz-modes.fz-modes-open::before{background:rgba(255,255,255,.18);color:#fff}
+	html.fz-collapsed .fz-modes::after{
+		content:"";position:absolute;left:calc(100% + 8px);bottom:0;width:124px;height:44px;
+		background:var(--fz-surface);border:1px solid var(--fz-border);border-radius:10px;
+		box-shadow:0 12px 34px rgba(0,0,0,.4);opacity:0;transform:translateX(-4px);
+		pointer-events:none;transition:opacity .15s ease,transform .15s ease}
+	html.fz-collapsed .fz-modes.fz-modes-open::after{opacity:1;transform:translateX(0)}
+	html.fz-collapsed .fz-modes .fz-mode-btn{
+		position:absolute;top:0;left:calc(100% + 12px);z-index:1;
+		width:36px;height:36px;min-width:36px;display:block;padding:0;border-radius:8px;
+		background:transparent;color:var(--fz-text-dim);opacity:0;transform:translateX(-4px);
+		pointer-events:none;line-height:1;box-sizing:border-box;
+		transition:opacity .15s ease,transform .15s ease,background .15s ease,color .15s ease}
+	html.fz-collapsed .fz-modes .fz-mode-btn::before{
+		content:"\f185";font-family:"Font Awesome 5 Free";font-weight:900;
+		position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+		width:18px;height:18px;line-height:18px;text-align:center;font-size:16px}
+	html.fz-collapsed .fz-modes .fz-mode-btn[data-mode="auto"]::before{content:"\f042"}
+	html.fz-collapsed .fz-modes .fz-mode-btn[data-mode="dark"]::before{content:"\f186"}
+	html.fz-collapsed .fz-modes .fz-mode-btn[data-mode="auto"]{left:calc(100% + 52px)}
+	html.fz-collapsed .fz-modes .fz-mode-btn[data-mode="dark"]{left:calc(100% + 92px)}
+	html.fz-collapsed .fz-modes.fz-modes-open .fz-mode-btn{opacity:1;transform:translateX(0);pointer-events:auto}
+	html.fz-collapsed .fz-modes .fz-mode-btn:hover{background:var(--fz-content-bg);color:var(--fz-text)}
+	html.fz-collapsed .fz-modes .fz-mode-btn.is-active{background:var(--fz-content-bg);color:var(--fz-text)}
+	html.fz-collapsed .fz-modes .fz-mode-btn i{display:none !important}
+	html.fz-collapsed .fz-modes .fz-mode-lbl{display:none}
 }
 .fz-mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;
 	border:0;background:none;color:var(--fz-nav-fg-dim);padding:6px 4px;border-radius:7px;font-size:12px;

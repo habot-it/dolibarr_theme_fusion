@@ -290,16 +290,20 @@
 				if (inp) setTimeout(function () { inp.focus(); }, 90);
 			}
 		});
-		// opening a tool dropdown (+, star, …) closes the search flyout
-		extraSlot.addEventListener("click", function () { ROOT.classList.remove("fz-search-open"); });
-		document.addEventListener("mousedown", function (e) {
-			if (!ROOT.classList.contains("fz-search-open")) return;
-			if (e.target.closest && e.target.closest("#fz-tools")) return;
-			ROOT.classList.remove("fz-search-open");
-		});
-		document.addEventListener("keydown", function (e) {
-			if (e.key === "Escape") { ROOT.classList.remove("fz-drawer", "fz-search-open"); endPeek(); }
-		});
+			// opening a tool dropdown (+, star, …) closes the search flyout
+			extraSlot.addEventListener("click", function () { ROOT.classList.remove("fz-search-open"); });
+			document.addEventListener("mousedown", function (e) {
+				if (!ROOT.classList.contains("fz-search-open")) return;
+				if (e.target.closest && e.target.closest("#fz-tools")) return;
+				ROOT.classList.remove("fz-search-open");
+			});
+			document.addEventListener("keydown", function (e) {
+				if (e.key === "Escape") {
+					ROOT.classList.remove("fz-drawer", "fz-search-open");
+					$all(".fz-modes-open").forEach(function (n) { n.classList.remove("fz-modes-open"); });
+					endPeek();
+				}
+			});
 
 		// Main-menu click: expand the submenu instead of navigating. The active
 		// section already has its submenu in the DOM; other sections are fetched
@@ -640,6 +644,25 @@
 
 	function makeModeToggle() {
 		var wrap = el("div", "fz-modes");
+		wrap.tabIndex = 0;
+		wrap.title = "Mode d'affichage";
+		wrap.setAttribute("aria-label", "Mode d'affichage");
+		wrap.setAttribute("role", "group");
+		wrap.addEventListener("click", function (e) {
+			if (e.target.closest && e.target.closest(".fz-mode-btn")) return;
+			e.stopPropagation();
+			wrap.classList.toggle("fz-modes-open");
+		});
+		wrap.addEventListener("keydown", function (e) {
+			if (e.key !== "Enter" && e.key !== " ") return;
+			if (e.target.closest && e.target.closest(".fz-mode-btn")) return;
+			e.preventDefault();
+			wrap.classList.toggle("fz-modes-open");
+		});
+		document.addEventListener("mousedown", function (e) {
+			if (e.target.closest && e.target.closest(".fz-modes")) return;
+			wrap.classList.remove("fz-modes-open");
+		});
 		var modes = [
 			{ k: "light", i: "fa-sun", t: "Clair" },
 			{ k: "auto", i: "fa-adjust", t: "Auto" },
@@ -655,6 +678,7 @@
 				try { localStorage.setItem("fz-mode", m.k); } catch (e) {}
 				$all(".fz-mode-btn", wrap).forEach(function (x) { x.classList.remove("is-active"); });
 				b.classList.add("is-active");
+				wrap.classList.remove("fz-modes-open");
 			});
 			wrap.appendChild(b);
 		});
