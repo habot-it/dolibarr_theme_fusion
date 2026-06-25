@@ -84,11 +84,12 @@
 	function initPrimaryTooltip(node) {
 		if (window.jQuery && window.jQuery.fn && window.jQuery.fn.tooltip) {
 			window.jQuery(node).tooltip({
-				tooltipClass: "mytooltip",
+				tooltipClass: "mytooltip fz-menu-tooltip",
+				items: ".fz-primary-tooltip",
 				show: { collision: "flipfit", effect: "toggle", delay: 50, duration: 20 },
 				hide: { delay: 250, duration: 20 },
 				disabled: !ROOT.classList.contains("fz-collapsed"),
-				position: { my: "left center", at: "right+14 center", collision: "flipfit" },
+				position: { my: "left center", at: "right+34 center", collision: "flipfit" },
 				content: function () {
 					return this.getAttribute("data-fz-title") || "";
 				}
@@ -97,10 +98,8 @@
 	}
 	function syncPrimaryTooltip(node) {
 		var collapsed = ROOT.classList.contains("fz-collapsed");
-		var label = node.getAttribute("data-fz-title") || "";
-		node.classList.toggle("classfortooltip", collapsed);
-		if (collapsed && label) node.setAttribute("title", label);
-		else node.removeAttribute("title");
+		node.classList.remove("classfortooltip");
+		node.removeAttribute("title");
 		if (window.jQuery && window.jQuery.fn && window.jQuery.fn.tooltip) {
 			try {
 				window.jQuery(node).tooltip("option", "disabled", !collapsed);
@@ -125,6 +124,86 @@
 			if (window.jQuery && window.jQuery.fn && window.jQuery.fn.tooltip) {
 				try { window.jQuery(node).tooltip("destroy"); } catch (e) {}
 			}
+		});
+	}
+	var NAV_SCROLL_KEY = "fz-nav-scrolltop";
+	function saveNavScroll(nav) {
+		if (!nav) return;
+		try { sessionStorage.setItem(NAV_SCROLL_KEY, String(nav.scrollTop || 0)); } catch (e) {}
+	}
+	function restoreNavScroll(nav) {
+		if (!nav) return;
+		var y = null;
+		try { y = parseInt(sessionStorage.getItem(NAV_SCROLL_KEY) || "", 10); } catch (e) {}
+		if (!isFinite(y) || y < 0) return;
+		function apply() {
+			var max = Math.max(0, nav.scrollHeight - nav.clientHeight);
+			nav.scrollTop = Math.min(y, max);
+		}
+		apply();
+		if (window.requestAnimationFrame) window.requestAnimationFrame(apply);
+		setTimeout(apply, 80);
+		setTimeout(apply, 250);
+	}
+	function watchNavScroll(nav) {
+		var timer = null;
+		nav.addEventListener("scroll", function () {
+			clearTimeout(timer);
+			timer = setTimeout(function () { saveNavScroll(nav); }, 60);
+		});
+		nav.addEventListener("click", function () { saveNavScroll(nav); }, true);
+		window.addEventListener("beforeunload", function () { saveNavScroll(nav); });
+		document.addEventListener("visibilitychange", function () {
+			if (document.visibilityState === "hidden") saveNavScroll(nav);
+		});
+	}
+	function markGroupHasSub(group, hasSub) {
+		if (group) group.classList.toggle("fz-has-sub", !!hasSub);
+	}
+	function groupLabel(group) {
+		var label = group ? group.querySelector(".fz-label") : null;
+		return ((label ? label.textContent : "") || "").replace(/\s+/g, " ").trim();
+	}
+	function subHasMeaningfulItems(sub, group) {
+		if (!sub) return false;
+		var rows = $all(".menu_titre, .menu_contenu", sub).filter(function (row) {
+			return titleOf(row) !== "";
+		});
+		if (!rows.length) return false;
+		if (rows.length === 1 && titleOf(rows[0]) === groupLabel(group)) return false;
+		return true;
+	}
+	function rootHasMeaningfulSub(root, group) {
+		var probe = el("div");
+		fillSubFromRoot(probe, root);
+		return subHasMeaningfulItems(probe, group);
+	}
+	function isSameOriginHref(href) {
+		try { return new URL(href, window.location.href).origin === window.location.origin; } catch (e) { return false; }
+	}
+	function detectTopGroupSubmenus(nav) {
+		$all(".fz-group", nav).forEach(function (group) {
+			var sub = group.querySelector(".fz-sub");
+			if (subHasMeaningfulItems(sub, group)) { markGroupHasSub(group, true); return; }
+			var head = group.querySelector(".fz-head[href]");
+			var href = head ? head.getAttribute("href") : "";
+			if (!href || href === "#" || head.getAttribute("target") || !isSameOriginHref(href)) {
+				markGroupHasSub(group, false);
+				return;
+			}
+			var key = "fzhasmain:" + href + "\n" + groupLabel(group);
+			var cached = fzCacheGet(key);
+			if (cached !== null) {
+				markGroupHasSub(group, cached === "1");
+				return;
+			}
+			fzQueue.push({ href: href, done: function (htmlText) {
+				var doc = new DOMParser().parseFromString(htmlText, "text/html");
+				var hasSub = rootHasMeaningfulSub(doc, group);
+				fzCacheSet(key, hasSub ? "1" : "0");
+				markGroupHasSub(group, hasSub);
+			} });
+			fzPump();
 		});
 	}
 
@@ -174,7 +253,7 @@
 			ver.textContent = "v" + verText.replace(/^v/i, "");
 			brand.appendChild(ver);
 		}
-		var collapseBtn = el("button", "fz-collapse", '<i class="fas fa-angle-double-left"></i>');
+		var collapseBtn = el("button", "fz-collapse", '<i class="fas"></i>');
 		collapseBtn.type = "button";
 		collapseBtn.setAttribute("aria-label", tr("menu", "Menu"));
 		collapseBtn.setAttribute("aria-expanded", ROOT.classList.contains("fz-collapsed") ? "false" : "true");
@@ -261,12 +340,19 @@
 		if (vmenu && activeGroup) {
 			var asub = activeGroup.querySelector(".fz-sub");
 			fillSubFromRoot(asub, document);
-			setupSubAccordion(asub);
-			openActiveSub(asub);
-			preloadAll(asub);
 			activeGroup.classList.add("fz-active");
-			setGroupOpen(activeGroup, true, false); // open instantly, no load-time flash
+			if (subHasMeaningfulItems(asub, activeGroup)) {
+				markGroupHasSub(activeGroup, true);
+				setupSubAccordion(asub);
+				openActiveSub(asub);
+				preloadAll(asub);
+				setGroupOpen(activeGroup, true, false); // open instantly, no load-time flash
+			} else {
+				markGroupHasSub(activeGroup, false);
+				asub.textContent = "";
+			}
 		}
+		detectTopGroupSubmenus(nav);
 
 		// ---- 4. Favorites / bookmark section ----------------------------------
 		if (bookmarksBlock) {
@@ -346,15 +432,25 @@
 				}, 0);
 			}).observe(sidebar, { subtree: true, childList: true, attributes: true, attributeFilter: ["title", "class"] });
 		} catch (e) {}
+		watchNavScroll(nav);
+		restoreNavScroll(nav);
 
 		// ---- 7. Wire interactions ---------------------------------------------
 		// The collapsed PREFERENCE lives in localStorage; the .fz-collapsed class can be
 		// momentarily lifted by the hover-peek below, so toggle from the stored value.
 		function prefersCollapsed() { try { return localStorage.getItem("fz-collapsed") === "1"; } catch (e) { return false; } }
+		function updateCollapseButton(collapsed) {
+			var icon = collapseBtn.querySelector("i");
+			if (icon) icon.className = "fas " + (collapsed ? "fa-angle-double-right" : "fa-lock");
+			collapseBtn.classList.toggle("is-unlocked", collapsed);
+			collapseBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+			collapseBtn.setAttribute("aria-pressed", collapsed ? "false" : "true");
+		}
+		updateCollapseButton(ROOT.classList.contains("fz-collapsed"));
 		function setCollapsed(collapsed) {
 			ROOT.classList.toggle("fz-collapsed", collapsed);
 			ROOT.classList.remove("fz-peek", "fz-search-open");
-			collapseBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+			updateCollapseButton(collapsed);
 			try { localStorage.setItem("fz-collapsed", collapsed ? "1" : "0"); } catch (e) {}
 			syncPrimaryTooltips(sidebar);
 		}
@@ -730,8 +826,18 @@
 			.then(function (html) {
 				var doc = new DOMParser().parseFromString(html, "text/html");
 				group.classList.remove("fz-loading");
-				if (fillSubFromRoot(sub, doc)) { setupSubAccordion(sub); openActiveSub(sub); preloadAll(sub); closeOtherGroups(group); setGroupOpen(group, true, true); }
-				else window.location.href = href;
+				if (fillSubFromRoot(sub, doc) && subHasMeaningfulItems(sub, group)) {
+					markGroupHasSub(group, true);
+					setupSubAccordion(sub);
+					openActiveSub(sub);
+					preloadAll(sub);
+					closeOtherGroups(group);
+					setGroupOpen(group, true, true);
+				} else {
+					markGroupHasSub(group, false);
+					sub.textContent = "";
+					window.location.href = href;
+				}
 			})
 			.catch(function () {
 				group.classList.remove("fz-loading");
