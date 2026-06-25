@@ -159,6 +159,14 @@ html.fusion.fz-collapsed #id-container{
 	margin-left: var(--fz-sb-w-collapsed) !important;
 	width: calc(100% - var(--fz-sb-w-collapsed)) !important;
 }
+/* hover-peek : the .fz-collapsed class is momentarily lifted so the rail renders
+   expanded, but the content must NOT reflow — keep it at the collapsed offset so the
+   expanded rail OVERLAYS it (an elevated shadow makes the overlay read as floating). */
+html.fusion.fz-peek #id-container{
+	margin-left: var(--fz-sb-w-collapsed) !important;
+	width: calc(100% - var(--fz-sb-w-collapsed)) !important;
+}
+html.fz-peek #fz-sidebar{ box-shadow:0 0 40px rgba(0,0,0,.45); }
 html.fusion #id-right{
 	display: block !important;
 	width: auto !important;
@@ -226,7 +234,11 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 #fz-brand .fz-logo img{max-width:100%;max-height:100%}
 /* When a real company logo is configured, show it as-is (no gradient background) */
 #fz-brand .fz-logo.has-logo{background:none;border-radius:0}
-#fz-brand .fz-brand-name{font-weight:700;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+#fz-brand .fz-brand-name{font-weight:700;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
+/* Dolibarr version badge, pushed to the right edge (margin-left:auto), with room
+   kept on the right for the floating collapse button */
+#fz-brand .fz-version{flex:0 0 auto;align-self:center;margin-left:auto;margin-right:5px;
+	color:rgba(255,255,255,.6);font-size:11px;font-weight:600;white-space:nowrap;letter-spacing:.02em}
 /* Slide button = a floating round handle straddling the sidebar's right edge,
    protruding onto the white content. Identical in both modes (only its left
    position slides with the sidebar width). position:fixed so it isn't clipped. */
@@ -274,7 +286,7 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 #fz-tools #blockvmenusearch input[type="text"]{width:100% !important;box-sizing:border-box;height:36px;
 	border-radius:9px;padding:6px 10px 6px 32px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.10);color:#fff}
 /* icon row sits BELOW the search field */
-#fz-tools .fz-tools-extra{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:flex-start}
+#fz-tools .fz-tools-extra{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:space-evenly}
 #fz-tools .fz-tools-extra a,
 #fz-tools .fz-tools-extra .login_block_elem{color:var(--fz-nav-fg) !important}
 /* loupe button : only shown when the sidebar is collapsed */
@@ -351,6 +363,18 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 .fz-sub .vsmenudisabled{color:var(--fz-nav-fg-dim) !important;opacity:.6}
 .fz-sub .menu_titre img,.fz-sub .menu_contenu img{filter:none}
 
+/* Collapsible sub-menus (any depth) : fusion.js re-nests the left-menu rows so every
+   node with deeper children becomes a .fz-subhead immediately followed by its
+   .fz-subsub panel. The panel folds/unfolds (height + opacity) with the head's state;
+   a chevron shows it. fz-subopen lives on the HEAD so nesting works. */
+.fz-subsub{max-height:0;opacity:0;overflow:hidden;transition:max-height .24s ease,opacity .2s ease}
+.fz-subhead.fz-subopen + .fz-subsub{opacity:1}
+.fz-sub .fz-subhead{cursor:pointer}
+.fz-sub .menu_titre.fz-subhead,.fz-sub .menu_contenu.fz-subhead{padding-right:30px !important}
+.fz-subhead > .fz-subchev{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+	font-size:10px;color:var(--fz-nav-fg-dim);transition:transform .2s ease;pointer-events:none}
+.fz-subhead.fz-subopen > .fz-subchev{transform:translateY(-50%) rotate(90deg)}
+
 /* Favorites (bookmark module) section */
 #fz-fav .fz-head .fz-ic{color:var(--fz-star)}
 #fz-fav a{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:7px;
@@ -378,6 +402,7 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 
 /* ---------- collapsed (icons only) ---------- */
 html.fz-collapsed #fz-brand .fz-brand-name,
+html.fz-collapsed #fz-brand .fz-version,
 html.fz-collapsed .fz-head .fz-label,
 html.fz-collapsed .fz-head .fz-chev,
 html.fz-collapsed .fz-sec-label,
@@ -500,7 +525,7 @@ html.fz-collapsed .fz-head[data-fzlabel]:hover::after{
 	html.fusion #fz-tools .fz-tools-search{position:static !important;width:100% !important;opacity:1 !important;pointer-events:auto !important}
 	html.fusion #fz-tools .fz-tools-search #topmenu-global-search-dropdown{background:none !important;border:0 !important;
 		box-shadow:none !important;padding:0 !important;width:100% !important}
-	html.fusion #fz-tools .fz-tools-extra{flex-direction:row !important;justify-content:flex-start !important}
+	html.fusion #fz-tools .fz-tools-extra{flex-direction:row !important;justify-content:space-evenly !important}
 	html.fusion #fz-tools .dropdown-menu{left:8px !important;right:8px !important;width:auto !important;top:calc(100% + 6px) !important}
 }
 
@@ -640,24 +665,28 @@ html.fz-collapsed #fz-tools .fz-fallback-search input{color:var(--fz-text)}
 	height:20px !important;object-fit:contain}
 #fz-tools .global-search-item:hover,#fz-tools .global-search-item:focus{background:var(--fz-content-bg)}
 
-/* ---- Quick-add (+) / bookmark (star) dropdowns ----------------------- */
+/* ---- Tool icons (quick-add +, bookmark star, module builder, …) --------
+   eldy gives these wrappers assorted paddings (.atoplogin → 4px, .login_block_elem
+   → 3/4px + inline style) and nests some one level deeper, so the buttons came out
+   different widths and off-centre. Reset all that, keep every direct child shrink-
+   wrapped, and make the clickable element a uniform 34x34 centred button — at any
+   nesting depth. */
+#fz-tools .fz-tools-extra > *{flex:0 0 auto}
 #fz-tools .fz-tools-extra .dropdown{position:static}
-/* every tool = an identical 34x34 centered button: the +/star dropdown toggles AND
-   the module-builder/print/help links (.login_block_elem) AND plugin icons (.login),
-   so they all sit perfectly aligned on the row */
-#fz-tools .fz-tools-extra > div > a.dropdown-toggle,
-#fz-tools .fz-tools-extra > .login_block_elem,
-#fz-tools .fz-tools-extra > .login{color:var(--fz-nav-fg) !important;font-size:15px;flex:0 0 auto;
-	width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;text-decoration:none;box-sizing:border-box}
-/* the module-builder/print/help glyphs are wrapped in an <a> inside .login_block_elem
-   — make it fill the square so the whole button is clickable and the icon centered */
-#fz-tools .fz-tools-extra > .login_block_elem > a,
-#fz-tools .fz-tools-extra > .login > a{display:flex;align-items:center;justify-content:center;
-	width:100%;height:100%;color:inherit !important;text-decoration:none}
+#fz-tools .fz-tools-extra .atoplogin,
+#fz-tools .fz-tools-extra .login_block_elem,
+#fz-tools .fz-tools-extra .inline-block,
+#fz-tools .fz-tools-extra .dropdown{margin:0 !important;padding:0 !important}
+#fz-tools .fz-tools-extra a.dropdown-toggle,
+#fz-tools .fz-tools-extra .login_block_elem > a{color:var(--fz-nav-fg) !important;font-size:15px;
+	width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+	border-radius:8px;text-decoration:none;box-sizing:border-box}
+#fz-tools .fz-tools-extra a.dropdown-toggle:hover,
+#fz-tools .fz-tools-extra .login_block_elem > a:hover{background:var(--fz-nav-hover)}
+/* neutralize the per-glyph padding/margin eldy puts on the icon spans */
+#fz-tools .fz-tools-extra a.dropdown-toggle > [class*="fa-"],
+#fz-tools .fz-tools-extra .login_block_elem > a > [class*="fa-"]{margin:0 !important;padding:0 !important;line-height:1}
 #fz-tools .fz-tools-extra .helppresentcircle{display:none !important} /* stray help arrow overlay */
-#fz-tools .fz-tools-extra > div > a.dropdown-toggle:hover,
-#fz-tools .fz-tools-extra > .login_block_elem:hover,
-#fz-tools .fz-tools-extra > .login:hover{background:var(--fz-nav-hover)}
 #fz-tools .dropdown-menu{
 	position:absolute !important;left:8px;right:8px;top:calc(100% + 6px) !important;bottom:auto;box-sizing:border-box;
 	width:auto !important;min-width:0 !important;max-height:62vh;overflow:auto;padding:6px;
