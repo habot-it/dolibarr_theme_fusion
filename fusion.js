@@ -15,6 +15,16 @@
 (function () {
 	"use strict";
 
+	function isPrintCssMode() {
+		try {
+			return new URLSearchParams(window.location.search).get("optioncss") === "print";
+		} catch (e) {
+			return /(?:^|[?&])optioncss=print(?:&|$)/.test(window.location.search);
+		}
+	}
+
+	if (isPrintCssMode()) return;
+
 	// Engage the CSS shell immediately (documentElement exists during <head> parse)
 	// so the legacy menus are hidden before they can flash on screen.
 	var ROOT = document.documentElement;

@@ -32,6 +32,8 @@ if ($fz_appname === '') {
 	$fz_appname = defined('DOL_APPLICATION_TITLE') ? constant('DOL_APPLICATION_TITLE') : 'Dolibarr';
 }
 $fz_appname = trim(preg_replace('/[\r\n\t]+/', ' ', ltrim((string) $fz_appname, '+')));
+$fz_optioncss = function_exists('GETPOST') ? GETPOST('optioncss', 'aZ09') : (isset($_GET['optioncss']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $_GET['optioncss']) : '');
+$fz_is_print = ($fz_optioncss === 'print');
 ?>
 html.fusion{
 	--fz-appname: <?php echo json_encode($fz_appname, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;   /* read by fusion.js */
@@ -782,3 +784,48 @@ html.fusion ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fz-text
 html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);background-clip:padding-box;border:3px solid transparent}
 /* keep the navy sidebar's own scrollbars on the light-thumb rule above */
 #fz-sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);background-clip:padding-box;border:2px solid transparent}
+
+<?php if ($fz_is_print) { ?>
+/* Fusion print mode: optioncss=print must be content-only. */
+header#id-top,
+#id-top,
+#id-left,
+.side-nav,
+.vmenu,
+.tmenu,
+#tmenu_tooltip,
+#fz-sidebar,
+#fz-topbar,
+#fz-scrim,
+body#mainbody > div[style*="clear"]{
+	display:none !important;
+}
+
+body#mainbody{
+	background:#fff !important;
+}
+
+#id-container,
+body#mainbody #id-container{
+	display:block !important;
+	margin-left:0 !important;
+	width:100% !important;
+	max-width:none !important;
+	padding-left:0 !important;
+	padding-right:0 !important;
+	padding-top:0 !important;
+	background:#fff !important;
+	box-sizing:border-box !important;
+}
+
+#id-right,
+body#mainbody #id-right{
+	display:block !important;
+	float:none !important;
+	margin-left:0 !important;
+	width:auto !important;
+	max-width:none !important;
+	min-height:0 !important;
+	box-sizing:border-box !important;
+}
+<?php } ?>
