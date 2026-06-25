@@ -296,22 +296,36 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
    kept on the right for the floating collapse button */
 #fz-brand .fz-version{flex:0 0 auto;align-self:center;margin-left:auto;margin-right:5px;
 	color:rgba(255,255,255,.6);font-size:11px;font-weight:600;white-space:nowrap;letter-spacing:.02em}
-/* Slide button = a floating round handle straddling the sidebar's right edge,
-   protruding onto the white content. Identical in both modes (only its left
-   position slides with the sidebar width). position:fixed so it isn't clipped. */
+/* Slide button = a small tab attached to the sidebar edge. The tab says
+   "drawer handle", the lock icon says whether the menu is pinned open. */
 #fz-brand .fz-collapse{
-	position:fixed;left:calc(var(--fz-sb-w) - 14px);top:13px;z-index:1300;
+	position:fixed;left:calc(var(--fz-sb-w) - 8px);top:10px;z-index:1300;
 	border:0;cursor:pointer;color:#fff;
-	background:var(--colorbackhmenu1, #2563eb);
-	width:28px;height:28px;border-radius:50%;font-size:13px;display:flex;align-items:center;justify-content:center;
-	box-shadow:0 2px 8px rgba(0,0,0,.28);
+	background:var(--fz-nav-bg);
+	width:30px;height:34px;border-radius:0 11px 11px 0;font-size:13px;
+	display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+	padding-left:6px;
+	box-shadow:none;
 	transition:left .22s ease,background .15s ease;
 }
-html.fz-collapsed #fz-brand .fz-collapse{left:calc(var(--fz-sb-w-collapsed) - 14px)}
-#fz-brand .fz-collapse:hover{background:color-mix(in srgb, var(--colorbackhmenu1, #2563eb) 86%, #fff)}
-/* animate the chevron : points left when open, flips right when collapsed */
-#fz-brand .fz-collapse i{transition:transform .28s ease}
-html.fz-collapsed #fz-brand .fz-collapse i{transform:rotate(180deg)}
+#fz-brand .fz-collapse:hover{
+	background:color-mix(in srgb, var(--fz-nav-bg) 88%, #fff);
+	box-shadow:none;
+}
+html.fz-collapsed #fz-brand .fz-collapse{left:calc(var(--fz-sb-w-collapsed) - 8px)}
+/* Closed lock when the sidebar is pinned open; double chevron when retracted. */
+#fz-brand .fz-collapse i{font-size:12px;line-height:1;transform:none;transition:opacity .18s ease}
+#fz-brand .fz-collapse.is-unlocked i{font-size:13px}
+
+/* Compact primary-menu tooltips shown only when the sidebar is retracted. */
+div.ui-tooltip.mytooltip.fz-menu-tooltip{
+	min-width:0 !important;
+	max-width:190px !important;
+	width:auto !important;
+	padding:8px 11px !important;
+	line-height:1.25 !important;
+	white-space:normal;
+}
 
 /* collapsed brand : same padding as expanded (figé, no jump) and, for a 32px logo
    in the 66px rail, 17px sides center it exactly — matching the avatar/icons (33px).
@@ -370,6 +384,7 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 	width:26px;height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:center;
 	margin:-4px -6px -4px 0;border-radius:7px;font-size:11px;color:var(--fz-nav-fg-dim);
 	cursor:pointer;transition:transform .18s ease,background .15s ease,color .15s ease}
+.fz-group:not(.fz-has-sub):not(.fz-loading) > .fz-head .fz-chev{display:none}
 .fz-head .fz-chev:hover{background:var(--fz-nav-hover);color:#fff}
 .fz-group.fz-open > .fz-head .fz-chev{transform:rotate(90deg)}
 /* on-demand submenu fetch: pulse the chevron while loading */
