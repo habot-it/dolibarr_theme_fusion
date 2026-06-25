@@ -34,9 +34,64 @@ if ($fz_appname === '') {
 $fz_appname = trim(preg_replace('/[\r\n\t]+/', ' ', ltrim((string) $fz_appname, '+')));
 $fz_optioncss = function_exists('GETPOST') ? GETPOST('optioncss', 'aZ09') : (isset($_GET['optioncss']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $_GET['optioncss']) : '');
 $fz_is_print = ($fz_optioncss === 'print');
+if (isset($langs) && is_object($langs)) {
+	$langs->loadLangs(array('main', 'admin'));
+}
+if (!function_exists('fz_fusion_trans')) {
+	function fz_fusion_trans($key, $fallback)
+	{
+		global $langs;
+		if (isset($langs) && is_object($langs)) {
+			$value = $langs->transnoentitiesnoconv($key);
+			if ($value !== '' && $value !== $key) {
+				return $value;
+			}
+		}
+		return $fallback;
+	}
+}
+if (!function_exists('fz_fusion_css_string')) {
+	function fz_fusion_css_string($value)
+	{
+		return '"'.str_replace(array('\\', '"', "\r", "\n"), array('\\\\', '\"', ' ', ' '), (string) $value).'"';
+	}
+}
+$fz_langcode = '';
+if (isset($langs) && is_object($langs) && !empty($langs->defaultlang)) {
+	$fz_langcode = (string) $langs->defaultlang;
+} elseif (function_exists('GETPOST')) {
+	$fz_langcode = (string) GETPOST('lang', 'aZ09');
+}
+$fz_langprefix = substr(strtolower(str_replace('_', '-', $fz_langcode)), 0, 2);
+$fz_mode_words = array(
+	'en' => array('display' => 'Display mode', 'light' => 'Light', 'auto' => 'Auto', 'dark' => 'Dark'),
+	'fr' => array('display' => 'Mode d\'affichage', 'light' => 'Clair', 'auto' => 'Auto', 'dark' => 'Sombre'),
+	'es' => array('display' => 'Modo de visualización', 'light' => 'Claro', 'auto' => 'Auto', 'dark' => 'Oscuro'),
+	'de' => array('display' => 'Anzeigemodus', 'light' => 'Hell', 'auto' => 'Auto', 'dark' => 'Dunkel'),
+	'it' => array('display' => 'Modalità di visualizzazione', 'light' => 'Chiaro', 'auto' => 'Auto', 'dark' => 'Scuro'),
+	'pt' => array('display' => 'Modo de visualização', 'light' => 'Claro', 'auto' => 'Auto', 'dark' => 'Escuro'),
+	'nl' => array('display' => 'Weergavemodus', 'light' => 'Licht', 'auto' => 'Auto', 'dark' => 'Donker'),
+);
+$fz_mode_word = isset($fz_mode_words[$fz_langprefix]) ? $fz_mode_words[$fz_langprefix] : $fz_mode_words['en'];
+$fz_i18n = array(
+	'search' => fz_fusion_trans('Search', 'Search'),
+	'menu' => fz_fusion_trans('Menu', 'Menu'),
+	'user' => fz_fusion_trans('User', 'User'),
+	'mode_display' => $fz_mode_word['display'],
+	'mode_light' => $fz_mode_word['light'],
+	'mode_auto' => $fz_mode_word['auto'],
+	'mode_dark' => $fz_mode_word['dark'],
+);
 ?>
 html.fusion{
 	--fz-appname: <?php echo json_encode($fz_appname, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP); ?>;   /* read by fusion.js */
+	--fz-t-search: <?php echo fz_fusion_css_string($fz_i18n['search']); ?>;
+	--fz-t-menu: <?php echo fz_fusion_css_string($fz_i18n['menu']); ?>;
+	--fz-t-user: <?php echo fz_fusion_css_string($fz_i18n['user']); ?>;
+	--fz-t-mode-display: <?php echo fz_fusion_css_string($fz_i18n['mode_display']); ?>;
+	--fz-t-mode-light: <?php echo fz_fusion_css_string($fz_i18n['mode_light']); ?>;
+	--fz-t-mode-auto: <?php echo fz_fusion_css_string($fz_i18n['mode_auto']); ?>;
+	--fz-t-mode-dark: <?php echo fz_fusion_css_string($fz_i18n['mode_dark']); ?>;
 	/* ---- geometry ---- */
 	--fz-sb-w: 268px;            /* expanded sidebar width            */
 	--fz-sb-w-collapsed: 66px;   /* icons-only sidebar width          */
@@ -480,12 +535,6 @@ html.fz-collapsed #fz-tools .search-dropdown-body{
 	padding:0 !important;max-height:50vh;overflow:auto}
 /* +, star, import dropdowns fly out to the right when collapsed */
 html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;right:auto !important;top:0 !important;width:260px !important}
-/* tooltip flyout when collapsed */
-html.fz-collapsed .fz-head[data-fzlabel]:hover::after{
-	content:attr(data-fzlabel);position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
-	background:#1b2740;color:#fff;padding:6px 10px;border-radius:7px;white-space:nowrap;font-size:12px;
-	box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:1400}
-
 /* ====================================================================== *
  *  PORTRAIT TOP BAR (only shown in narrow / portrait mode)               *
  * ====================================================================== */
