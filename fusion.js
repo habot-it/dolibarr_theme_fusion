@@ -315,14 +315,15 @@
 				}
 			});
 
-		// Main-menu click: expand the submenu instead of navigating. The active
-		// section already has its submenu in the DOM; other sections are fetched
-		// on demand (their left menu only exists server-side for the open section).
+		// Menu accordion: the link itself navigates; only the chevron unfolds.
+		// In collapsed desktop mode, clicking a primary icon still opens the rail as
+		// an overlay because the chevron is hidden there.
 		nav.addEventListener("click", function (ev) {
 			// sub-menu accordion (any depth): a collapsible head toggles its own panel and
 			// collapses the other open heads at the same level.
-			var subhead = ev.target.closest(".fz-subhead");
-			if (subhead) {
+			var subchev = ev.target.closest(".fz-subchev");
+			if (subchev) {
+				var subhead = subchev.closest(".fz-subhead");
 				var pnl = subhead.nextElementSibling;
 				if (pnl && pnl.classList && pnl.classList.contains("fz-subsub")) {
 					ev.preventDefault();
@@ -349,7 +350,8 @@
 			}
 			var head = ev.target.closest(".fz-head");
 			if (!head) return;
-			if (head.getAttribute("target")) return; // opens elsewhere -> let it through
+			var headchev = ev.target.closest(".fz-chev");
+			if (!headchev && head.getAttribute("target")) return; // opens elsewhere -> let it through
 			var group = head.closest(".fz-group");
 			if (!group) return;
 			var sub = group.querySelector(".fz-sub");
@@ -367,8 +369,10 @@
 				return;
 			}
 
+			if (!headchev) return;
+			ev.preventDefault();
+
 			if (sub && sub.children.length) {
-				ev.preventDefault();
 				var willOpen = !group.classList.contains("fz-open");
 				if (willOpen) closeOtherGroups(group);
 				setGroupOpen(group, willOpen, true);
@@ -376,7 +380,6 @@
 			}
 			var href = head.getAttribute("href");
 			if (!href || href === "#") return;
-			ev.preventDefault();
 			loadSub(group, sub, href);
 		});
 
