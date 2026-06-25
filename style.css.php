@@ -311,7 +311,11 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 .fz-head:hover{background:var(--fz-nav-hover);color:#fff}
 .fz-head .fz-ic{width:20px;flex:0 0 20px;text-align:center;font-size:15px;transition:font-size .22s ease}
 .fz-head .fz-label{flex:1;overflow:hidden;text-overflow:ellipsis}
-.fz-head .fz-chev{font-size:11px;color:var(--fz-nav-fg-dim);transition:transform .18s ease}
+.fz-head .fz-chev{
+	width:26px;height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:center;
+	margin:-4px -6px -4px 0;border-radius:7px;font-size:11px;color:var(--fz-nav-fg-dim);
+	cursor:pointer;transition:transform .18s ease,background .15s ease,color .15s ease}
+.fz-head .fz-chev:hover{background:var(--fz-nav-hover);color:#fff}
 .fz-group.fz-open > .fz-head .fz-chev{transform:rotate(90deg)}
 /* on-demand submenu fetch: pulse the chevron while loading */
 .fz-group.fz-loading > .fz-head .fz-chev{animation:fz-pulse .8s ease-in-out infinite}
@@ -371,10 +375,13 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
    a chevron shows it. fz-subopen lives on the HEAD so nesting works. */
 .fz-subsub{max-height:0;opacity:0;overflow:hidden;transition:max-height .24s ease,opacity .2s ease}
 .fz-subhead.fz-subopen + .fz-subsub{opacity:1}
-.fz-sub .fz-subhead{cursor:pointer}
+.fz-sub .fz-subhead{cursor:default}
 .fz-sub .menu_titre.fz-subhead,.fz-sub .menu_contenu.fz-subhead{padding-right:30px !important}
-.fz-subhead > .fz-subchev{position:absolute;right:12px;top:50%;transform:translateY(-50%);
-	font-size:10px;color:var(--fz-nav-fg-dim);transition:transform .2s ease;pointer-events:none}
+.fz-subhead > .fz-subchev{
+	position:absolute;right:4px;top:50%;z-index:2;display:flex;align-items:center;justify-content:center;
+	width:24px;height:24px;border-radius:6px;transform:translateY(-50%);font-size:10px;
+	color:var(--fz-nav-fg-dim);cursor:pointer;transition:transform .2s ease,background .15s ease,color .15s ease}
+.fz-subhead > .fz-subchev:hover{background:var(--fz-nav-hover);color:#fff}
 .fz-subhead.fz-subopen > .fz-subchev{transform:translateY(-50%) rotate(90deg)}
 
 /* Favorites (bookmark module) section */
