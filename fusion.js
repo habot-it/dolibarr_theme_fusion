@@ -60,6 +60,73 @@
 		if (html != null) e.innerHTML = html;
 		return e;
 	}
+	function cssTextVar(name, fallback) {
+		var value = "";
+		try {
+			value = getComputedStyle(ROOT).getPropertyValue(name).trim();
+		} catch (e) {}
+		if (!value) return fallback;
+		return value.replace(/^["']|["']$/g, "") || fallback;
+	}
+	function tr(key, fallback) {
+		return cssTextVar("--fz-t-" + key, fallback);
+	}
+	function enablePrimaryIconTooltip(node, label) {
+		if (!node || !label) return node;
+		node.classList.add("fz-primary-tooltip");
+		node.setAttribute("data-fz-title", label);
+		initPrimaryTooltip(node);
+		syncPrimaryTooltip(node);
+		node.addEventListener("mouseenter", function () { syncPrimaryTooltip(node); });
+		node.addEventListener("focusin", function () { syncPrimaryTooltip(node); });
+		return node;
+	}
+	function initPrimaryTooltip(node) {
+		if (window.jQuery && window.jQuery.fn && window.jQuery.fn.tooltip) {
+			window.jQuery(node).tooltip({
+				tooltipClass: "mytooltip",
+				show: { collision: "flipfit", effect: "toggle", delay: 50, duration: 20 },
+				hide: { delay: 250, duration: 20 },
+				disabled: !ROOT.classList.contains("fz-collapsed"),
+				position: { my: "left center", at: "right+14 center", collision: "flipfit" },
+				content: function () {
+					return this.getAttribute("data-fz-title") || "";
+				}
+			});
+		}
+	}
+	function syncPrimaryTooltip(node) {
+		var collapsed = ROOT.classList.contains("fz-collapsed");
+		var label = node.getAttribute("data-fz-title") || "";
+		node.classList.toggle("classfortooltip", collapsed);
+		if (collapsed && label) node.setAttribute("title", label);
+		else node.removeAttribute("title");
+		if (window.jQuery && window.jQuery.fn && window.jQuery.fn.tooltip) {
+			try {
+				window.jQuery(node).tooltip("option", "disabled", !collapsed);
+				if (!collapsed) window.jQuery(node).tooltip("close");
+			} catch (e) {
+				initPrimaryTooltip(node);
+			}
+		}
+	}
+	function syncPrimaryTooltips(ctx) {
+		$all(".fz-primary-tooltip", ctx || document).forEach(syncPrimaryTooltip);
+	}
+	function suppressNonPrimaryTooltips(ctx) {
+		$all("[title], .classfortooltip", ctx).forEach(function (node) {
+			if (node.classList.contains("fz-primary-tooltip")) return;
+			var label = (node.getAttribute("title") || "").trim();
+			if (label && !node.getAttribute("aria-label") && node.matches("a,button,[role='button']")) {
+				node.setAttribute("aria-label", label);
+			}
+			node.removeAttribute("title");
+			node.classList.remove("classfortooltip", "fz-tooltip-right");
+			if (window.jQuery && window.jQuery.fn && window.jQuery.fn.tooltip) {
+				try { window.jQuery(node).tooltip("destroy"); } catch (e) {}
+			}
+		});
+	}
 
 	function build() {
 		// Abort gracefully on pages without the standard menu (login, popups, …).
@@ -86,7 +153,7 @@
 		var homeA = document.querySelector("#mainmenutd_home a[href]");
 		var logo = el("a", "fz-logo" + (logoImg ? " has-logo" : ""));
 		logo.setAttribute("href", homeA ? homeA.getAttribute("href") : "/index.php?mainmenu=home");
-		logo.title = appName;
+		logo.setAttribute("aria-label", appName);
 		if (logoImg) {
 			var img = logoImg.cloneNode(false);
 			img.removeAttribute("id");
@@ -98,7 +165,6 @@
 		brand.appendChild(logo);
 		var brandName = el("div", "fz-brand-name");
 		brandName.textContent = appName;
-		brandName.title = appName;
 		brand.appendChild(brandName);
 		// Dolibarr version, shown as a small badge right after the app name
 		var verEl = $(".aversion");
@@ -106,13 +172,11 @@
 		if (verText) {
 			var ver = el("span", "fz-version", "");
 			ver.textContent = "v" + verText.replace(/^v/i, "");
-			ver.title = "Dolibarr " + verText;
 			brand.appendChild(ver);
 		}
 		var collapseBtn = el("button", "fz-collapse", '<i class="fas fa-angle-double-left"></i>');
 		collapseBtn.type = "button";
-		collapseBtn.title = "Réduire / agrandir le menu";
-		collapseBtn.setAttribute("aria-label", collapseBtn.title);
+		collapseBtn.setAttribute("aria-label", tr("menu", "Menu"));
 		collapseBtn.setAttribute("aria-expanded", ROOT.classList.contains("fz-collapsed") ? "false" : "true");
 		brand.appendChild(collapseBtn);
 
@@ -120,8 +184,9 @@
 		// field (grows), and the icon dropdowns (+, star, import…) pushed right.
 		var tools = el("div"); tools.id = "fz-tools";
 		var searchToggle = el("button", "", '<i class="fas fa-search"></i>');
-		searchToggle.id = "fz-search-toggle"; searchToggle.type = "button"; searchToggle.title = "Rechercher";
-		searchToggle.setAttribute("aria-label", "Rechercher");
+		var searchLabel = tr("search", "Search");
+		searchToggle.id = "fz-search-toggle"; searchToggle.type = "button";
+		searchToggle.setAttribute("aria-label", searchLabel);
 		var searchSlot = el("div", "fz-tools-search");
 		var extraSlot = el("div", "fz-tools-extra");
 		tools.appendChild(searchToggle);
@@ -140,7 +205,9 @@
 		// Top bar (portrait)
 		topbar.appendChild((function () {
 			var b = el("button", "fz-burger", '<i class="fas fa-bars"></i>');
-			b.type = "button"; b.id = "fz-burger"; return b;
+			b.type = "button"; b.id = "fz-burger";
+			b.setAttribute("aria-label", tr("menu", "Menu"));
+			return b;
 		})());
 		topbar.appendChild(el("div", "fz-tb-title", appName));
 
@@ -172,9 +239,12 @@
 			var target = linkA ? linkA.getAttribute("target") : null;
 			if (target) head.setAttribute("target", target);
 
-			head.appendChild(el("span", "fz-ic", iconFor(code, li)));
+			head.appendChild(enablePrimaryIconTooltip(el("span", "fz-ic", iconFor(code, li)), label));
 			head.appendChild(el("span", "fz-label", "")).textContent = label;
-			head.appendChild(el("span", "fz-chev", '<i class="fas fa-chevron-right"></i>'));
+			var chev = el("span", "fz-chev", '<i class="fas fa-chevron-right"></i>');
+			chev.setAttribute("role", "button");
+			chev.setAttribute("aria-label", label);
+			head.appendChild(chev);
 
 			group.appendChild(head);
 			group.appendChild(el("div", "fz-sub"));
@@ -258,6 +328,24 @@
 			userWrap.appendChild(lb);
 		}
 		foot.appendChild(userWrap);
+		suppressNonPrimaryTooltips(sidebar);
+		syncPrimaryTooltips(sidebar);
+		setTimeout(function () { suppressNonPrimaryTooltips(sidebar); syncPrimaryTooltips(sidebar); }, 0);
+		try {
+			new MutationObserver(function () { syncPrimaryTooltips(sidebar); }).observe(ROOT, { attributes: true, attributeFilter: ["class"] });
+		} catch (e) {}
+		try {
+			var tooltipCleanupQueued = false;
+			new MutationObserver(function () {
+				if (tooltipCleanupQueued) return;
+				tooltipCleanupQueued = true;
+				setTimeout(function () {
+					tooltipCleanupQueued = false;
+					suppressNonPrimaryTooltips(sidebar);
+					syncPrimaryTooltips(sidebar);
+				}, 0);
+			}).observe(sidebar, { subtree: true, childList: true, attributes: true, attributeFilter: ["title", "class"] });
+		} catch (e) {}
 
 		// ---- 7. Wire interactions ---------------------------------------------
 		// The collapsed PREFERENCE lives in localStorage; the .fz-collapsed class can be
@@ -268,6 +356,7 @@
 			ROOT.classList.remove("fz-peek", "fz-search-open");
 			collapseBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
 			try { localStorage.setItem("fz-collapsed", collapsed ? "1" : "0"); } catch (e) {}
+			syncPrimaryTooltips(sidebar);
 		}
 		collapseBtn.addEventListener("click", function () { setCollapsed(!prefersCollapsed()); });
 
@@ -280,6 +369,7 @@
 			if (!ROOT.classList.contains("fz-peek")) return;
 			ROOT.classList.remove("fz-peek", "fz-search-open");
 			if (prefersCollapsed()) ROOT.classList.add("fz-collapsed");
+			syncPrimaryTooltips(sidebar);
 		}
 		document.addEventListener("mousedown", function (e) {
 			if (!ROOT.classList.contains("fz-peek")) return;
@@ -364,6 +454,7 @@
 				ev.preventDefault();
 				ROOT.classList.remove("fz-collapsed");
 				ROOT.classList.add("fz-peek");
+				syncPrimaryTooltips(sidebar);
 				if (sub && sub.children.length) { closeOtherGroups(group); setGroupOpen(group, true, false); }
 				else { var h = head.getAttribute("href"); if (h && h !== "#") loadSub(group, sub, h); }
 				return;
@@ -491,7 +582,11 @@
 		header.classList.add("fz-subhead");
 		header.classList.toggle("fz-subopen", !!open);
 		if (!header.querySelector(".fz-subchev")) {
-			header.appendChild(el("span", "fz-subchev", '<i class="fas fa-chevron-right"></i>'));
+			var chev = el("span", "fz-subchev", '<i class="fas fa-chevron-right"></i>');
+			var label = titleOf(header);
+			chev.setAttribute("role", "button");
+			chev.setAttribute("aria-label", label);
+			header.appendChild(chev);
 		}
 	}
 
@@ -649,17 +744,20 @@
 		var form = el("form", "fz-fallback-search");
 		form.setAttribute("action", (window.DOL_URL_ROOT || "") + "/core/search_page.php");
 		form.setAttribute("method", "GET");
-		form.innerHTML = '<span class="fas fa-search fz-fallback-search-icon"></span>'
-			+ '<input name="search_all" placeholder="Rechercher…" autocomplete="off" '
-			+ '>';
+		form.appendChild(el("span", "fas fa-search fz-fallback-search-icon"));
+		var input = el("input");
+		input.name = "search_all";
+		input.placeholder = tr("search", "Search") + "...";
+		input.autocomplete = "off";
+		form.appendChild(input);
 		return form;
 	}
 
 	function makeModeToggle() {
 		var wrap = el("div", "fz-modes");
+		var displayModeLabel = tr("mode-display", "Display mode");
 		wrap.tabIndex = 0;
-		wrap.title = "Mode d'affichage";
-		wrap.setAttribute("aria-label", "Mode d'affichage");
+		wrap.setAttribute("aria-label", displayModeLabel);
 		wrap.setAttribute("role", "group");
 		wrap.addEventListener("click", function (e) {
 			if (e.target.closest && e.target.closest(".fz-mode-btn")) return;
@@ -677,15 +775,16 @@
 			wrap.classList.remove("fz-modes-open");
 		});
 		var modes = [
-			{ k: "light", i: "fa-sun", t: "Clair" },
-			{ k: "auto", i: "fa-adjust", t: "Auto" },
-			{ k: "dark", i: "fa-moon", t: "Sombre" }
+			{ k: "light", i: "fa-sun", t: tr("mode-light", "Light") },
+			{ k: "auto", i: "fa-adjust", t: tr("mode-auto", "Auto") },
+			{ k: "dark", i: "fa-moon", t: tr("mode-dark", "Dark") }
 		];
 		var current = ROOT.getAttribute("data-fz-mode") || "auto";
 		modes.forEach(function (m) {
 			var b = el("button", "fz-mode-btn" + (m.k === current ? " is-active" : ""),
 				'<i class="fas ' + m.i + '"></i><span class="fz-mode-lbl">' + m.t + '</span>');
-			b.type = "button"; b.title = "Mode " + m.t; b.setAttribute("data-mode", m.k);
+			b.type = "button"; b.setAttribute("data-mode", m.k);
+			b.setAttribute("aria-label", m.t);
 			b.addEventListener("click", function () {
 				ROOT.setAttribute("data-fz-mode", m.k);
 				try { localStorage.setItem("fz-mode", m.k); } catch (e) {}
