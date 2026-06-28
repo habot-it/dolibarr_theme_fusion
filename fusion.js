@@ -30,11 +30,15 @@
 	var ROOT = document.documentElement;
 	ROOT.classList.add("fusion");
 
-	// Restore persisted preferences early (collapsed state + color mode).
+	function validMode(value) {
+		value = String(value || "");
+		return /^(light|auto|dark)$/.test(value) ? value : "auto";
+	}
+
+	// Restore persisted Fusion preferences early (collapsed state + color mode).
 	try {
 		if (localStorage.getItem("fz-collapsed") === "1") ROOT.classList.add("fz-collapsed");
-		var savedMode = localStorage.getItem("fz-mode") || "auto";
-		ROOT.setAttribute("data-fz-mode", savedMode);
+		ROOT.setAttribute("data-fz-mode", validMode(localStorage.getItem("fz-mode") || "auto"));
 	} catch (e) { ROOT.setAttribute("data-fz-mode", "auto"); }
 
 	// FontAwesome 5 icon for each known main-menu code (Dolibarr ships FA5, not FA6).
@@ -379,7 +383,9 @@
 			var target = linkA ? linkA.getAttribute("target") : null;
 			if (target) head.setAttribute("target", target);
 
-			head.appendChild(enablePrimaryIconTooltip(el("span", "fz-ic", iconFor(code, li)), label));
+			var icon = el("span", "fz-ic", iconFor(code, li));
+			if (icon.querySelector(".fz-native-menu-icon")) icon.classList.add("fz-ic-native");
+			head.appendChild(enablePrimaryIconTooltip(icon, label));
 			head.appendChild(el("span", "fz-label", "")).textContent = label;
 			var chev = el("span", "fz-chev", '<i class="fas fa-chevron-right"></i>');
 			chev.setAttribute("role", "button");
@@ -654,16 +660,40 @@
 	}
 
 	function iconFor(code, li) {
-		// 1) reuse an explicit FA glyph provided by the module's menu entry
+		// 1) reuse Dolibarr's own generated icon so native colors/images survive.
+		var nativeIcon = cloneMenuIcon(li);
+		if (nativeIcon) return nativeIcon;
+
+		// 2) reuse an explicit FA glyph provided by the module's menu entry
 		var glyph = li.querySelector("i.fa, i.fas, i.far, i.fab, span.fa, span.fas");
 		if (glyph) {
 			var classes = (glyph.getAttribute("class") || "").match(/\bfa-[\w-]+/g);
 			if (classes && classes.length) return '<i class="fas ' + classes.join(" ") + '"></i>';
 		}
-		// 2) known code
+		// 3) known code
 		if (ICONS[code]) return '<i class="fas ' + ICONS[code] + '"></i>';
-		// 3) fallback
+		// 4) fallback
 		return '<i class="fas fa-puzzle-piece"></i>';
+	}
+
+	function cloneMenuIcon(li) {
+		var topImage = li ? li.querySelector(".topmenuimage") : null;
+		if (!topImage) return "";
+		var icon = topImage.querySelector("span, i, img") || topImage;
+		if (icon.classList && icon.classList.contains("tmenuimageforpng")) icon = topImage;
+		var clone = icon.cloneNode(true);
+		cleanMenuIconClone(clone);
+		clone.classList.add("fz-native-menu-icon");
+		return clone.outerHTML;
+	}
+
+	function cleanMenuIconClone(node) {
+		[node].concat($all("*", node)).forEach(function (item) {
+			item.removeAttribute("id");
+			item.removeAttribute("title");
+			item.removeAttribute("aria-describedby");
+			item.classList.remove("classfortooltip");
+		});
 	}
 
 	// Move every left-menu (.vmenu) block found under `root` into the group's
