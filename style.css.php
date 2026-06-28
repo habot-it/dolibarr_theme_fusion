@@ -106,7 +106,6 @@ $fz_border_radius = getDolGlobalString('THEME_ELDY_USEBORDERONTABLE') ? getDolGl
 $fz_row_hover = (isset($colorbacklinepairhover) && $colorbacklinepairhover !== '') ? 'var(--colorbacklinepairhover)' : 'color-mix(in srgb, var(--fz-nav-fg) 14%, transparent)';
 $fz_row_checked = (isset($colorbacklinepairchecked) && $colorbacklinepairchecked !== '') ? 'var(--colorbacklinepairchecked)' : 'color-mix(in srgb, var(--fz-nav-fg) 22%, transparent)';
 $fz_sub_row_hover = (isset($colorbacklinepairhover) && $colorbacklinepairhover !== '') ? 'var(--colorbacklinepairhover)' : 'color-mix(in srgb, var(--fz-sub-fg) 14%, transparent)';
-$fz_sub_row_checked = (isset($colorbacklinepairchecked) && $colorbacklinepairchecked !== '') ? 'var(--colorbacklinepairchecked)' : 'color-mix(in srgb, var(--fz-sub-fg) 22%, transparent)';
 $fz_nav_hover_fg = (isset($colorbacklinepairhover) && $colorbacklinepairhover !== '') ? 'var(--fz-text)' : 'var(--fz-nav-fg)';
 $fz_nav_active_fg = (isset($colorbacklinepairchecked) && $colorbacklinepairchecked !== '') ? 'var(--fz-text)' : 'var(--fz-nav-fg)';
 $fz_langcode = '';
@@ -142,7 +141,6 @@ html.fusion{
 	--fz-logo-url: <?php echo fz_fusion_css_string($fz_logo_url); ?>;
 	--fz-logo-square-url: <?php echo fz_fusion_css_string($fz_logo_square_url); ?>;
 	--fz-logo-wide: <?php echo $fz_is_empty_appname ? '1' : '0'; ?>;
-	--fz-menu-colorlogo: <?php echo getDolGlobalString('THEME_MENU_COLORLOGO') ? '1' : '0'; ?>;
 	--fz-t-search: <?php echo fz_fusion_css_string($fz_i18n['search']); ?>;
 	--fz-t-menu: <?php echo fz_fusion_css_string($fz_i18n['menu']); ?>;
 	--fz-t-user: <?php echo fz_fusion_css_string($fz_i18n['user']); ?>;
@@ -175,7 +173,6 @@ html.fusion{
 	--fz-sub-fg-dim: color-mix(in srgb, var(--fz-sub-fg) 64%, transparent);
 	--fz-sub-border: color-mix(in srgb, var(--fz-sub-fg) 22%, transparent);
 	--fz-sub-hover: <?php echo $fz_sub_row_hover; ?>;
-	--fz-sub-active-bg: <?php echo $fz_sub_row_checked; ?>;
 	--fz-accent: var(--butactionbg, var(--colortextlink, var(--colorbackhmenu1, #2563eb)));
 	--fz-accent-fg: var(--textbutaction, #ffffff);
 	--fz-star: #f5b301;
@@ -501,15 +498,8 @@ html.fz-collapsed #fz-brand .fz-logo.is-wide-logo{width:40px;height:40px}
 .fz-head .fz-ic .fz-native-menu-icon i::before,
 .fz-head .fz-ic .fz-native-menu-icon span::before{line-height:20px !important;text-align:center !important}
 <?php if (getDolGlobalString('THEME_MENU_COLORLOGO')) { ?>
-.fz-head .fz-ic:not(.fz-ic-native),.fz-head .fz-ic:not(.fz-ic-native) i,.fz-head .fz-ic:not(.fz-ic-native) span,
-.fz-head .fz-ic:not(.fz-ic-native) [class*="fa-"],.fz-head .fz-ic:not(.fz-ic-native)::before,
-.fz-head .fz-ic:not(.fz-ic-native) i::before,.fz-head .fz-ic:not(.fz-ic-native) span::before{
-	color:var(--fz-menu-icon-normal) !important}
 .fz-head .fz-ic.fz-ic-native .fz-native-menu-icon{filter:none !important}
 <?php } else { ?>
-.fz-head .fz-ic,.fz-head .fz-ic i,.fz-head .fz-ic span,.fz-head .fz-ic [class*="fa-"],
-.fz-head .fz-ic::before,.fz-head .fz-ic i::before,.fz-head .fz-ic span::before{
-	color:var(--fz-menu-icon-normal) !important}
 .fz-head .fz-ic.fz-ic-native .fz-native-menu-icon{filter:saturate(0) grayscale(1) !important}
 <?php } ?>
 
@@ -895,24 +885,10 @@ html.fz-collapsed #fz-user .dropdown-menu{
 #fz-tools #top-global-search-input{width:100% !important;max-width:none !important;min-width:0 !important;box-sizing:border-box !important}
 #fz-tools #top-menu-action-search,
 #fz-tools .search-dropdown-header{margin:0 !important;padding:0 !important;display:block !important}
-#fz-tools .fz-fallback-search{
-	display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.07);
-	border:1px solid rgba(255,255,255,.06);border-radius:var(--fz-radius);padding:7px 10px;box-sizing:border-box}
-#fz-tools .fz-fallback-search-icon{color:var(--fz-nav-fg-dim);opacity:.65}
-#fz-tools .fz-fallback-search input{
-	flex:1;min-width:0;background:none;border:0;outline:0;color:var(--fz-nav-fg);font-size:13px;font-family:inherit}
-html.fz-collapsed #fz-tools .fz-tools-search .fz-fallback-search{
-	width:264px;background:var(--fz-surface);border-color:var(--fz-border);
-	box-shadow:0 14px 36px rgba(0,0,0,.4);padding:8px}
-html.fz-collapsed #fz-tools .fz-fallback-search input{color:var(--fz-text)}
 @media only screen and (max-width: 920px){
 	html.fusion.fz-collapsed #fz-tools #top-global-search-input{
 		background:rgba(255,255,255,.07);color:var(--fz-nav-fg);border-color:rgba(255,255,255,.06)}
 	html.fusion.fz-collapsed #fz-tools #top-global-search-input::placeholder{color:var(--fz-nav-fg-dim)}
-	html.fusion.fz-collapsed #fz-tools .fz-tools-search .fz-fallback-search{
-		width:100%;background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.06);
-		box-shadow:none;padding:7px 10px}
-	html.fusion.fz-collapsed #fz-tools .fz-fallback-search input{color:var(--fz-nav-fg)}
 }
 /* the per-type scope list appears only while the field is focused.
    It anchors to #fz-tools (position:relative): the inner search wrappers collapse

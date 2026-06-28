@@ -558,31 +558,33 @@
 		$("#fz-burger").addEventListener("click", function () { ROOT.classList.add("fz-drawer"); });
 		scrim.addEventListener("click", function () { ROOT.classList.remove("fz-drawer"); });
 
-		// Collapsed mode : the loupe opens the search field as an animated flyout
-		searchToggle.addEventListener("click", function (e) {
-			e.stopPropagation();
-			// close any open +/star/import dropdown so it doesn't overlap the search flyout
-			$all("#fz-tools .dropdown.open").forEach(function (d) { d.classList.remove("open"); });
-			ROOT.classList.toggle("fz-search-open");
-			if (ROOT.classList.contains("fz-search-open")) {
-				var inp = document.getElementById("top-global-search-input") || searchSlot.querySelector("input");
-				if (inp) setTimeout(function () { inp.focus(); }, 90);
-			}
-		});
-			// opening a tool dropdown (+, star, …) closes the search flyout
-			extraSlot.addEventListener("click", function () { ROOT.classList.remove("fz-search-open"); });
-			document.addEventListener("mousedown", function (e) {
-				if (!ROOT.classList.contains("fz-search-open")) return;
-				if (e.target.closest && e.target.closest("#fz-tools")) return;
-				ROOT.classList.remove("fz-search-open");
-			});
-			document.addEventListener("keydown", function (e) {
-				if (e.key === "Escape") {
-					ROOT.classList.remove("fz-drawer", "fz-search-open");
-					$all(".fz-modes-open").forEach(function (n) { n.classList.remove("fz-modes-open"); });
-					endPeek();
+		// Collapsed mode : the loupe opens the search field as an animated flyout.
+		if (nativeSearch) {
+			searchToggle.addEventListener("click", function (e) {
+				e.stopPropagation();
+				// close any open +/star/import dropdown so it doesn't overlap the search flyout
+				$all("#fz-tools .dropdown.open").forEach(function (d) { d.classList.remove("open"); });
+				ROOT.classList.toggle("fz-search-open");
+				if (ROOT.classList.contains("fz-search-open")) {
+					var inp = document.getElementById("top-global-search-input") || searchSlot.querySelector("input");
+					if (inp) setTimeout(function () { inp.focus(); }, 90);
 				}
 			});
+		}
+		// opening a tool dropdown (+, star, …) closes the search flyout
+		extraSlot.addEventListener("click", function () { ROOT.classList.remove("fz-search-open"); });
+		document.addEventListener("mousedown", function (e) {
+			if (!ROOT.classList.contains("fz-search-open")) return;
+			if (e.target.closest && e.target.closest("#fz-tools")) return;
+			ROOT.classList.remove("fz-search-open");
+		});
+		document.addEventListener("keydown", function (e) {
+			if (e.key === "Escape") {
+				ROOT.classList.remove("fz-drawer", "fz-search-open");
+				$all(".fz-modes-open").forEach(function (n) { n.classList.remove("fz-modes-open"); });
+				endPeek();
+			}
+		});
 
 		// Menu accordion: the link itself navigates; only the chevron unfolds.
 		// In collapsed desktop mode, clicking a primary icon still opens the rail as
@@ -951,20 +953,6 @@
 				group.classList.remove("fz-loading");
 				window.location.href = href;
 			});
-	}
-
-	function makeFallbackSearch() {
-		// Minimal search that posts to Dolibarr's global search page.
-		var form = el("form", "fz-fallback-search");
-		form.setAttribute("action", (window.DOL_URL_ROOT || "") + "/core/search_page.php");
-		form.setAttribute("method", "GET");
-		form.appendChild(el("span", "fas fa-search fz-fallback-search-icon"));
-		var input = el("input");
-		input.name = "search_all";
-		input.placeholder = tr("search", "Search") + "...";
-		input.autocomplete = "off";
-		form.appendChild(input);
-		return form;
 	}
 
 	function makeModeToggle() {
