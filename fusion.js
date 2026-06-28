@@ -264,6 +264,9 @@
 		var brandLogoUrl = cssTextVar("--fz-logo-url", "");
 		var brandLogoSquareUrl = cssTextVar("--fz-logo-square-url", brandLogoUrl);
 		var brandLogoWide = cssTextVar("--fz-logo-wide", "0") === "1";
+		// Wide wordmark when expanded; the dedicated square icon (Dolibarr's "squared
+		// logo") when the rail is collapsed, so we show a purpose-made icon instead of
+		// trying to crop the wordmark down to its glyph.
 		function currentBrandLogoUrl() {
 			if (brandLogoWide && ROOT.classList.contains("fz-collapsed") && brandLogoSquareUrl) {
 				return brandLogoSquareUrl;
