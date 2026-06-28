@@ -225,7 +225,9 @@ html.fusion[data-fz-mode="dark"]{
 html.fusion[data-fz-mode="dark"] body,
 html.fusion[data-fz-mode="dark"] button{ color:#bbb; }
 
-<?php if (getDolGlobalInt('THEME_DARKMODEENABLED') != 0) { ?>
+/* Fusion's own light/auto/dark switch is the sole authority for dark mode: in
+   "auto" we always follow the OS preference, regardless of Dolibarr's
+   THEME_DARKMODEENABLED setting (which is redundant/contradictory with our switch). */
 @media (prefers-color-scheme: dark){
 	html.fusion[data-fz-mode="auto"]{
 		--fz-nav-bg: color-mix(in srgb, var(--colorbackhmenu1, #0a0f1a) 22%, #0a0c12);
@@ -257,7 +259,6 @@ html.fusion[data-fz-mode="dark"] button{ color:#bbb; }
 	html.fusion[data-fz-mode="auto"] body,
 	html.fusion[data-fz-mode="auto"] button{ color:#bbb; }
 }
-<?php } ?>
 
 /* ---------------------------------------------------------------------- *
  *  Hide the legacy menus (their useful nodes are moved into the sidebar)  *
@@ -353,7 +354,10 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 /* Brand + collapse button */
 #fz-brand{
 	height: var(--fz-topbar-h); flex:0 0 auto;
-	display:flex; align-items:center; gap:10px; padding:0 17px;
+	/* left padding 9px (not 17) so the expanded logo's icon lines up exactly with the
+	   square icon when it is centered in the 66px collapsed rail (its 48px box lands
+	   at x=9) — the icon keeps the same left margin AND size in both modes. */
+	display:flex; align-items:center; gap:10px; padding:0 17px 0 9px;
 }
 #fz-brand .fz-logo{
 	width:32px;height:32px;border-radius:var(--fz-radius);flex:0 0 auto;
@@ -368,7 +372,7 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 /* Dolibarr version badge, pushed to the right edge (margin-left:auto), with room
    kept on the right for the floating collapse button */
 #fz-brand .fz-version{flex:0 0 auto;align-self:center;margin-left:auto;margin-right:16px;
-	transform:translateX(10px);
+	transform:translateX(22px);
 	color:var(--fz-nav-fg-dim);font-size:11px;font-weight:700;white-space:nowrap;letter-spacing:.02em}
 /* Slide button = a small tab attached to the sidebar edge. The chevron points
    toward the action: left to retract, right to reopen. */
@@ -406,7 +410,10 @@ div.ui-tooltip.mytooltip.fz-menu-tooltip{
    is fixed/out of flow, so it must not influence logo alignment. */
 html.fz-collapsed #fz-brand{padding:0;gap:0;justify-content:center}
 html.fz-collapsed #fz-brand .fz-logo{margin:0}
-html.fz-collapsed #fz-brand .fz-logo.has-logo{width:44px;height:40px}
+html.fz-collapsed #fz-brand .fz-logo.has-logo{width:48px;height:40px}
+/* When the rail is collapsed JS swaps the wide wordmark for the dedicated square
+   icon (Dolibarr's "squared logo"), so it renders via the .has-logo rule above. The
+   line below is only a fallback for sites with no square logo configured. */
 html.fz-collapsed #fz-brand .fz-logo.is-wide-logo{width:40px;height:40px}
 
 
