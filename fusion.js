@@ -68,6 +68,39 @@
 		if (!value) return fallback;
 		return value.replace(/^["']|["']$/g, "") || fallback;
 	}
+	function cleanLabel(value) {
+		value = String(value || "")
+			.replace(/\\u0026nbsp;|&nbsp;|&#160;|\u00a0/gi, " ")
+			.replace(/<[^>]*>/g, " ")
+			.replace(/\s+/g, " ")
+			.trim();
+		return value;
+	}
+	function stripLoginSuffix(value) {
+		return cleanLabel(value).replace(/\s+\([^()]+\)\s*$/, "");
+	}
+	function stripUserHeaderLogin(userHeader) {
+		if (!userHeader) return;
+		var br = userHeader.querySelector("br");
+		var nodes = Array.prototype.slice.call(userHeader.childNodes);
+		nodes.some(function (node) {
+			if (node === br) return true;
+			if (node.nodeType === 3) {
+				node.nodeValue = node.nodeValue.replace(/\s+\([^()]+\)(\s*)$/, "$1");
+			}
+			return false;
+		});
+	}
+	function userHeaderMainLabel(userHeader) {
+		if (!userHeader) return "";
+		var parts = [];
+		Array.prototype.slice.call(userHeader.childNodes).some(function (node) {
+			if (node.nodeName && node.nodeName.toLowerCase() === "br") return true;
+			parts.push(node.textContent || "");
+			return false;
+		});
+		return stripLoginSuffix(parts.join(" "));
+	}
 	function tr(key, fallback) {
 		return cssTextVar("--fz-t-" + key, fallback);
 	}
@@ -221,30 +254,58 @@
 		var topbar = el("div"); topbar.id = "fz-topbar";
 		var scrim = el("div"); scrim.id = "fz-scrim";
 
-		// Application name (passed from the theme via a CSS custom property)
-		var appName = (getComputedStyle(ROOT).getPropertyValue("--fz-appname") || "").trim().replace(/^["']|["']$/g, "");
-		if (!appName) appName = "Dolibarr";
+		// Application name and logo are passed from the theme via CSS custom properties.
+		var appName = cleanLabel(cssTextVar("--fz-appname", ""));
+		var brandLabel = cleanLabel(cssTextVar("--fz-brand-label", "")) || appName || "Dolibarr";
+		var brandLogoUrl = cssTextVar("--fz-logo-url", "");
+		var brandLogoSquareUrl = cssTextVar("--fz-logo-square-url", brandLogoUrl);
+		var brandLogoWide = cssTextVar("--fz-logo-wide", "0") === "1";
+		function currentBrandLogoUrl() {
+			if (brandLogoWide && ROOT.classList.contains("fz-collapsed") && brandLogoSquareUrl) {
+				return brandLogoSquareUrl;
+			}
+			return brandLogoUrl || brandLogoSquareUrl;
+		}
 
-		// Brand bar (reuse company logo if present in the top menu)
+		// Brand bar: app name present = square logo + text; empty app name = wide logo.
 		var brand = el("div"); brand.id = "fz-brand";
 		var logoImg = $(".menulogocontainer img.mycompany");
 		// logo is a link to the home page (real "Home" menu URL when available)
 		var homeA = document.querySelector("#mainmenutd_home a[href]");
-		var logo = el("a", "fz-logo" + (logoImg ? " has-logo" : ""));
+		var logo = el("a", "fz-logo" + ((currentBrandLogoUrl() || logoImg) ? " has-logo" : "") + (brandLogoWide ? " is-wide-logo" : ""));
 		logo.setAttribute("href", homeA ? homeA.getAttribute("href") : "/index.php?mainmenu=home");
-		logo.setAttribute("aria-label", appName);
-		if (logoImg) {
+		logo.setAttribute("aria-label", brandLabel);
+		var brandImg = null;
+		if (currentBrandLogoUrl()) {
+			brandImg = new Image();
+			brandImg.src = currentBrandLogoUrl();
+			brandImg.alt = "";
+			logo.appendChild(brandImg);
+		} else if (logoImg) {
 			var img = logoImg.cloneNode(false);
 			img.removeAttribute("id");
 			img.setAttribute("alt", "");
 			logo.appendChild(img);
 		} else {
-			logo.textContent = appName.charAt(0).toUpperCase();
+			logo.textContent = brandLabel.charAt(0).toUpperCase();
 		}
+		function syncBrandLogoState() {
+			var useSquare = brandLogoWide && ROOT.classList.contains("fz-collapsed") && brandLogoSquareUrl;
+			logo.classList.toggle("is-wide-logo", brandLogoWide && !useSquare);
+			if (brandImg) {
+				var src = currentBrandLogoUrl();
+				if (src && brandImg.getAttribute("src") !== src) {
+					brandImg.src = src;
+				}
+			}
+		}
+		syncBrandLogoState();
 		brand.appendChild(logo);
-		var brandName = el("div", "fz-brand-name");
-		brandName.textContent = appName;
-		brand.appendChild(brandName);
+		if (appName) {
+			var brandName = el("div", "fz-brand-name");
+			brandName.textContent = appName;
+			brand.appendChild(brandName);
+		}
 		// Dolibarr version, shown as a small badge right after the app name
 		var verEl = $(".aversion");
 		var verText = verEl ? verEl.textContent.replace(/\s+/g, " ").trim() : "";
@@ -288,7 +349,7 @@
 			b.setAttribute("aria-label", tr("menu", "Menu"));
 			return b;
 		})());
-		topbar.appendChild(el("div", "fz-tb-title", appName));
+		topbar.appendChild(el("div", "fz-tb-title", appName || brandLabel));
 
 		body.appendChild(topbar);
 		body.appendChild(scrim);
@@ -413,12 +474,26 @@
 			var lb = logoutBlock.closest(".login_block_elem") || logoutBlock;
 			userWrap.appendChild(lb);
 		}
+		var userToggle = userWrap.querySelector("#topmenu-login-dropdown > a");
+		var userHeader = userWrap.querySelector("#topmenu-login-dropdown .user-header p");
+		stripUserHeaderLogin(userHeader);
+		if (userToggle && !userToggle.querySelector(".atoploginusername")) {
+			var userLabel = userHeaderMainLabel(userHeader);
+			if (userLabel) {
+				var userName = el("span", "fz-user-name atoploginusername small");
+				userName.textContent = userLabel;
+				userToggle.appendChild(userName);
+			}
+		}
 		foot.appendChild(userWrap);
 		suppressNonPrimaryTooltips(sidebar);
 		syncPrimaryTooltips(sidebar);
 		setTimeout(function () { suppressNonPrimaryTooltips(sidebar); syncPrimaryTooltips(sidebar); }, 0);
 		try {
-			new MutationObserver(function () { syncPrimaryTooltips(sidebar); }).observe(ROOT, { attributes: true, attributeFilter: ["class"] });
+			new MutationObserver(function () {
+				syncBrandLogoState();
+				syncPrimaryTooltips(sidebar);
+			}).observe(ROOT, { attributes: true, attributeFilter: ["class"] });
 		} catch (e) {}
 		try {
 			var tooltipCleanupQueued = false;
@@ -441,7 +516,7 @@
 		function prefersCollapsed() { try { return localStorage.getItem("fz-collapsed") === "1"; } catch (e) { return false; } }
 		function updateCollapseButton(collapsed) {
 			var icon = collapseBtn.querySelector("i");
-			if (icon) icon.className = "fas " + (collapsed ? "fa-angle-double-right" : "fa-lock");
+			if (icon) icon.className = "fas " + (collapsed ? "fa-angle-double-right" : "fa-angle-double-left");
 			collapseBtn.classList.toggle("is-unlocked", collapsed);
 			collapseBtn.setAttribute("aria-expanded", collapsed ? "false" : "true");
 			collapseBtn.setAttribute("aria-pressed", collapsed ? "false" : "true");
@@ -451,6 +526,7 @@
 			ROOT.classList.toggle("fz-collapsed", collapsed);
 			ROOT.classList.remove("fz-peek", "fz-search-open");
 			updateCollapseButton(collapsed);
+			syncBrandLogoState();
 			try { localStorage.setItem("fz-collapsed", collapsed ? "1" : "0"); } catch (e) {}
 			syncPrimaryTooltips(sidebar);
 		}
@@ -465,6 +541,7 @@
 			if (!ROOT.classList.contains("fz-peek")) return;
 			ROOT.classList.remove("fz-peek", "fz-search-open");
 			if (prefersCollapsed()) ROOT.classList.add("fz-collapsed");
+			syncBrandLogoState();
 			syncPrimaryTooltips(sidebar);
 		}
 		document.addEventListener("mousedown", function (e) {
@@ -550,6 +627,7 @@
 				ev.preventDefault();
 				ROOT.classList.remove("fz-collapsed");
 				ROOT.classList.add("fz-peek");
+				syncBrandLogoState();
 				syncPrimaryTooltips(sidebar);
 				if (sub && sub.children.length) { closeOtherGroups(group); setGroupOpen(group, true, false); }
 				else { var h = head.getAttribute("href"); if (h && h !== "#") loadSub(group, sub, h); }
