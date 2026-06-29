@@ -42,29 +42,31 @@ if (!function_exists('fz_fusion_mycompany_logo_url')) {
 	{
 		global $conf;
 
-		$squareCandidates = array(
-			array('MAIN_INFO_SOCIETE_LOGO_SQUARRED', 'logos/'),
-			array('MAIN_INFO_SOCIETE_LOGO_SQUARRED_SMALL', 'logos/thumbs/'),
-			array('MAIN_INFO_SOCIETE_LOGO_SQUARRED_MINI', 'logos/thumbs/'),
-		);
-		$wideCandidates = array(
-			array('MAIN_INFO_SOCIETE_LOGO', 'logos/'),
-			array('MAIN_INFO_SOCIETE_LOGO_SMALL', 'logos/thumbs/'),
-			array('MAIN_INFO_SOCIETE_LOGO_MINI', 'logos/thumbs/'),
-		);
-		$candidates = $shape === 'wide'
-			? array_merge($wideCandidates, $squareCandidates)
-			: array_merge($squareCandidates, $wideCandidates);
+		// Main logo constant per shape (square icon vs wide wordmark), with a
+		// fallback to the other shape if the preferred one isn't configured.
+		$order = ($shape === 'wide')
+			? array('MAIN_INFO_SOCIETE_LOGO', 'MAIN_INFO_SOCIETE_LOGO_SQUARRED')
+			: array('MAIN_INFO_SOCIETE_LOGO_SQUARRED', 'MAIN_INFO_SOCIETE_LOGO');
 
-		foreach ($candidates as $candidate) {
-			$file = getDolGlobalString($candidate[0]);
+		$dirout = empty($conf->mycompany->dir_output) ? '' : $conf->mycompany->dir_output;
+		if ($dirout === '') {
+			return '';
+		}
+
+		foreach ($order as $const) {
+			$file = getDolGlobalString($const);
 			if ($file === '') {
 				continue;
 			}
-			$relativePath = $candidate[1].$file;
-			$absolutePath = empty($conf->mycompany->dir_output) ? '' : $conf->mycompany->dir_output.'/'.$relativePath;
-			if ($absolutePath && is_readable($absolutePath)) {
-				return DOL_URL_ROOT.'/viewimage.php?cache=1&modulepart=mycompany&file='.urlencode($relativePath);
+			// The brand only renders ~38px tall, so prefer the much lighter "_small"
+			// thumbnail Dolibarr generates (logo.png -> thumbs/logo_small.png); fall
+			// back to the full-resolution file when no thumbnail exists.
+			$dot = strrpos($file, '.');
+			$small = ($dot !== false) ? substr($file, 0, $dot).'_small'.substr($file, $dot) : $file.'_small';
+			foreach (array('logos/thumbs/'.$small, 'logos/'.$file) as $relativePath) {
+				if (is_readable($dirout.'/'.$relativePath)) {
+					return DOL_URL_ROOT.'/viewimage.php?cache=1&modulepart=mycompany&file='.urlencode($relativePath);
+				}
 			}
 		}
 
@@ -330,6 +332,11 @@ html.fusion body#mainbody #id-right{ width: auto !important; max-width: none !im
 	font-family: inherit;
 }
 html.fz-collapsed #fz-sidebar{ width: var(--fz-sb-w-collapsed); }
+html.fz-shell-resizing #fz-sidebar{overflow:hidden}
+html.fz-collapsing #fz-brand .fz-logo,
+html.fz-collapsing #fz-tools,
+html.fz-collapsing #fz-fav{display:none !important}
+html.fz-shell-resizing #fz-sidebar .dropdown-menu{display:none !important}
 /* never underline links anywhere in the menu (eldy underlines on hover) */
 html.fusion #fz-sidebar a,html.fusion #fz-sidebar a:link,html.fusion #fz-sidebar a:visited,
 html.fusion #fz-sidebar a:hover,html.fusion #fz-sidebar a:focus,html.fusion #fz-sidebar a:active,
@@ -354,10 +361,7 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 /* Brand + collapse button */
 #fz-brand{
 	height: var(--fz-topbar-h); flex:0 0 auto;
-	/* left padding 9px (not 17) so the expanded logo's icon lines up exactly with the
-	   square icon when it is centered in the 66px collapsed rail (its 48px box lands
-	   at x=9) — the icon keeps the same left margin AND size in both modes. */
-	display:flex; align-items:center; gap:10px; padding:0 17px 0 9px;
+	display:flex; align-items:center; gap:10px; padding:0 15px 0 5px;
 }
 #fz-brand .fz-logo{
 	width:32px;height:32px;border-radius:var(--fz-radius);flex:0 0 auto;
@@ -365,9 +369,11 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 	background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:800;
 }
 #fz-brand .fz-logo img{display:block;width:100%;height:100%;object-fit:contain}
-/* When a real company logo is configured, show it as-is (no gradient background) */
-#fz-brand .fz-logo.has-logo{background:none;border-radius:0}
-#fz-brand .fz-logo.is-wide-logo{width:124px;height:34px;justify-content:flex-start}
+/* A real logo (wide wordmark when expanded, square icon when collapsed): show it
+   as-is, sized by HEIGHT so the width just follows the image. Both logos are framed
+   to the same scale, so this single rule renders them consistently in both modes. */
+#fz-brand .fz-logo.has-logo{width:auto;height:auto;background:none;border-radius:0;overflow:visible}
+#fz-brand .fz-logo.has-logo img{width:auto;height:55px;max-width:none}
 #fz-brand .fz-brand-name{font-weight:700;color:var(--fz-nav-fg);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
 /* Dolibarr version badge, pushed to the right edge (margin-left:auto), with room
    kept on the right for the floating collapse button */
@@ -406,15 +412,11 @@ div.ui-tooltip.mytooltip.fz-menu-tooltip{
 	white-space:normal;
 }
 
-/* collapsed brand: center the square logo in the 66px rail. The collapse handle
-   is fixed/out of flow, so it must not influence logo alignment. */
+/* collapsed brand: just center the (square) logo in the 66px rail. It keeps the
+   height-based size from the rule above — no per-mode sizing. The collapse handle is
+   fixed/out of flow, so it doesn't affect alignment. */
 html.fz-collapsed #fz-brand{padding:0;gap:0;justify-content:center}
 html.fz-collapsed #fz-brand .fz-logo{margin:0}
-html.fz-collapsed #fz-brand .fz-logo.has-logo{width:48px;height:40px}
-/* When the rail is collapsed JS swaps the wide wordmark for the dedicated square
-   icon (Dolibarr's "squared logo"), so it renders via the .has-logo rule above. The
-   line below is only a fallback for sites with no square logo configured. */
-html.fz-collapsed #fz-brand .fz-logo.is-wide-logo{width:40px;height:40px}
 
 
 /* Tools row (search + quick add), reusing Dolibarr nodes */

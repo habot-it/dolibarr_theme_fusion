@@ -523,6 +523,24 @@
 		// The collapsed PREFERENCE lives in localStorage; the .fz-collapsed class can be
 		// momentarily lifted by the hover-peek below, so toggle from the stored value.
 		function prefersCollapsed() { try { return localStorage.getItem("fz-collapsed") === "1"; } catch (e) { return false; } }
+		var shellResizeTimer = null;
+		function clearShellResizeState() {
+			ROOT.classList.remove("fz-shell-resizing", "fz-collapsing");
+		}
+		function markShellResizing(collapsing) {
+			ROOT.classList.add("fz-shell-resizing");
+			ROOT.classList.toggle("fz-collapsing", !!collapsing);
+			clearTimeout(shellResizeTimer);
+			shellResizeTimer = setTimeout(clearShellResizeState, REDUCE ? 0 : 280);
+		}
+		function closeSidebarDropdowns() {
+			ROOT.classList.remove("fz-search-open");
+			$all("#fz-sidebar .dropdown.open, #fz-sidebar #topmenu-login-dropdown.open").forEach(function (node) {
+				node.classList.remove("open");
+				var toggle = node.querySelector(".dropdown-toggle, [aria-expanded]");
+				if (toggle) toggle.setAttribute("aria-expanded", "false");
+			});
+		}
 		function updateCollapseButton(collapsed) {
 			var icon = collapseBtn.querySelector("i");
 			if (icon) icon.className = "fas " + (collapsed ? "fa-angle-double-right" : "fa-angle-double-left");
@@ -532,13 +550,18 @@
 		}
 		updateCollapseButton(ROOT.classList.contains("fz-collapsed"));
 		function setCollapsed(collapsed) {
+			markShellResizing(collapsed);
+			closeSidebarDropdowns();
 			ROOT.classList.toggle("fz-collapsed", collapsed);
-			ROOT.classList.remove("fz-peek", "fz-search-open");
+			ROOT.classList.remove("fz-peek");
 			updateCollapseButton(collapsed);
 			syncBrandLogoState();
 			try { localStorage.setItem("fz-collapsed", collapsed ? "1" : "0"); } catch (e) {}
 			syncPrimaryTooltips(sidebar);
 		}
+		sidebar.addEventListener("transitionend", function (e) {
+			if (e.target === sidebar && e.propertyName === "width") clearShellResizeState();
+		});
 		collapseBtn.addEventListener("click", function () { setCollapsed(!prefersCollapsed()); });
 
 		// Click-to-peek : on a collapsed rail (desktop), clicking a nav section expands
