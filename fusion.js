@@ -34,12 +34,16 @@
 		value = String(value || "");
 		return /^(light|auto|dark)$/.test(value) ? value : "auto";
 	}
+	function storageGet(area, key) {
+		try { return window[area].getItem(key); } catch (e) { return null; }
+	}
+	function storageSet(area, key, value) {
+		try { window[area].setItem(key, value); } catch (e) {}
+	}
 
 	// Restore persisted Fusion preferences early (collapsed state + color mode).
-	try {
-		if (localStorage.getItem("fz-collapsed") === "1") ROOT.classList.add("fz-collapsed");
-		ROOT.setAttribute("data-fz-mode", validMode(localStorage.getItem("fz-mode") || "auto"));
-	} catch (e) { ROOT.setAttribute("data-fz-mode", "auto"); }
+	if (storageGet("localStorage", "fz-collapsed") === "1") ROOT.classList.add("fz-collapsed");
+	ROOT.setAttribute("data-fz-mode", validMode(storageGet("localStorage", "fz-mode") || "auto"));
 
 	// FontAwesome 5 icon for each known main-menu code (Dolibarr ships FA5, not FA6).
 	var ICONS = {
@@ -166,12 +170,12 @@
 	var NAV_SCROLL_KEY = "fz-nav-scrolltop";
 	function saveNavScroll(nav) {
 		if (!nav) return;
-		try { sessionStorage.setItem(NAV_SCROLL_KEY, String(nav.scrollTop || 0)); } catch (e) {}
+		storageSet("sessionStorage", NAV_SCROLL_KEY, String(nav.scrollTop || 0));
 	}
 	function restoreNavScroll(nav) {
 		if (!nav) return;
 		var y = null;
-		try { y = parseInt(sessionStorage.getItem(NAV_SCROLL_KEY) || "", 10); } catch (e) {}
+		y = parseInt(storageGet("sessionStorage", NAV_SCROLL_KEY) || "", 10);
 		if (!isFinite(y) || y < 0) return;
 		function apply() {
 			var max = Math.max(0, nav.scrollHeight - nav.clientHeight);
@@ -278,7 +282,7 @@
 		var brand = el("div"); brand.id = "fz-brand";
 		var logoImg = $(".menulogocontainer img.mycompany");
 		// logo is a link to the home page (real "Home" menu URL when available)
-		var homeA = document.querySelector("#mainmenutd_home a[href]");
+		var homeA = $("#mainmenutd_home a[href]");
 		var logo = el("a", "fz-logo" + ((currentBrandLogoUrl() || logoImg) ? " has-logo" : "") + (brandLogoWide ? " is-wide-logo" : ""));
 		logo.setAttribute("href", homeA ? homeA.getAttribute("href") : "/index.php?mainmenu=home");
 		logo.setAttribute("aria-label", brandLabel);
@@ -522,9 +526,11 @@
 		// ---- 7. Wire interactions ---------------------------------------------
 		// The collapsed PREFERENCE lives in localStorage; the .fz-collapsed class can be
 		// momentarily lifted by the hover-peek below, so toggle from the stored value.
-		function prefersCollapsed() { try { return localStorage.getItem("fz-collapsed") === "1"; } catch (e) { return false; } }
+		function prefersCollapsed() { return storageGet("localStorage", "fz-collapsed") === "1"; }
 		var shellResizeTimer = null;
 		function clearShellResizeState() {
+			clearTimeout(shellResizeTimer);
+			shellResizeTimer = null;
 			ROOT.classList.remove("fz-shell-resizing", "fz-collapsing");
 		}
 		function markShellResizing(collapsing) {
@@ -556,7 +562,7 @@
 			ROOT.classList.remove("fz-peek");
 			updateCollapseButton(collapsed);
 			syncBrandLogoState();
-			try { localStorage.setItem("fz-collapsed", collapsed ? "1" : "0"); } catch (e) {}
+			storageSet("localStorage", "fz-collapsed", collapsed ? "1" : "0");
 			syncPrimaryTooltips(sidebar);
 		}
 		sidebar.addEventListener("transitionend", function (e) {
@@ -898,8 +904,8 @@
 	// Background fetch queue (limited concurrency) + per-session cache, so the recursive
 	// preload doesn't hammer the server and is reused across navigations.
 	var FZ_MAX = 4, fzActive = 0, fzQueue = [];
-	function fzCacheGet(k) { try { return sessionStorage.getItem("fzpm:" + k); } catch (e) { return null; } }
-	function fzCacheSet(k, v) { try { sessionStorage.setItem("fzpm:" + k, v); } catch (e) {} }
+	function fzCacheGet(k) { return storageGet("sessionStorage", "fzpm:" + k); }
+	function fzCacheSet(k, v) { storageSet("sessionStorage", "fzpm:" + k, v); }
 	function fzPump() {
 		while (fzActive < FZ_MAX && fzQueue.length) {
 			var job = fzQueue.shift();
@@ -1015,7 +1021,7 @@
 			b.setAttribute("aria-label", m.t);
 			b.addEventListener("click", function () {
 				ROOT.setAttribute("data-fz-mode", m.k);
-				try { localStorage.setItem("fz-mode", m.k); } catch (e) {}
+				storageSet("localStorage", "fz-mode", m.k);
 				$all(".fz-mode-btn", wrap).forEach(function (x) { x.classList.remove("is-active"); });
 				b.classList.add("is-active");
 				wrap.classList.remove("fz-modes-open");
