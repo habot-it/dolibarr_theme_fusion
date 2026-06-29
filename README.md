@@ -50,7 +50,8 @@ In *Home > Setup > Display*, select the "eldy" theme again (or set the
 
 ## License
 
-Distributed under the **GNU General Public License v3.0 or later**
-(GPL-3.0-or-later), like Dolibarr itself. See the [LICENSE](LICENSE) file.
+GPLv3 or later — see [`COPYING`](COPYING).
 
-Copyright (C) 2026 Alban DEZANDÉE
+## Author
+
+HABOT IT — <https://www.habot.it>

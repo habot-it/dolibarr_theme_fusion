@@ -58,8 +58,7 @@ if (!function_exists('fz_fusion_mycompany_logo_url')) {
 			if ($file === '') {
 				continue;
 			}
-			// The brand only renders ~38px tall, so prefer the much lighter "_small"
-			// thumbnail Dolibarr generates (logo.png -> thumbs/logo_small.png); fall
+			// Prefer Dolibarr's lighter "_small" thumbnail for the sidebar, and fall
 			// back to the full-resolution file when no thumbnail exists.
 			$dot = strrpos($file, '.');
 			$small = ($dot !== false) ? substr($file, 0, $dot).'_small'.substr($file, $dot) : $file.'_small';
@@ -175,8 +174,6 @@ html.fusion{
 	--fz-sub-fg-dim: color-mix(in srgb, var(--fz-sub-fg) 64%, transparent);
 	--fz-sub-border: color-mix(in srgb, var(--fz-sub-fg) 22%, transparent);
 	--fz-sub-hover: <?php echo $fz_sub_row_hover; ?>;
-	--fz-accent: var(--butactionbg, var(--colortextlink, var(--colorbackhmenu1, #2563eb)));
-	--fz-accent-fg: var(--textbutaction, #ffffff);
 	--fz-star: #f5b301;
 
 	--fz-content-bg: var(--colorbackbody, #f4f6fb);
@@ -613,18 +610,8 @@ html.fz-collapsed #fz-user .hideonsmartphone{display:none !important}
    instead of snapping via justify-content during the horizontal collapse */
 html.fz-collapsed .fz-head{padding:11px 15px}
 html.fz-collapsed .fz-head .fz-ic{font-size:17px}
-/* user avatar : eldy forces `padding:0 3px 0 4px !important` on .login_block_elem,
-   which shoved the avatar ~4px right in flex-start (expanded) while the collapsed
-   centering hid it — that asymmetry was the jump. Neutralize that padding and the
-   wrapper gaps so the avatar's left edge is the SAME in both modes: foot 8px + the
-   <a> padding 8px = 16px → 16 + 34 + 16 = the 66px rail. So it is centered when
-   collapsed AND figé (no jump) when expanding, with plain flex-start everywhere. */
-/* Zero every eldy gap/padding in the chain so the avatar sits at a FIXED left edge
-   (foot 8px + <a> padding 8px = 16px) in BOTH modes. 16 + 34 (avatar) + 16 = the
-   66px rail → centered when collapsed AND, being flex-start (left-anchored), it
-   never moves during the width animation. We deliberately do NOT use
-   justify-content:center: that isn't animatable, so it would snap the avatar to the
-   middle of the still-wide container at the start of the collapse and swing back. */
+/* Keep the avatar left edge fixed while the sidebar width animates; the 8px footer
+   padding + 8px link padding naturally center the 34px image in the 66px rail. */
 #fz-user,
 #fz-user .login_block_user,
 #fz-user .login_block_elem,
