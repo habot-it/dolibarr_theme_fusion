@@ -166,7 +166,7 @@ html.fusion{
 	--fz-nav-active-bg: <?php echo $fz_row_checked; ?>;
 	--fz-nav-hover-fg: <?php echo $fz_nav_hover_fg; ?>;
 	--fz-nav-active-fg: <?php echo $fz_nav_active_fg; ?>;
-	--fz-menu-icon-normal: <?php echo getDolGlobalString('THEME_MENU_COLORLOGO') ? 'var(--fz-menu-icon-color, var(--fz-nav-fg-dim))' : 'var(--fz-nav-fg-dim)'; ?>;
+	--fz-menu-icon-normal: <?php echo getDolGlobalString('THEME_MENU_COLORLOGO') ? 'var(--fz-menu-icon-color, var(--fz-nav-fg))' : 'var(--fz-nav-fg)'; ?>;
 	--fz-menu-icon-hover: <?php echo getDolGlobalString('THEME_MENU_COLORLOGO') ? 'var(--fz-menu-icon-color, var(--fz-nav-hover-fg))' : 'var(--fz-nav-hover-fg)'; ?>;
 	--fz-menu-icon-active: <?php echo getDolGlobalString('THEME_MENU_COLORLOGO') ? 'var(--fz-menu-icon-color, var(--fz-nav-active-fg))' : 'var(--fz-nav-active-fg)'; ?>;
 	--fz-sub-bg: var(--colorbackvmenu1, color-mix(in srgb, var(--fz-nav-bg) 92%, #fff));
@@ -190,9 +190,11 @@ html.fusion{
 /*
  * Dark palette — redefines BOTH the fusion shell vars (--fz-*) AND eldy's own
  * theme variables (--color*) so the WHOLE app switches, not just the sidebar.
- * Applied when the user forces dark, or chooses "auto" and the OS is dark.
+ * It applies in two cases: the user forces dark, or picks "auto" and the OS is dark.
+ * Both emit the very same declarations, so they live in ONE variable and cannot drift.
  */
-html.fusion[data-fz-mode="dark"]{
+<?php
+$fz_dark_palette = <<<'FZDARK'
 	/* shell (sidebar keeps a subtle tint of the configured brand color) */
 	--fz-nav-bg: color-mix(in srgb, var(--colorbackhmenu1, #0a0f1a) 22%, #0a0c12);
 	--fz-nav-bg2: color-mix(in srgb, var(--fz-nav-bg) 84%, #000);
@@ -220,6 +222,10 @@ html.fusion[data-fz-mode="dark"]{
 	--colortextbacktab:rgb(220,220,220); --colorboxiconbg:rgb(36,38,39);
 	--refidnocolor:rgb(220,220,220); --tableforfieldcolor:rgb(220,220,220);
 	--colorblack:#fff; --colorwhite:#000;
+FZDARK;
+?>
+html.fusion[data-fz-mode="dark"]{
+<?php echo $fz_dark_palette; ?>
 }
 html.fusion[data-fz-mode="dark"] body,
 html.fusion[data-fz-mode="dark"] button{ color:#bbb; }
@@ -229,31 +235,7 @@ html.fusion[data-fz-mode="dark"] button{ color:#bbb; }
    THEME_DARKMODEENABLED setting (which is redundant/contradictory with our switch). */
 @media (prefers-color-scheme: dark){
 	html.fusion[data-fz-mode="auto"]{
-		--fz-nav-bg: color-mix(in srgb, var(--colorbackhmenu1, #0a0f1a) 22%, #0a0c12);
-		--fz-nav-bg2: color-mix(in srgb, var(--fz-nav-bg) 84%, #000);
-		--fz-nav-hover: rgba(255,255,255,.08);
-		--fz-sub-bg: color-mix(in srgb, var(--colorbackvmenu1, #2b2c2e) 92%, #000);
-		--fz-sub-hover: rgba(255,255,255,.08);
-		--fz-content-bg:#1d1e20; --fz-surface:#26272b; --fz-border:#3a3b3e;
-		--fz-text:#dcdcdc; --fz-text-dim:#9aa0a8; --fz-topbar-bg:#3d3e40; --fz-topbar-fg:rgb(220,220,220);
-		--colorbackhmenu1:#3d3e40; --colorbackvmenu1:#2b2c2e; --colorbacktitle1:#3b3c3e;
-		--colorbacktabcard1:#1d1e20; --colorbacktabactive:rgb(220,220,220);
-		--colorbacklineimpair1:#38393d; --colorbacklineimpair2:#2b2d2f;
-		--colorbacklinepair1:#38393d; --colorbacklinepair2:#2b2d2f;
-		--colorbacklinepairhover:#2b2d2f; --colorbacklinepairchecked:#0e5ccd;
-		--colorbackbody:#1d1e20; --colorbackmobilemenu:#080808; --colorbackgrey:#0f0f0f;
-		--tooltipbgcolor:#2b2d2f; --colortexttitlenotab:rgb(220,220,220);
-		--colortexttitlenotab2:rgb(220,220,220); --colortexttitle:rgb(220,220,220);
-		--colortext:rgb(220,220,220); --colortextlink:#4390dc; --colortexttitlelink:#4390dc;
-		--colortextbackhmenu:rgb(220,220,220); --colortextbackvmenu:rgb(220,220,220);
-		--tooltipfontcolor:rgb(220,220,220); --listetotal:rgb(245,83,158);
-		--inputbackgroundcolor:rgb(70,70,70); --inputbackgroundcolordisabled:rgb(60,60,60);
-		--inputcolordisabled:rgb(140,140,140); --inputbordercolor:rgb(120,120,120);
-		--oddevencolor:rgb(220,220,220); --colorboxstatsborder:rgb(65,100,138);
-		--dolgraphbg:#1d1e20; --fieldrequiredcolor:rgb(250,183,59);
-		--colortextbacktab:rgb(220,220,220); --colorboxiconbg:rgb(36,38,39);
-		--refidnocolor:rgb(220,220,220); --tableforfieldcolor:rgb(220,220,220);
-		--colorblack:#fff; --colorwhite:#000;
+<?php echo $fz_dark_palette; ?>
 	}
 	html.fusion[data-fz-mode="auto"] body,
 	html.fusion[data-fz-mode="auto"] button{ color:#bbb; }
@@ -779,7 +761,7 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 		content:"\f042";font-family:"Font Awesome 5 Free";font-weight:900;
 		position:absolute;inset:0;display:grid;place-items:center;
 		width:40px;height:40px;border-radius:var(--fz-radius);background:rgba(255,255,255,.10);
-		color:var(--fz-nav-fg);font-size:16px;line-height:1;box-sizing:border-box}
+		color:var(--fz-nav-fg-dim);font-size:16px;line-height:1;box-sizing:border-box}
 	html.fz-collapsed[data-fz-mode="light"] .fz-modes::before{content:"\f185"}
 	html.fz-collapsed[data-fz-mode="dark"] .fz-modes::before{content:"\f186"}
 	html.fz-collapsed .fz-modes:hover::before,
@@ -925,8 +907,10 @@ html.fz-collapsed #fz-user .dropdown-menu{
 #fz-tools .fz-tools-extra .login_block_elem,
 #fz-tools .fz-tools-extra .inline-block,
 #fz-tools .fz-tools-extra .dropdown{margin:0 !important;padding:0 !important}
+/* Dimmed: the icons inside these links are `color:inherit`, so THIS is what actually sets
+   their colour (quick add, bookmarks, builder, print). Hover/open below light them back up. */
 #fz-tools .fz-tools-extra a.dropdown-toggle,
-#fz-tools .fz-tools-extra .login_block_elem > a{color:var(--fz-nav-fg) !important;font-size:15px;
+#fz-tools .fz-tools-extra .login_block_elem > a{color:var(--fz-nav-fg-dim) !important;font-size:15px;
 	width:34px;height:34px;display:flex;align-items:center;justify-content:center;
 	border-radius:var(--fz-radius);text-decoration:none;box-sizing:border-box}
 #fz-tools .fz-tools-extra a.dropdown-toggle:hover,

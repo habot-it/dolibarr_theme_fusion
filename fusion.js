@@ -283,15 +283,24 @@
 		var logoImg = $(".menulogocontainer img.mycompany");
 		// logo is a link to the home page (real "Home" menu URL when available)
 		var homeA = $("#mainmenutd_home a[href]");
-		var logo = el("a", "fz-logo" + ((currentBrandLogoUrl() || logoImg) ? " has-logo" : "") + (brandLogoWide ? " is-wide-logo" : ""));
+		var logo = el("a", "fz-logo" + ((currentBrandLogoUrl() || logoImg) ? " has-logo" : ""));
 		logo.setAttribute("href", homeA ? homeA.getAttribute("href") : "/index.php?mainmenu=home");
 		logo.setAttribute("aria-label", brandLabel);
 		var brandImg = null;
 		if (currentBrandLogoUrl()) {
 			brandImg = new Image();
+			brandImg.decoding = "async";
 			brandImg.src = currentBrandLogoUrl();
 			brandImg.alt = "";
 			logo.appendChild(brandImg);
+			// Folding the rail swaps the wide wordmark for the square icon. Both are small
+			// thumbnails, so preload the one not shown yet: the swap then comes straight from
+			// cache instead of firing a request in the middle of the fold animation.
+			if (brandLogoWide && brandLogoSquareUrl && brandLogoSquareUrl !== brandLogoUrl) {
+				var altLogo = new Image();
+				altLogo.decoding = "async";
+				altLogo.src = ROOT.classList.contains("fz-collapsed") ? brandLogoUrl : brandLogoSquareUrl;
+			}
 		} else if (logoImg) {
 			var img = logoImg.cloneNode(false);
 			img.removeAttribute("id");
@@ -300,15 +309,11 @@
 		} else {
 			logo.textContent = brandLabel.charAt(0).toUpperCase();
 		}
+		// Show the wide wordmark when expanded, the square icon when collapsed.
 		function syncBrandLogoState() {
-			var useSquare = brandLogoWide && ROOT.classList.contains("fz-collapsed") && brandLogoSquareUrl;
-			logo.classList.toggle("is-wide-logo", brandLogoWide && !useSquare);
-			if (brandImg) {
-				var src = currentBrandLogoUrl();
-				if (src && brandImg.getAttribute("src") !== src) {
-					brandImg.src = src;
-				}
-			}
+			if (!brandImg) return;
+			var src = currentBrandLogoUrl();
+			if (src && brandImg.getAttribute("src") !== src) brandImg.src = src;
 		}
 		syncBrandLogoState();
 		brand.appendChild(logo);
