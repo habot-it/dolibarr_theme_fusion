@@ -425,7 +425,7 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 #fz-tools .fz-tools-extra a,
 #fz-tools .fz-tools-extra .login_block_elem{color:var(--fz-nav-fg) !important}
 /* loupe button : only shown when the sidebar is collapsed */
-#fz-search-toggle{display:none;flex:0 0 auto;width:40px;height:38px;border:0;border-radius:var(--fz-radius);
+#fz-search-toggle{display:none;flex:0 0 auto;width:40px;height:40px;border:0;border-radius:var(--fz-radius);
 	background:rgba(255,255,255,.10);color:var(--fz-nav-fg);cursor:pointer;align-items:center;justify-content:center;font-size:15px}
 #fz-search-toggle:hover{background:var(--fz-nav-hover);color:var(--fz-nav-hover-fg)}
 
@@ -588,9 +588,17 @@ html.fz-collapsed #fz-fav a .fz-favlabel,
 html.fz-collapsed #fz-foot .blockvmenuhelp,
 html.fz-collapsed #fz-user .atoploginusername,
 html.fz-collapsed #fz-user .hideonsmartphone{display:none !important}
-/* symmetric padding centers the lone icon AND lets it slide there (animatable),
-   instead of snapping via justify-content during the horizontal collapse */
-html.fz-collapsed .fz-head{padding:11px 15px}
+/* Match every collapsed navigation hit area to the 40x40 search button. Hide
+   only the scrollbar chrome (scrolling remains enabled), otherwise its gutter
+   shifts the navigation boxes left while the tools stay centred. */
+@media only screen and (min-width:921px){
+	html.fusion.fz-collapsed #fz-nav{
+		padding-left:0;padding-right:0;scrollbar-width:none;-ms-overflow-style:none}
+	html.fusion.fz-collapsed #fz-nav::-webkit-scrollbar{width:0;height:0}
+	html.fusion.fz-collapsed .fz-group{width:40px;margin:1px auto}
+	html.fusion.fz-collapsed .fz-head{
+		width:40px;height:40px;box-sizing:border-box;padding:0;gap:0;justify-content:center}
+}
 html.fz-collapsed .fz-head .fz-ic{font-size:17px}
 /* Keep the avatar left edge fixed while the sidebar width animates; the 8px footer
    padding + 8px link padding naturally center the 34px image in the 66px rail. */
@@ -899,7 +907,7 @@ html.fz-collapsed #fz-user .dropdown-menu{
    eldy gives these wrappers assorted paddings (.atoplogin → 4px, .login_block_elem
    → 3/4px + inline style) and nests some one level deeper, so the buttons came out
    different widths and off-centre. Reset all that, keep every direct child shrink-
-   wrapped, and make the clickable element a uniform 34x34 centred button — at any
+   wrapped, and make the clickable element a uniform 40x40 centred button — at any
    nesting depth. */
 #fz-tools .fz-tools-extra > *{flex:0 0 auto}
 #fz-tools .fz-tools-extra .dropdown{position:static}
@@ -911,7 +919,7 @@ html.fz-collapsed #fz-user .dropdown-menu{
    their colour (quick add, bookmarks, builder, print). Hover/open below light them back up. */
 #fz-tools .fz-tools-extra a.dropdown-toggle,
 #fz-tools .fz-tools-extra .login_block_elem > a{color:var(--fz-nav-fg-dim) !important;font-size:15px;
-	width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+	width:40px;height:40px;display:flex;align-items:center;justify-content:center;
 	border-radius:var(--fz-radius);text-decoration:none;box-sizing:border-box}
 #fz-tools .fz-tools-extra a.dropdown-toggle:hover,
 #fz-tools .fz-tools-extra .login_block_elem > a:hover{background:var(--fz-nav-hover);color:var(--fz-nav-hover-fg) !important}
