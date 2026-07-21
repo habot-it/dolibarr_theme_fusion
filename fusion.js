@@ -15,12 +15,17 @@
 (function () {
 	"use strict";
 
-	function isPrintCssMode() {
+	function queryParam(search, name) {
 		try {
-			return new URLSearchParams(window.location.search).get("optioncss") === "print";
+			return new URLSearchParams(search).get(name);
 		} catch (e) {
-			return /(?:^|[?&])optioncss=print(?:&|$)/.test(window.location.search);
+			var match = new RegExp("(?:^|[?&])" + name + "=([^&]*)").exec(search || "");
+			if (!match) return null;
+			try { return decodeURIComponent(match[1].replace(/\+/g, " ")); } catch (ignore) { return match[1]; }
 		}
+	}
+	function isPrintCssMode() {
+		return queryParam(window.location.search, "optioncss") === "print";
 	}
 
 	if (isPrintCssMode()) return;
@@ -373,6 +378,7 @@
 
 		// ---- 2. Populate navigation from the horizontal top menu ---------------
 		var activeGroup = null;
+		var requestedMainMenu = queryParam(location.search, "mainmenu");
 		Array.prototype.slice.call(tmenu.children).forEach(function (li) {
 			if (li.tagName !== "LI") return;
 			if (li.classList.contains("tmenucompanylogo") || li.classList.contains("tmenuend")) return;
@@ -383,6 +389,7 @@
 				: (li.querySelector("a") ? (li.querySelector("a").getAttribute("title") || "").trim() : "");
 			var linkA = li.querySelector("a.tmenulabel") || li.querySelector("a");
 			var href = linkA ? linkA.getAttribute("href") : null;
+			if (!code && linkA) code = queryParam(linkA.search, "mainmenu") || "";
 			if (!label && !href) return;
 			if (href === "#" || (linkA && /size12x|fa-bars/.test(linkA.innerHTML)) && !label) return; // skip "all modules" toggle
 
@@ -408,7 +415,8 @@
 			group.appendChild(el("div", "fz-sub"));
 			nav.appendChild(group);
 
-			if (li.classList.contains("tmenusel")) activeGroup = group;
+			var nativeSelected = li.classList.contains("tmenusel") || !!li.querySelector("a.tmenusel");
+			if ((requestedMainMenu && code === requestedMainMenu) || (!requestedMainMenu && nativeSelected)) activeGroup = group;
 		});
 
 		// ---- 3. Move the active section's left submenu under its group ---------
@@ -416,9 +424,9 @@
 		var bookmarksBlock = vmenu ? vmenu.querySelector("#blockvmenubookmarks") : null;
 		var helpBlock = vmenu ? vmenu.querySelector("#blockvmenuhelp") : null;
 
-		if (vmenu && activeGroup) {
+		if (activeGroup) {
 			var asub = activeGroup.querySelector(".fz-sub");
-			fillSubFromRoot(asub, document);
+			fillSubFromRoot(asub, document, activeGroup);
 			activeGroup.classList.add("fz-active");
 			if (subHasMeaningfulItems(asub, activeGroup)) {
 				markGroupHasSub(activeGroup, true);
@@ -740,7 +748,7 @@
 	// or a parsed AJAX document for sections loaded on demand. Search/bookmarks/
 	// help blocks are skipped (they live elsewhere in the shell). Returns true if
 	// at least one entry was added.
-	function fillSubFromRoot(sub, root) {
+	function fillSubFromRoot(sub, root, group) {
 		var vmenu = root.querySelector(".vmenu");
 		if (vmenu) {
 			$all(".blockvmenu", vmenu).forEach(function (b) {
@@ -754,7 +762,27 @@
 			if (b.parentNode === sub) return;
 			if (b.classList.contains("blockvmenu") || b.classList.contains("blockvmenuend")) sub.appendChild(b);
 		});
+		if (group) ensureSubMenuContext(sub, group);
 		return sub.children.length > 0;
+	}
+
+	// Dolibarr's menu handler stores the selected `mainmenu` and `leftmenu` in
+	// the PHP session. Many native left-menu URLs only carry `leftmenu`, because
+	// the classic layout assumes the matching top menu was visited first. Fusion
+	// can display cached/on-demand submenus without that prior navigation, so add
+	// the owning main-menu code to every such link and let Dolibarr update its
+	// canonical session state on the next request.
+	function ensureSubMenuContext(container, group) {
+		var mainMenu = group && group.getAttribute("data-code");
+		if (!mainMenu || typeof URL === "undefined") return;
+		$all("a[href]", container).forEach(function (link) {
+			try {
+				var url = new URL(link.getAttribute("href"), location.href);
+				if (url.origin !== location.origin || !url.searchParams.has("leftmenu") || url.searchParams.has("mainmenu")) return;
+				url.searchParams.set("mainmenu", mainMenu);
+				link.setAttribute("href", url.pathname + url.search + url.hash);
+			} catch (e) {}
+		});
 	}
 
 	// Fold/unfold a group's submenu with a height animation. CSS can't animate to
@@ -874,9 +902,21 @@
 		if (pn && pn.classList && pn.classList.contains("fz-subsub")) animatePanel(pn, true, false);
 	}
 	function openActiveSub(sub) {
-		var full = location.pathname + location.search, links = $all("a[href]", sub), active = null;
-		for (var i = 0; i < links.length && !active; i++) if ((links[i].pathname + links[i].search) === full) active = links[i];
-		if (!active) for (var k = 0; k < links.length && !active; k++) if (links[k].pathname === location.pathname) active = links[k];
+		var full = location.pathname + location.search;
+		var requestedLeftMenu = queryParam(location.search, "leftmenu");
+		var links = $all("a[href]", sub), exact = null, samePathLeft = null, leftMatch = null, samePath = null;
+		// Prefer the most specific URL inside the branch selected by Dolibarr's
+		// stable `leftmenu` key. One pass is enough for every fallback.
+		for (var i = 0; i < links.length; i++) {
+			var linkLeftMenu = requestedLeftMenu ? queryParam(links[i].search, "leftmenu") : null;
+			if (!exact && links[i].pathname + links[i].search === full) exact = links[i];
+			if (links[i].pathname === location.pathname) {
+				if (!samePathLeft && requestedLeftMenu && linkLeftMenu === requestedLeftMenu) samePathLeft = links[i];
+				if (!samePath) samePath = links[i];
+			}
+			if (!leftMatch && requestedLeftMenu && linkLeftMenu === requestedLeftMenu) leftMatch = links[i];
+		}
+		var active = exact || samePathLeft || leftMatch || samePath;
 		if (!active) return;
 		var ownHead = active.closest(".fz-subhead");
 		if (ownHead) openHead(ownHead);
@@ -934,6 +974,8 @@
 			function build(kids) {
 				if (row.classList.contains("fz-subhead") || !kids.length) return;
 				buildTreeUnder(row, lvl, kids);
+				var owningGroup = row.closest(".fz-group");
+				if (owningGroup) ensureSubMenuContext(row.nextElementSibling, owningGroup);
 				preloadAll(row.nextElementSibling);
 			}
 			var cached = fzCacheGet(key);
@@ -973,7 +1015,7 @@
 			.then(function (html) {
 				var doc = new DOMParser().parseFromString(html, "text/html");
 				group.classList.remove("fz-loading");
-				if (fillSubFromRoot(sub, doc) && subHasMeaningfulItems(sub, group)) {
+				if (fillSubFromRoot(sub, doc, group) && subHasMeaningfulItems(sub, group)) {
 					markGroupHasSub(group, true);
 					setupSubAccordion(sub);
 					openActiveSub(sub);
