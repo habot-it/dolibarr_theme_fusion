@@ -126,6 +126,18 @@ $fz_mode_words = array(
 	'nl' => array('display' => 'Weergavemodus', 'light' => 'Licht', 'auto' => 'Auto', 'dark' => 'Donker'),
 );
 $fz_mode_word = isset($fz_mode_words[$fz_langprefix]) ? $fz_mode_words[$fz_langprefix] : $fz_mode_words['en'];
+// Labels of the dashboard grid. Dolibarr has no key for most of them, so they follow
+// the same per-language table as the color modes above.
+$fz_dash_words = array(
+	'en' => array('layout' => 'Layout', 'fullwidth' => 'Full width', 'autoheight' => 'Automatic height', 'reset' => 'Reset', 'customize' => 'Customize', 'done' => 'Done', 'addrow' => 'Add a row', 'delrow' => 'Delete this row', 'moverow' => 'Move this row', 'move' => 'Move this widget', 'expand' => 'Open in a window', 'delwidget' => 'Remove this widget', 'resetask' => 'Reset the dashboard layout?'),
+	'fr' => array('layout' => 'Disposition', 'fullwidth' => 'Pleine largeur', 'autoheight' => 'Hauteur automatique', 'reset' => 'Réinitialiser', 'customize' => 'Personnaliser', 'done' => 'Terminer', 'addrow' => 'Ajouter une ligne', 'delrow' => 'Supprimer cette ligne', 'moverow' => 'Déplacer cette ligne', 'move' => 'Déplacer ce widget', 'expand' => 'Ouvrir dans une fenêtre', 'delwidget' => 'Retirer ce widget', 'resetask' => 'Réinitialiser la disposition du tableau de bord ?'),
+	'es' => array('layout' => 'Disposición', 'fullwidth' => 'Ancho completo', 'autoheight' => 'Altura automática', 'reset' => 'Restablecer', 'customize' => 'Personalizar', 'done' => 'Terminar', 'addrow' => 'Añadir una fila', 'delrow' => 'Eliminar esta fila', 'moverow' => 'Mover esta fila', 'move' => 'Mover este widget', 'expand' => 'Abrir en una ventana', 'delwidget' => 'Quitar este widget', 'resetask' => '¿Restablecer la disposición del panel?'),
+	'de' => array('layout' => 'Anordnung', 'fullwidth' => 'Volle Breite', 'autoheight' => 'Automatische Höhe', 'reset' => 'Zurücksetzen', 'customize' => 'Anpassen', 'done' => 'Fertig', 'addrow' => 'Zeile hinzufügen', 'delrow' => 'Diese Zeile löschen', 'moverow' => 'Diese Zeile verschieben', 'move' => 'Dieses Widget verschieben', 'expand' => 'In einem Fenster öffnen', 'delwidget' => 'Dieses Widget entfernen', 'resetask' => 'Anordnung des Dashboards zurücksetzen?'),
+	'it' => array('layout' => 'Disposizione', 'fullwidth' => 'Larghezza piena', 'autoheight' => 'Altezza automatica', 'reset' => 'Ripristina', 'customize' => 'Personalizza', 'done' => 'Fine', 'addrow' => 'Aggiungi una riga', 'delrow' => 'Elimina questa riga', 'moverow' => 'Sposta questa riga', 'move' => 'Sposta questo widget', 'expand' => 'Apri in una finestra', 'delwidget' => 'Rimuovi questo widget', 'resetask' => 'Ripristinare la disposizione della dashboard?'),
+	'pt' => array('layout' => 'Disposição', 'fullwidth' => 'Largura total', 'autoheight' => 'Altura automática', 'reset' => 'Repor', 'customize' => 'Personalizar', 'done' => 'Concluir', 'addrow' => 'Adicionar uma linha', 'delrow' => 'Eliminar esta linha', 'moverow' => 'Mover esta linha', 'move' => 'Mover este widget', 'expand' => 'Abrir numa janela', 'delwidget' => 'Remover este widget', 'resetask' => 'Repor a disposição do painel?'),
+	'nl' => array('layout' => 'Indeling', 'fullwidth' => 'Volledige breedte', 'autoheight' => 'Automatische hoogte', 'reset' => 'Herstellen', 'customize' => 'Aanpassen', 'done' => 'Klaar', 'addrow' => 'Rij toevoegen', 'delrow' => 'Deze rij verwijderen', 'moverow' => 'Deze rij verplaatsen', 'move' => 'Deze widget verplaatsen', 'expand' => 'In een venster openen', 'delwidget' => 'Deze widget verwijderen', 'resetask' => 'De indeling van het dashboard herstellen?'),
+);
+$fz_dash_word = isset($fz_dash_words[$fz_langprefix]) ? $fz_dash_words[$fz_langprefix] : $fz_dash_words['en'];
 $fz_i18n = array(
 	'search' => fz_fusion_trans('Search', 'Search'),
 	'menu' => fz_fusion_trans('Menu', 'Menu'),
@@ -134,6 +146,21 @@ $fz_i18n = array(
 	'mode_light' => $fz_mode_word['light'],
 	'mode_auto' => $fz_mode_word['auto'],
 	'mode_dark' => $fz_mode_word['dark'],
+	'dash_customize' => $fz_dash_word['customize'],
+	'dash_done' => $fz_dash_word['done'],
+	'dash_addrow' => $fz_dash_word['addrow'],
+	'dash_delrow' => $fz_dash_word['delrow'],
+	'dash_moverow' => $fz_dash_word['moverow'],
+	'dash_move' => $fz_dash_word['move'],
+	'dash_layout' => $fz_dash_word['layout'],
+	'dash_fullwidth' => $fz_dash_word['fullwidth'],
+	'dash_autoheight' => $fz_dash_word['autoheight'],
+	'dash_cancel' => fz_fusion_trans('Cancel', 'Cancel'),
+	'dash_save' => fz_fusion_trans('Save', 'Save'),
+	'dash_expand' => $fz_dash_word['expand'],
+	'dash_delwidget' => $fz_dash_word['delwidget'],
+	'dash_reset' => $fz_dash_word['reset'],
+	'dash_resetask' => $fz_dash_word['resetask'],
 );
 ?>
 html.fusion{
@@ -149,6 +176,21 @@ html.fusion{
 	--fz-t-mode-light: <?php echo fz_fusion_css_string($fz_i18n['mode_light']); ?>;
 	--fz-t-mode-auto: <?php echo fz_fusion_css_string($fz_i18n['mode_auto']); ?>;
 	--fz-t-mode-dark: <?php echo fz_fusion_css_string($fz_i18n['mode_dark']); ?>;
+	--fz-t-dash-customize: <?php echo fz_fusion_css_string($fz_i18n['dash_customize']); ?>;
+	--fz-t-dash-done: <?php echo fz_fusion_css_string($fz_i18n['dash_done']); ?>;
+	--fz-t-dash-addrow: <?php echo fz_fusion_css_string($fz_i18n['dash_addrow']); ?>;
+	--fz-t-dash-delrow: <?php echo fz_fusion_css_string($fz_i18n['dash_delrow']); ?>;
+	--fz-t-dash-moverow: <?php echo fz_fusion_css_string($fz_i18n['dash_moverow']); ?>;
+	--fz-t-dash-move: <?php echo fz_fusion_css_string($fz_i18n['dash_move']); ?>;
+	--fz-t-dash-layout: <?php echo fz_fusion_css_string($fz_i18n['dash_layout']); ?>;
+	--fz-t-dash-fullwidth: <?php echo fz_fusion_css_string($fz_i18n['dash_fullwidth']); ?>;
+	--fz-t-dash-autoheight: <?php echo fz_fusion_css_string($fz_i18n['dash_autoheight']); ?>;
+	--fz-t-dash-cancel: <?php echo fz_fusion_css_string($fz_i18n['dash_cancel']); ?>;
+	--fz-t-dash-save: <?php echo fz_fusion_css_string($fz_i18n['dash_save']); ?>;
+	--fz-t-dash-expand: <?php echo fz_fusion_css_string($fz_i18n['dash_expand']); ?>;
+	--fz-t-dash-delwidget: <?php echo fz_fusion_css_string($fz_i18n['dash_delwidget']); ?>;
+	--fz-t-dash-reset: <?php echo fz_fusion_css_string($fz_i18n['dash_reset']); ?>;
+	--fz-t-dash-resetask: <?php echo fz_fusion_css_string($fz_i18n['dash_resetask']); ?>;
 	/* ---- geometry ---- */
 	--fz-sb-w: 268px;            /* expanded sidebar width            */
 	--fz-sb-w-collapsed: 66px;   /* icons-only sidebar width          */
@@ -994,6 +1036,290 @@ html.fusion ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fz-text
 html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);background-clip:padding-box;border:3px solid transparent}
 /* keep the navy sidebar's own scrollbars on the light-thumb rule above */
 #fz-sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);background-clip:padding-box;border:2px solid transparent}
+
+/* ====================================================================== *
+ *  DASHBOARD GRID (fusion-dashboard.js)                                   *
+ *  Dolibarr's two hard-coded widget columns become rows of freely sized   *
+ *  widgets: a row is twelve tracks wide and each widget carries its own   *
+ *  width (--fz-cw tracks) and height (--fz-ch). Widgets flow and wrap, so *
+ *  one sitting above another is just what the widths produce. Everything  *
+ *  here only exists once the script has moved the widgets, so nothing     *
+ *  below can affect a page where the grid did not take over.              *
+ * ====================================================================== */
+
+/* Hide the native columns while the grid is being built. fusion.js drops this
+   class after 3s no matter what, so a failed script can never hide the page. */
+html.fusion.fz-dash-boot .twocolumns{visibility:hidden}
+/* The emptied native columns stay in the DOM: core's inline script still queries
+   them, and removing them would break its "add widget" / "close widget" code. */
+html.fusion .fz-dash-legacy{display:none !important}
+
+html.fusion #fz-dash{
+	--fz-dash-gap:16px;
+	display:flex;flex-direction:column;gap:var(--fz-dash-gap);
+	position:relative;padding-bottom:4px}
+html.fusion #fz-dash .fz-dash-row{position:relative}
+html.fusion #fz-dash .fz-dash-grid{
+	display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+	grid-auto-rows:8px;grid-auto-flow:dense;
+	column-gap:var(--fz-dash-gap);row-gap:0;align-items:start}
+/* THE rule of the whole feature: a widget is a span on the row's 12 tracks.
+   minmax(0,1fr) above is what lets a wide table shrink instead of blowing the row
+   apart, which is how the content adapts to the width it is given. */
+html.fusion #fz-dash .fz-dash-cell{
+	grid-column:span var(--fz-cw,6);min-width:0;position:relative;
+	margin-bottom:var(--fz-dash-gap)}
+html.fusion #fz-dash .fz-dash-cellinner{min-width:0}
+/* A pinned height resizes THE WIDGET, not the slot holding it. The height has to be
+   carried all the way down to `table.boxtable`: div.box has no background of its own,
+   so stopping there stretches an invisible box and leaves the visible card floating
+   at its natural height, with the resize handle stranded at the corner of the empty
+   space below it. The table is made a flex child so it takes the remaining height,
+   and the box scrolls whatever does not fit — inside the widget's frame, not beside
+   it. The script also fires a window resize event afterwards, which is what chart
+   libraries listen to in order to redraw at the new size. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height{height:var(--fz-ch)}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height > .fz-dash-cellinner{height:100%;overflow:hidden}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height > .fz-dash-cellinner > .box{
+	height:100%;overflow:auto;box-sizing:border-box;display:flex;flex-direction:column}
+/* The native bottom border belongs to the table's last cell. A fixed-height chart
+   can extend that cell past the clipped viewport, and a canvas can paint over a
+   border placed on .box. Draw the frame last, on the grid cell itself. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive::after{
+	content:"";position:absolute;z-index:6;inset:0;box-sizing:border-box;
+	border:1px solid transparent;border-bottom-color:var(--fz-border);
+	border-radius:var(--fz-radius);pointer-events:none}
+/* ClearView charts and maps already adapt their drawing to the height offered by
+   the card. A scrollbar on the whole box only exposes table rounding differences
+   (usually one or two pixels) and makes the dashboard look broken. Keep generic
+   third-party widgets scrollable, but let ClearView own its content viewport. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive > .fz-dash-cellinner > .box{
+	overflow:hidden;box-sizing:border-box}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-box-cell{
+	overflow:hidden}
+/* Keep Dolibarr's native table layout. The row containing the drawing absorbs
+   the remaining height; summary rows below it retain their natural height. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive table.fz-dash-adaptive-table > tbody > tr.fz-dash-grow-row > td{
+	box-sizing:border-box;height:100%;min-height:0;vertical-align:top}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive table.fz-dash-adaptive-table > tbody > tr:not(.fz-dash-grow-row) > td{
+	height:auto}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-box-graph{
+	box-sizing:border-box;display:flex;height:100%;min-height:0}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-box-graph > .dolgraphchart{
+	flex:1 1 auto;width:100% !important;height:100% !important;
+	min-height:0 !important;max-height:none !important}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-box-graph canvas{
+	width:100% !important;height:100% !important}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-worldmap{
+	height:100%;box-sizing:border-box;display:flex;flex-direction:column;min-height:0}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-worldmap__stage{
+	flex:1 1 auto;min-height:0;aspect-ratio:auto}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-worldmap__ranking{
+	flex:0 0 auto}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height > .fz-dash-cellinner > .box > table.boxtable{
+	flex:1 1 auto;min-height:0;height:100%}
+/* Inside that stretched table, the content row is the one that must absorb the extra
+   height — the title row keeps its own. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height table.boxtable > tbody > tr:last-child > td{
+	height:100%;vertical-align:top}
+/* Give a single content block the height of the row, so it can pass it on to what
+   it contains. Do not apply this to every direct child: a ClearView revenue widget
+   contains a KPI followed by its chart, and stretching the KPI to 100% would push
+   the chart below the clipped card. A chart that sizes itself is excluded as well. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height table.boxtable > tbody > tr:last-child > td > div:only-child:not(.is-stretched){
+	display:flex;flex-direction:column;justify-content:flex-start;height:100%;min-height:0}
+/* An inline SVG chart is a drawing with a fixed viewBox: CSS can scale it, never
+   re-lay it out. Given the full width and capped at the height available, a widget
+   shorter than the drawing scales it down whole instead of cropping it.
+   A widget TALLER than the drawing is the module's business, not the theme's: only
+   the code that drew the chart can fill that height without distorting its labels.
+   ClearView does it — its script switches the chart to preserveAspectRatio="none"
+   and counter-scales what must keep its shape — so a chart that marks itself
+   `.is-stretched` is left entirely alone here.
+   Scoped to the chart level (a direct child of the content cell) so the icons living
+   deeper inside tables are left alone, and to .fz-has-height so a widget on automatic
+   height is untouched. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height table.boxtable > tbody > tr:last-child > td > svg,
+html.fusion #fz-dash .fz-dash-cell.fz-has-height table.boxtable > tbody > tr:last-child > td > div:only-child:not(.is-stretched) > svg{
+	width:100%;height:auto;min-height:0;max-height:100%}
+html.fusion #fz-dash .fz-dash-cell > .fz-dash-cellinner > .box{margin:0;padding:0}
+/* eldy spaces boxes with a margin on the inner table; the grid gap does that now. */
+html.fusion #fz-dash .fz-dash-cell table.boxtable{margin-bottom:0}
+
+/* ---- the widget header ----------------------------------------------- */
+/* Dolibarr puts a move grip and a close cross in every widget header. The grip is
+   driven by the sortable it sets on the two native columns — which no longer hold
+   anything — so it is a dead control here. The cross is one misclick away from
+   removing a widget: removal belongs to edit mode, where the widget toolbar offers
+   it. Both are hidden but KEPT in the DOM: the cross is what core bound its own
+   removal handler to, and that is what the toolbar button clicks.
+   The script does not rely on these rules alone: it MOVES both controls into
+   .fz-dash-native inside the widget, so they are out of the header whatever the
+   context — the dialog, a stale stylesheet, a box from a third-party module. */
+html.fusion .fz-dash-native{display:none !important}
+html.fusion #fz-dash .boxhandle,
+html.fusion #fz-dash [id^="imgclose"],
+html.fusion .fz-dash-popup .boxhandle,
+html.fusion .fz-dash-popup [id^="imgclose"],
+html.fusion .fz-dash-popup .fz-dash-expand{display:none !important}
+/* In their place, the button that opens the widget in a Dolibarr window. */
+html.fusion #fz-dash .fz-dash-expand{
+	display:inline-flex;align-items:center;justify-content:center;
+	width:22px;height:22px;padding:0;margin-left:6px;vertical-align:middle;
+	border:0;border-radius:var(--fz-radius);background:transparent;
+	color:inherit;opacity:.55;cursor:pointer;font-size:12px;
+	transition:opacity .15s ease,background .15s ease}
+html.fusion #fz-dash .fz-dash-expand:hover,
+html.fusion #fz-dash .fz-dash-expand:focus-visible{
+	opacity:1;background:color-mix(in srgb,currentColor 14%,transparent)}
+/* The widget rendered inside the dialog keeps its own scrolling, not the page's. */
+html.fusion .fz-dash-popup{padding:0}
+html.fusion .fz-dash-popup > .box{margin:0;padding:0;overflow-x:auto}
+/* jQuery UI computes an absolute position from the document. Fusion's fixed side
+   shell can offset that result, especially on very wide screens. Anchor widget
+   dialogs to the viewport itself so their margins are genuinely symmetrical. */
+html.fusion .fz-dash-widget-dialog{
+	position:fixed !important;
+	top:50% !important;
+	left:50% !important;
+	right:auto !important;
+	bottom:auto !important;
+	transform:translate(-50%,-50%);
+	display:flex !important;
+	flex-direction:column;
+	box-sizing:border-box;
+	margin:0 !important;
+	overflow:hidden !important;
+	width:min(90vw,1400px) !important;
+	max-width:94vw !important;
+	max-height:88vh !important}
+html.fusion .fz-dash-widget-dialog > .ui-dialog-titlebar{
+	flex:0 0 auto}
+html.fusion .fz-dash-widget-dialog > .ui-dialog-content{
+	flex:1 1 auto !important;
+	min-height:0 !important;
+	height:auto !important;
+	box-sizing:border-box;
+	padding-left:0 !important;
+	max-height:calc(88vh - 48px) !important;
+	overflow:auto !important}
+@media (max-width:820px){
+	html.fusion .fz-dash-widget-dialog{
+		width:94vw !important;
+		max-height:90vh !important}
+	html.fusion .fz-dash-widget-dialog > .ui-dialog-content{
+		max-height:calc(90vh - 48px) !important}
+}
+
+/* ---- controls, revealed only in edit mode ---------------------------- */
+html.fusion #fz-dash .fz-dash-bar{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+html.fusion #fz-dash .fz-dash-btn{
+	display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;
+	border:1px solid var(--fz-border);border-radius:var(--fz-radius);
+	background:var(--fz-surface);color:var(--fz-text);font-size:12px;cursor:pointer;
+	transition:background .15s ease,border-color .15s ease}
+html.fusion #fz-dash .fz-dash-btn:hover{background:var(--fz-border)}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-toggle{
+	background:var(--colorbackhmenu1,#2563eb);border-color:transparent;color:#fff}
+html.fusion #fz-dash .fz-dash-reset,
+html.fusion #fz-dash .fz-dash-done,
+html.fusion #fz-dash .fz-dash-addrow,
+html.fusion #fz-dash .fz-dash-rowtools,
+html.fusion #fz-dash .fz-dash-celltools{display:none}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-reset,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-done{display:inline-flex}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-addrow{
+	display:flex;align-items:center;justify-content:center;gap:8px;
+	height:38px;border:1px dashed var(--fz-border);border-radius:var(--fz-radius);
+	background:transparent;color:var(--fz-text-dim);font-size:12px;cursor:pointer}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-addrow:hover{
+	border-color:var(--fz-text-dim);color:var(--fz-text)}
+
+/* Edit mode lighting up every control of every row and widget at once is
+   unreadable. The space is reserved (so nothing jumps), but a toolbar only becomes
+   visible on the element it acts upon — hovered, or holding the focus. */
+html.fusion #fz-dash.fz-dash-edit .fz-dash-rowtools,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools{
+	visibility:hidden;opacity:0;transition:opacity .12s ease}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-row:hover > .fz-dash-rowtools,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-row:focus-within > .fz-dash-rowtools,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:hover > .fz-dash-celltools,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:focus-within > .fz-dash-celltools{
+	visibility:visible;opacity:1}
+
+html.fusion #fz-dash.fz-dash-edit .fz-dash-rowtools{
+	display:flex;gap:4px;align-items:center;justify-content:flex-end;margin-bottom:4px}
+/* The widget toolbar sits ON the widget, in its header, where the expand button is
+   the rest of the time — the controls belong to the widget, not to the slot around
+   it, so they must not float outside its frame. */
+html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools{
+	display:flex;gap:4px;align-items:center;
+	position:absolute;top:7px;right:8px;z-index:4}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-expand{display:none}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-rowtools button,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools button{
+	display:flex;align-items:center;justify-content:center;
+	width:26px;height:26px;padding:0;border:1px solid var(--fz-border);
+	border-radius:var(--fz-radius);background:var(--fz-surface);color:var(--fz-text-dim);
+	font-size:11px;cursor:pointer}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-rowtools button:hover,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools button:hover{color:var(--fz-text);border-color:var(--fz-text-dim)}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-grip{cursor:move}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-del:hover{
+	color:#fff;background:var(--butactiondeletebg,#b0413e);border-color:transparent}
+/* ---- the layout dialog ------------------------------------------------ */
+/* The size is chosen as a rectangle in a grid, the way Home Assistant does it.
+   The widget is resized only when a grid cell is clicked. */
+html.fusion .fz-dash-layoutdlg{padding:4px 2px}
+html.fusion .fz-dash-layoutdlg .fz-dash-picker{
+	display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-bottom:10px}
+html.fusion .fz-dash-layoutdlg .fz-dash-pcell{
+	height:22px;padding:0;border:0;border-radius:3px;cursor:pointer;
+	background:color-mix(in srgb,var(--fz-text-dim) 18%,transparent);
+	transition:background .1s ease}
+html.fusion .fz-dash-layoutdlg .fz-dash-pcell:hover{
+	background:color-mix(in srgb,var(--fz-text-dim) 34%,transparent)}
+html.fusion .fz-dash-layoutdlg .fz-dash-pcell.is-on{background:var(--colorbackhmenu1,#2563eb)}
+/* An automatic height is not "one row tall": the top row is drawn hollow to say the
+   widget takes whatever height its content needs. */
+html.fusion .fz-dash-layoutdlg .fz-dash-pcell.is-auto{
+	background:transparent;box-shadow:inset 0 0 0 2px var(--colorbackhmenu1,#2563eb)}
+html.fusion .fz-dash-layoutdlg .fz-dash-readout{
+	font-size:12px;font-weight:700;color:var(--fz-text);
+	font-variant-numeric:tabular-nums;margin-bottom:10px}
+html.fusion .fz-dash-layoutdlg .fz-dash-opts{display:flex;flex-direction:column;gap:6px}
+html.fusion .fz-dash-layoutdlg .fz-dash-opt{
+	display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fz-text);cursor:pointer}
+
+/* Only the widget being worked on is outlined, and the outline hugs it: at rest,
+   edit mode is quiet. */
+html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:hover,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:focus-within{
+	outline:1px dashed var(--fz-border);outline-offset:2px;border-radius:var(--fz-radius)}
+/* While a widget is being resized, kill text selection and cursor flicker. */
+html.fz-dash-resizing,html.fz-dash-resizing body{user-select:none;cursor:nwse-resize}
+
+/* Empty rows must stay droppable while editing. */
+html.fusion #fz-dash.fz-dash-edit .fz-dash-grid{min-height:56px}
+html.fusion #fz-dash .fz-dash-ph{
+	grid-column:span var(--fz-cw,6);min-height:70px;
+	border:1px dashed var(--fz-text-dim);border-radius:var(--fz-radius);
+	background:color-mix(in srgb,var(--fz-text-dim) 10%,transparent)}
+html.fusion #fz-dash .fz-dash-rowph{
+	min-height:56px;border:1px dashed var(--fz-text-dim);border-radius:var(--fz-radius)}
+/* jQuery UI drags with an absolutely positioned helper: it must not keep the grid
+   span of the row it came from, or it covers half the screen while moving. */
+html.fusion #fz-dash .ui-sortable-helper{box-shadow:0 18px 40px rgba(0,0,0,.25);opacity:.96}
+
+/* ---- narrow / portrait ----------------------------------------------- */
+/* Same breakpoint as the shell: below it there is no room to place widgets side by
+   side, so each one takes the full width and pinned heights are released. */
+@media only screen and (max-width:920px){
+	html.fusion #fz-dash .fz-dash-cell{grid-column:span 12 !important}
+	html.fusion #fz-dash .fz-dash-cell.fz-has-height{height:auto}
+	html.fusion #fz-dash .fz-dash-cell.fz-has-height > .fz-dash-cellinner{height:auto;overflow:visible}
+}
+
 
 <?php if ($fz_is_print) { ?>
 /* Fusion print mode: optioncss=print must be content-only. */

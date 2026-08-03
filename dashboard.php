@@ -1,0 +1,191 @@
+<?php
+/* Copyright (C) 2026  Fusion theme
+ *
+ * Theme "fusion" — storage endpoint for the configurable dashboard grid.
+ *
+ * fusion-dashboard.js rebuilds the widget area (Dolibarr's two hard-coded box
+ * columns) into a grid of independent rows, so it needs to persist a layout that
+ * llx_boxes cannot express: llx_boxes.box_order only knows about column "A" and
+ * column "B" (A01, B02, …). The layout therefore lives beside it, in the user's
+ * own parameters (llx_user_param, one row per zone), which keeps it per user and
+ * available from any browser — Dolibarr core is left untouched.
+ *
+ * The theme stylesheet cannot serve that value the way it serves every other
+ * server-side value (theme/eldy/style.css.php defines NOLOGIN, because the CSS is
+ * also served to the login page, so $user is not authenticated there). Hence this
+ * small endpoint: GET action=load returns the layout, POST action=save stores it.
+ *
+ *   GET  theme/fusion/dashboard.php?action=load&zone=0
+ *        -> {"layout":{"v":1,"rows":[…]}}   (layout is null when nothing is stored)
+ *   POST theme/fusion/dashboard.php?action=save&zone=0&token=<anti-csrf-newtoken>
+ *        body = the layout as JSON
+ *        -> {"ok":true}
+ *
+ * The layout is never stored as received: sanitizeLayout() rebuilds it from
+ * whitelisted keys and integers only, so nothing a client sends can ever come back
+ * out as markup.
+ */
+
+if (!defined('NOTOKENRENEWAL')) {
+	define('NOTOKENRENEWAL', '1'); // Saves happen while the page stays open: leave its token valid
+}
+if (!defined('NOREQUIREMENU')) {
+	define('NOREQUIREMENU', '1');
+}
+if (!defined('NOREQUIREHTML')) {
+	define('NOREQUIREHTML', '1');
+}
+if (!defined('NOREQUIREAJAX')) {
+	define('NOREQUIREAJAX', '1');
+}
+if (!defined('NOREQUIRESOC')) {
+	define('NOREQUIRESOC', '1');
+}
+
+require __DIR__.'/../../main.inc.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var Translate $langs
+ * @var User $user
+ */
+
+if (!function_exists('fz_fusion_dashboard_sanitize')) {
+	/**
+	 * Rebuild a layout from untrusted input, keeping only what the grid understands:
+	 * rows of widgets, each widget carrying its width over the row's twelve tracks and
+	 * its height.
+	 *
+	 * An intermediate version wrapped widgets in explicit columns (rows[].cols[]);
+	 * those are flattened here, each widget inheriting its column's width, which draws
+	 * the same picture without the extra object.
+	 *
+	 * @param	mixed		$data	Decoded JSON payload
+	 * @return	array|null			Canonical layout, or null when there is nothing usable
+	 */
+	function fz_fusion_dashboard_sanitize($data)
+	{
+		if (!is_array($data) || empty($data['rows']) || !is_array($data['rows'])) {
+			return null;
+		}
+
+		$rows = array();
+		foreach (array_slice($data['rows'], 0, 40) as $row) {
+			if (!is_array($row)) {
+				continue;
+			}
+
+			$rawitems = array();
+			if (!empty($row['items']) && is_array($row['items'])) {
+				$rawitems = $row['items'];
+			} elseif (!empty($row['cols']) && is_array($row['cols'])) {
+				foreach ($row['cols'] as $col) {
+					if (!is_array($col) || empty($col['items']) || !is_array($col['items'])) {
+						continue;
+					}
+					foreach ($col['items'] as $item) {
+						if (is_array($item)) {
+							$item['w'] = isset($col['w']) ? $col['w'] : 6;
+							$rawitems[] = $item;
+						}
+					}
+				}
+			}
+
+			$items = array();
+			foreach (array_slice($rawitems, 0, 60) as $item) {
+				if (!is_array($item) || !isset($item['id'])) {
+					continue;
+				}
+				// A widget id is a box_id, or one of the synthetic ids the script gives
+				// to the non-draggable blocks of the area (the working board).
+				$id = (string) $item['id'];
+				if (!preg_match('/^[a-zA-Z0-9_]{1,32}$/', $id)) {
+					continue;
+				}
+				$width = isset($item['w']) ? (int) $item['w'] : 6;
+				$height = isset($item['h']) ? (int) $item['h'] : 0;
+				$items[] = array(
+					'id' => $id,
+					'w' => max(1, min(12, $width)),		// width, in twelfths of a row
+					'h' => ($height > 0 ? max(120, min(4000, $height)) : 0),	// 0 = automatic height
+				);
+			}
+
+			if (count($items)) {
+				$rows[] = array('items' => $items);
+			}
+		}
+
+		if (!count($rows)) {
+			return null;
+		}
+
+		return array('v' => 3, 'rows' => $rows);
+	}
+}
+
+$action = GETPOST('action', 'aZ09');
+$zone = GETPOST('zone', 'aZ09');
+if (!preg_match('/^[a-zA-Z0-9_]{1,32}$/', $zone)) {
+	$zone = '0'; // Same default as FormOther::getBoxesArea()
+}
+$param = 'FUSION_DASHBOARD_'.$zone;
+
+// main.inc.php already refuses anonymous access, but the layout is strictly personal.
+if (empty($user->id)) {
+	httponly_accessforbidden('Not logged');
+}
+
+// Refuse before top_httphead(): httponly_accessforbidden() emits its own headers.
+if ($action != 'load' && $action != 'save') {
+	httponly_accessforbidden('Unknown action', 400);
+}
+if ($action == 'save') {
+	// An invalid token makes main.inc.php empty $_POST and carry on, so refuse explicitly.
+	// The token is the one Dolibarr publishes in <meta name="anti-csrf-newtoken">.
+	if (empty($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] != 'POST') {
+		httponly_accessforbidden('Method not allowed', 405);
+	}
+	if (GETPOST('token', 'alpha') !== currentToken()) {
+		httponly_accessforbidden('Bad token', 403);
+	}
+}
+
+top_httphead('application/json', 1);
+
+if ($action == 'load') {
+	$stored = (isset($user->conf->$param) && $user->conf->$param !== '') ? json_decode($user->conf->$param, true) : null;
+
+	// The token is handed back so a save whose token expired (Dolibarr rolls it on
+	// every page load, so a second tab invalidates ours) can be retried. Reading it
+	// requires a same-origin authenticated request: a cross-origin caller can issue
+	// this GET but cannot read its response.
+	print json_encode(array('layout' => fz_fusion_dashboard_sanitize($stored), 'token' => newToken()));
+} else {
+	// The payload is read raw: GETPOST's sanitizers would mangle the JSON. It is
+	// parsed and rebuilt below, so nothing unchecked reaches the database.
+	$body = file_get_contents('php://input');
+	if (strlen($body) > 65000) {
+		http_response_code(413);
+		print json_encode(array('ok' => false, 'error' => 'Payload too large'));
+		$db->close();
+		exit;
+	}
+
+	$layout = fz_fusion_dashboard_sanitize(json_decode($body, true));
+	if ($layout === null) {
+		http_response_code(400);
+		print json_encode(array('ok' => false, 'error' => 'Invalid layout'));
+		$db->close();
+		exit;
+	}
+
+	$result = dol_set_user_param($db, $conf, $user, array($param => json_encode($layout)));
+
+	print json_encode(array('ok' => ($result >= 0)));
+}
+
+$db->close();

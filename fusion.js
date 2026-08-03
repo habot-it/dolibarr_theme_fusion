@@ -35,6 +35,10 @@
 	var ROOT = document.documentElement;
 	ROOT.classList.add("fusion");
 
+	// Our own <script> element: its url is how the theme locates its companion files
+	// (see loadDashboard), its nonce is how they stay loadable under a nonce-based CSP.
+	var SELF = document.currentScript;
+
 	function validMode(value) {
 		value = String(value || "");
 		return /^(light|auto|dark)$/.test(value) ? value : "auto";
@@ -1078,12 +1082,47 @@
 		return wrap;
 	}
 
+	// The configurable widget grid lives in its own file, fetched only on the pages
+	// that actually render a widget area (the home page and the module home pages),
+	// so every other page keeps paying nothing for it. The script tag inherits our
+	// own url — hence the same cache-busting query string as the rest of the theme —
+	// and our nonce, so a nonce-based CSP accepts it.
+	function loadDashboard() {
+		// All the grid styles are scoped under html.fusion: if the shell bailed out,
+		// the grid would render unstyled, so it must bail out too.
+		if (!ROOT.classList.contains("fusion")) return;
+		if (!SELF || !SELF.src || !document.getElementById("boxhalfleft")) return;
+
+		// Hide the native two columns while the grid is being built, but never trust
+		// that alone: if the script fails to load or to run, the class is dropped and
+		// the untouched Dolibarr layout shows up instead of an empty page.
+		ROOT.classList.add("fz-dash-boot");
+		var fallback = setTimeout(function () { ROOT.classList.remove("fz-dash-boot"); }, 3000);
+
+		var script = document.createElement("script");
+		var dashboardSrc = SELF.src.replace(/fusion\.js/, "fusion-dashboard.js");
+		script.src = dashboardSrc + (dashboardSrc.indexOf("?") === -1 ? "?" : "&") + "fzv=20260730-3";
+		var nonce = SELF.nonce || SELF.getAttribute("nonce");
+		if (nonce) script.setAttribute("nonce", nonce);
+		script.onerror = function () {
+			clearTimeout(fallback);
+			ROOT.classList.remove("fz-dash-boot");
+		};
+		document.body.appendChild(script);
+	}
+
 	function init() {
 		try {
 			build();
 		} catch (e) {
 			ROOT.classList.remove("fusion", "fz-collapsed", "fz-drawer", "fz-search-open");
 			if (window.console && console.error) console.error("Fusion theme failed to initialize", e);
+		}
+		try {
+			loadDashboard();
+		} catch (e) {
+			ROOT.classList.remove("fz-dash-boot");
+			if (window.console && console.error) console.error("Fusion dashboard failed to load", e);
 		}
 	}
 
