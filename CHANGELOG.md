@@ -20,6 +20,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 - A button in every widget header opens that widget in a Dolibarr dialog, at full size.
 
 ### Changed
+- Fusion is now self-contained: the Dolibarr 22.0.5 component stylesheet base, its includes and its
+  image resources are bundled and versioned with the theme. No runtime dependency on `theme/eldy`
+  remains.
 - Dolibarr's close cross and move grip are taken out of the widget header: removing a widget is now
   done from its toolbar in *Customize* mode, so a stray click cannot drop a widget any more. The cross
   itself is kept, hidden, because core's own removal handler is bound to it.
