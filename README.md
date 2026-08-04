@@ -1,9 +1,10 @@
 # Fusion — unified responsive theme for Dolibarr
 
-**Fusion** is a [Dolibarr](https://www.dolibarr.org/) theme derived from **eldy**.
-It reuses every component style of eldy (tables, forms, cards, badges, …) and only
-overrides the application shell to **merge Dolibarr's two menus** (horizontal top
-bar + vertical left menu) into a **single responsive navigation**:
+**Fusion** is a standalone [Dolibarr](https://www.dolibarr.org/) theme. Its
+component styles originated from Eldy and are now bundled and versioned directly
+inside Fusion; no other theme directory is required at runtime. Fusion also
+provides its own application shell, which **merges Dolibarr's two menus**
+(horizontal top bar + vertical left menu) into a **single responsive navigation**:
 
 - **landscape** — one retractable left sidebar (full ⇄ icons only);
 - **portrait** — a top bar with a hamburger button that opens the same menu as a
@@ -28,19 +29,20 @@ it in a Dolibarr window at full size.
 
 | File | Purpose |
 | --- | --- |
-| `style.css.php` | Includes eldy's stylesheet, then applies the Fusion shell overrides (scoped under `html.fusion`). |
+| `style.css.php` | Loads the bundled component base, then applies the Fusion shell overrides (scoped under `html.fusion`). |
+| `base.css.php`, `global.inc.php`, component includes | Standalone component styling bundled with Fusion. |
+| `img/` | Theme-owned image resources used by the component base. |
 | `fusion.js` | Restructures the menus into a single navigation (auto-loaded when `ALLOW_THEME_JS = 1`). |
 | `fusion-dashboard.js` | Turns the widget area into a configurable grid (loaded only on pages showing widgets). |
 | `dashboard.php` | Saves and loads the grid layout, per user, in `llx_user_param`. |
-| `theme_vars.inc.php` | Reuses eldy's theme variables and options. |
+| `theme_vars.inc.php` | Fusion's component and graph color variables. |
 | `activate_fusion.sql` | Enables the theme and the required constants. |
 | `thumb.png` | Preview thumbnail shown in the theme list. |
 | `CHANGELOG.md` | Release history. |
 
 ## Requirements
 
-- A working Dolibarr installation with the **eldy** theme present
-  (`htdocs/theme/eldy/`), which Fusion depends on.
+- Dolibarr 22.x (the bundled component base currently tracks Dolibarr 22.0.5).
 - The theme JavaScript option enabled (constant `ALLOW_THEME_JS = 1`).
 
 ## Installation
@@ -64,7 +66,8 @@ In *Home > Setup > Display*, select the "eldy" theme again (or set the
 
 ## License
 
-GPLv3 or later — see [`COPYING`](COPYING).
+GPLv3 or later — see [`LICENSE`](LICENSE). The bundled component base retains
+the original Dolibarr/Eldy copyright notices.
 
 ## Author
 

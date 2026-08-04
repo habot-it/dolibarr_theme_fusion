@@ -1,8 +1,8 @@
 <?php
 /* Copyright (C) 2026  Fusion theme
  *
- * Theme "fusion" — derived from eldy. It reuses every component style of eldy
- * (tables, forms, cards, badges, …) and only overrides the application shell so
+ * Theme "fusion" — standalone theme with a locally maintained Dolibarr component
+ * base (tables, forms, cards, badges, …) and its own application shell so
  * that the two Dolibarr menus (horizontal top + vertical left) are merged into a
  * SINGLE responsive navigation:
  *   - landscape : one retractable left sidebar
@@ -10,13 +10,13 @@
  * The DOM merge itself is done by theme/fusion/fusion.js (auto-loaded when the
  * constant ALLOW_THEME_JS = 1).
  *
- * IMPORTANT: no output must be produced before eldy's style.css.php is included,
- * because it is the one that calls top_httphead('text/css') (HTTP headers).
+ * IMPORTANT: no output must be produced before base.css.php is included,
+ * because it bootstraps Dolibarr and calls top_httphead('text/css').
  */
 
-// Reuse the whole eldy stylesheet (this also bootstraps Dolibarr and sets the
-// text/css content-type). __DIR__ inside eldy keeps resolving to the eldy dir.
-require __DIR__.'/../eldy/style.css.php';
+// Load Fusion's bundled component base. It is versioned with the theme and has
+// no runtime dependency on another Dolibarr theme directory.
+require __DIR__.'/base.css.php';
 ?>
 
 /* =======================================================================

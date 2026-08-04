@@ -11,7 +11,7 @@
  * available from any browser — Dolibarr core is left untouched.
  *
  * The theme stylesheet cannot serve that value the way it serves every other
- * server-side value (theme/eldy/style.css.php defines NOLOGIN, because the CSS is
+ * server-side value (theme/fusion/base.css.php defines NOLOGIN, because the CSS is
  * also served to the login page, so $user is not authenticated there). Hence this
  * small endpoint: GET action=load returns the layout, POST action=save stores it.
  *
