@@ -207,6 +207,105 @@
 			if (document.visibilityState === "hidden") saveNavScroll(nav);
 		});
 	}
+
+	// Keep jQuery UI dialogs inside the content viewport rather than centering
+	// them across the full browser width (which includes Fusion's sidebar).
+	// Percentage-sized dialogs and core previews (typically 90vw) scale with the
+	// actual content width; ordinary fixed-width dialogs keep their requested size.
+	var FZ_DIALOG_GUTTER = 14;
+	var fzDialogFrame = null;
+	function dialogContentSpace() {
+		var viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+		var container = $("#id-container");
+		if (!container || viewportWidth <= 0) return { left: 0, width: viewportWidth };
+		var rect = container.getBoundingClientRect();
+		var left = Math.max(0, Math.min(viewportWidth, rect.left));
+		var right = Math.max(left, Math.min(viewportWidth, rect.right));
+		var width = right - left;
+		return width >= 200 ? { left: left, width: width } : { left: 0, width: viewportWidth };
+	}
+	function dialogWidthModel(wrapper, content) {
+		if (wrapper._fzDialogWidthModel) return wrapper._fzDialogWidthModel;
+		var option = null;
+		if (window.jQuery && window.jQuery.fn && window.jQuery.fn.dialog) {
+			try { option = window.jQuery(content).dialog("option", "width"); } catch (e) {}
+		}
+		if (typeof option === "string") {
+			var percent = /^\s*([0-9]+(?:\.[0-9]+)?)%\s*$/.exec(option);
+			if (percent) {
+				wrapper._fzDialogWidthModel = { mode: "ratio", value: parseFloat(percent[1]) / 100 };
+				return wrapper._fzDialogWidthModel;
+			}
+		}
+		var requested = parseFloat(option);
+		if (!isFinite(requested) || requested <= 0) requested = wrapper.getBoundingClientRect().width;
+		var viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 1);
+		var ratio = requested / viewportWidth;
+		wrapper._fzDialogWidthModel = (ratio >= 0.84 && ratio <= 1.05)
+			? { mode: "ratio", value: ratio }
+			: { mode: "fixed", value: requested };
+		return wrapper._fzDialogWidthModel;
+	}
+	function syncOpenDialogs() {
+		fzDialogFrame = null;
+		if (!ROOT.classList.contains("fusion")) return;
+		var space = dialogContentSpace();
+		var maxWidth = Math.max(160, space.width - (FZ_DIALOG_GUTTER * 2));
+		$all(".ui-dialog[role='dialog']").forEach(function (wrapper) {
+			if (window.getComputedStyle(wrapper).display === "none") return;
+			var content = wrapper.querySelector(".ui-dialog-content");
+			if (!content) return;
+			var model = dialogWidthModel(wrapper, content);
+			var targetWidth = model.mode === "ratio" ? space.width * model.value : model.value;
+			targetWidth = Math.max(160, Math.min(maxWidth, Math.round(targetWidth)));
+			var currentWidth = wrapper.getBoundingClientRect().width;
+			if (Math.abs(currentWidth - targetWidth) > 1) {
+				if (window.jQuery && window.jQuery.fn && window.jQuery.fn.dialog) {
+					try { window.jQuery(content).dialog("option", "width", targetWidth); }
+					catch (e) { wrapper.style.width = targetWidth + "px"; }
+				} else {
+					wrapper.style.width = targetWidth + "px";
+				}
+			}
+			var measuredWidth = wrapper.getBoundingClientRect().width;
+			var pageLeft = window.pageXOffset || document.documentElement.scrollLeft || 0;
+			var centeredLeft = pageLeft + space.left + Math.max(FZ_DIALOG_GUTTER, (space.width - measuredWidth) / 2);
+			wrapper.style.left = Math.round(centeredLeft) + "px";
+		});
+	}
+	function scheduleDialogSizing() {
+		if (fzDialogFrame !== null) return;
+		if (window.requestAnimationFrame) fzDialogFrame = window.requestAnimationFrame(syncOpenDialogs);
+		else fzDialogFrame = setTimeout(syncOpenDialogs, 0);
+	}
+	function initDialogSizing() {
+		if (document._fzDialogSizing) return;
+		document._fzDialogSizing = true;
+		if (window.jQuery && window.jQuery.fn && window.jQuery.fn.dialog) {
+			window.jQuery(document).on("dialogopen.fusion", ".ui-dialog-content", function () {
+				var wrapper = this.closest ? this.closest(".ui-dialog[role='dialog']") : null;
+				if (wrapper) wrapper._fzDialogWidthModel = null;
+				scheduleDialogSizing();
+			});
+		}
+		try {
+			new MutationObserver(function (records) {
+				var found = records.some(function (record) {
+					return Array.prototype.some.call(record.addedNodes || [], function (node) {
+						return node.nodeType === 1 && ((node.matches && node.matches(".ui-dialog[role='dialog']"))
+							|| (node.querySelector && node.querySelector(".ui-dialog[role='dialog']")));
+					});
+				});
+				if (found) scheduleDialogSizing();
+			}).observe(document.body, { childList: true, subtree: true });
+		} catch (e) {}
+		var container = $("#id-container");
+		if (container && window.ResizeObserver) {
+			try { new ResizeObserver(scheduleDialogSizing).observe(container); } catch (e) {}
+		}
+		window.addEventListener("resize", scheduleDialogSizing);
+		scheduleDialogSizing();
+	}
 	function markGroupHasSub(group, hasSub) {
 		if (group) group.classList.toggle("fz-has-sub", !!hasSub);
 	}
@@ -539,6 +638,7 @@
 		} catch (e) {}
 		watchNavScroll(nav);
 		restoreNavScroll(nav);
+		initDialogSizing();
 
 		// ---- 7. Wire interactions ---------------------------------------------
 		// The collapsed PREFERENCE lives in localStorage; the .fz-collapsed class can be
@@ -581,9 +681,14 @@
 			syncBrandLogoState();
 			storageSet("localStorage", "fz-collapsed", collapsed ? "1" : "0");
 			syncPrimaryTooltips(sidebar);
+			scheduleDialogSizing();
+			setTimeout(scheduleDialogSizing, REDUCE ? 0 : 240);
 		}
 		sidebar.addEventListener("transitionend", function (e) {
-			if (e.target === sidebar && e.propertyName === "width") clearShellResizeState();
+			if (e.target === sidebar && e.propertyName === "width") {
+				clearShellResizeState();
+				scheduleDialogSizing();
+			}
 		});
 		collapseBtn.addEventListener("click", function () { setCollapsed(!prefersCollapsed()); });
 
