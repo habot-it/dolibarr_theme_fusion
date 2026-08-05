@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+### Fixed
+- Fusion's content width and sidebar offset now take precedence over module-level layout overrides.
+- Large jQuery UI popups are sized and centered against Fusion's actual content area, and update while
+  the sidebar is expanded or collapsed.
+- TimeMoto's Timeline header uses compact 40 px controls, inline filters and square period arrows;
+  actions stay inside their available column and wrap instead of overflowing the page.
+- The embedded TimeMoto clock is reorganized into a compact horizontal card with clock, details and
+  two stacked 40 px actions.
+
 ### Added
 - Configurable dashboard grid on every page that shows widgets (the home page and the module home
   pages), built on Home Assistant's model. Dolibarr's two hard-coded columns become independent rows

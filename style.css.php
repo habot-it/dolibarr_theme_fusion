@@ -300,7 +300,7 @@ html.fusion body#mainbody > div[style*="clear"]{ display:none !important; }
 /* Offset the container by the sidebar width and constrain its width.
    Force block layout: with the left-menu cell removed, #id-right (a lone
    display:table-cell) would otherwise shrink-to-fit and leave a void at right. */
-html.fusion #id-container{
+html.fusion body#mainbody #id-container{
 	display: block !important;
 	margin-left: var(--fz-sb-w) !important;
 	width: calc(100% - var(--fz-sb-w)) !important;
@@ -308,19 +308,19 @@ html.fusion #id-container{
 	transition: margin-left .22s ease, width .22s ease;
 	background: var(--fz-content-bg);
 }
-html.fusion.fz-collapsed #id-container{
+html.fusion.fz-collapsed body#mainbody #id-container{
 	margin-left: var(--fz-sb-w-collapsed) !important;
 	width: calc(100% - var(--fz-sb-w-collapsed)) !important;
 }
 /* hover-peek : the .fz-collapsed class is momentarily lifted so the rail renders
    expanded, but the content must NOT reflow — keep it at the collapsed offset so the
    expanded rail OVERLAYS it (an elevated shadow makes the overlay read as floating). */
-html.fusion.fz-peek #id-container{
+html.fusion.fz-peek body#mainbody #id-container{
 	margin-left: var(--fz-sb-w-collapsed) !important;
 	width: calc(100% - var(--fz-sb-w-collapsed)) !important;
 }
 html.fz-peek #fz-sidebar{ box-shadow:0 0 40px rgba(0,0,0,.45); }
-html.fusion #id-right{
+html.fusion body#mainbody #id-right{
 	display: block !important;
 	width: auto !important;
 	float: none !important;
@@ -331,12 +331,254 @@ html.fusion #id-right{
 html.fusion body#mainbody{ background: var(--fz-content-bg); }
 
 /* Neutralize 3rd-party module layout hacks that reserve the legacy left-menu
-   width (e.g. timemoto: "#id-container{padding-left:260px}" on .page-index /
-   .page-manager). The 2-id selector (body#mainbody + #id-container) outranks
-   their 1-id selectors. Only the padding is killed here; the margin/width offset
-   stays in the orientation-aware rules so portrait (drawer) is not affected. */
+   width (e.g. TimeMoto on .page-index / .page-manager). The 2-id selectors
+   above and below outrank their later !important declarations, while the
+   orientation-aware rules keep the correct sidebar offset. */
 html.fusion body#mainbody #id-container{ padding-left: 0 !important; padding-right: 0 !important; }
 html.fusion body#mainbody #id-right{ width: auto !important; max-width: none !important; }
+
+/* Dialogs are centered by fusion.js in the real content rectangle. These
+   limits are a no-JS/first-frame safeguard against the sidebar overlap. */
+html.fusion .ui-dialog[role="dialog"]{
+	box-sizing: border-box;
+	max-width: calc(100vw - var(--fz-sb-w) - 28px);
+}
+html.fusion.fz-collapsed .ui-dialog[role="dialog"],
+html.fusion.fz-peek .ui-dialog[role="dialog"]{
+	max-width: calc(100vw - var(--fz-sb-w-collapsed) - 28px);
+}
+@media only screen and (max-width: 920px){
+	html.fusion .ui-dialog[role="dialog"]{
+		max-width: calc(100vw - 28px);
+	}
+}
+
+/* Compact TimeMoto header: two 40px control rows on desktop, while keeping
+   every row constrained to the content column so narrow screens can wrap. */
+html.fusion body#mainbody.page-index .tm-header-content,
+html.fusion body#mainbody.page-manager .tm-header-content{
+	min-height: 0;
+	padding: 12px 14px;
+}
+html.fusion body#mainbody.page-index .tm-header-layout,
+html.fusion body#mainbody.page-manager .tm-header-layout{
+	grid-template-columns: minmax(520px, 1fr) minmax(0, 1.25fr);
+	align-items: start;
+	gap: 16px;
+}
+html.fusion body#mainbody.page-index .tm-header-title,
+html.fusion body#mainbody.page-manager .tm-header-title{
+	min-height: 40px;
+	margin: 0 0 8px;
+}
+html.fusion body#mainbody.page-index .tm-header-title > .fas,
+html.fusion body#mainbody.page-manager .tm-header-title > .fas{
+	width: 32px;
+	height: 32px;
+}
+html.fusion body#mainbody.page-index .tm-header-dropdowns,
+html.fusion body#mainbody.page-manager .tm-header-dropdowns{
+	flex-wrap: nowrap;
+	gap: 8px;
+}
+html.fusion body#mainbody.page-index .tm-header-dropdowns .tm-nav-form-margin,
+html.fusion body#mainbody.page-manager .tm-header-dropdowns .tm-nav-form-margin{
+	flex: 1 1 140px;
+	min-width: 120px;
+	max-width: 240px;
+	margin: 0;
+}
+html.fusion body#mainbody.page-index .tm-show-disabled-form,
+html.fusion body#mainbody.page-manager .tm-show-disabled-form{
+	flex: 0 0 auto;
+	margin: 0;
+}
+html.fusion body#mainbody.page-index .tm-show-disabled-label,
+html.fusion body#mainbody.page-manager .tm-show-disabled-label{
+	min-height: 40px;
+	padding: 0 2px;
+	white-space: nowrap;
+}
+html.fusion body#mainbody.page-index .tm-header-right-cell,
+html.fusion body#mainbody.page-manager .tm-header-right-cell,
+html.fusion body#mainbody.page-index .tm-nav-panel,
+html.fusion body#mainbody.page-manager .tm-nav-panel,
+html.fusion body#mainbody.page-index .tm-nav-buttons-line1,
+html.fusion body#mainbody.page-manager .tm-nav-buttons-line1,
+html.fusion body#mainbody.page-index .tm-nav-buttons-line2,
+html.fusion body#mainbody.page-manager .tm-nav-buttons-line2{
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+html.fusion body#mainbody.page-index .tm-nav-panel,
+html.fusion body#mainbody.page-manager .tm-nav-panel{
+	gap: 8px;
+}
+html.fusion body#mainbody.page-index .tm-nav-buttons-line1,
+html.fusion body#mainbody.page-manager .tm-nav-buttons-line1,
+html.fusion body#mainbody.page-index .tm-nav-buttons-line2,
+html.fusion body#mainbody.page-manager .tm-nav-buttons-line2{
+	gap: 8px;
+}
+html.fusion body#mainbody.page-index .tm-nav-buttons-line2,
+html.fusion body#mainbody.page-manager .tm-nav-buttons-line2{
+	align-self: flex-end;
+	width: fit-content;
+	flex-wrap: nowrap;
+	padding: 4px;
+}
+html.fusion body#mainbody.page-index .tm-header-content .button,
+html.fusion body#mainbody.page-manager .tm-header-content .button{
+	display: inline-flex !important;
+	height: 40px !important;
+	min-height: 40px !important;
+	align-items: center;
+	justify-content: center;
+	margin: 0 !important;
+	padding: 0 14px !important;
+	line-height: 1 !important;
+	white-space: nowrap;
+}
+html.fusion body#mainbody.page-index .tm-header-content .tm-nav-button-small,
+html.fusion body#mainbody.page-manager .tm-header-content .tm-nav-button-small,
+html.fusion body#mainbody.page-index .tm-header-content .tm-nav-arrow-button,
+html.fusion body#mainbody.page-manager .tm-header-content .tm-nav-arrow-button{
+	flex: 0 0 40px;
+	width: 40px !important;
+	min-width: 40px !important;
+	max-width: 40px !important;
+	padding: 0 !important;
+}
+html.fusion body#mainbody.page-index .tm-nav-buttons-line2 .tm-nav-inline-form,
+html.fusion body#mainbody.page-manager .tm-nav-buttons-line2 .tm-nav-inline-form{
+	display: flex;
+	flex: 0 1 auto;
+	flex-wrap: wrap;
+	width: auto;
+	min-width: 0;
+	max-width: 100%;
+	margin: 0;
+}
+html.fusion body#mainbody.page-index .tm-header-content select,
+html.fusion body#mainbody.page-manager .tm-header-content select,
+html.fusion body#mainbody.page-index .tm-header-content .select2-container,
+html.fusion body#mainbody.page-manager .tm-header-content .select2-container,
+html.fusion body#mainbody.page-index .tm-header-content .select2-selection--single,
+html.fusion body#mainbody.page-manager .tm-header-content .select2-selection--single{
+	height: 40px !important;
+	min-height: 40px !important;
+}
+html.fusion body#mainbody.page-index .tm-header-content .select2-selection__rendered,
+html.fusion body#mainbody.page-manager .tm-header-content .select2-selection__rendered{
+	line-height: 38px !important;
+}
+html.fusion body#mainbody.page-index .tm-header-content .select2-selection__arrow,
+html.fusion body#mainbody.page-manager .tm-header-content .select2-selection__arrow{
+	height: 38px !important;
+}
+
+/* Compact remote-clocking card: clock, details and the two 40px actions share
+   one horizontal grid instead of stacking each action below a tall column. */
+html.fusion body#mainbody .tm-header-remote{
+	padding: 8px;
+}
+html.fusion body#mainbody .tm-header-remote .tm-clock-wrapper{
+	display: grid;
+	grid-template-columns: 56px minmax(94px, 1fr) minmax(94px, 104px);
+	grid-template-rows: repeat(2, minmax(40px, auto));
+	align-items: center;
+	gap: 4px 8px;
+}
+html.fusion body#mainbody .tm-header-remote .tm-clock-column{
+	display: contents;
+}
+html.fusion body#mainbody .tm-header-remote .tm-clock-column:first-child .tm-clock-column-content{
+	grid-column: 1;
+	grid-row: 1 / 3;
+}
+html.fusion body#mainbody .tm-header-remote .tm-clock-column:nth-child(2) .tm-clock-column-content{
+	grid-column: 2;
+	grid-row: 1 / 3;
+}
+html.fusion body#mainbody .tm-header-remote .tm-clock-column:first-child .tm-button-form{
+	grid-column: 3;
+	grid-row: 1;
+}
+html.fusion body#mainbody .tm-header-remote .tm-clock-column:nth-child(2) .tm-button-form{
+	grid-column: 3;
+	grid-row: 2;
+}
+html.fusion body#mainbody .tm-header-remote .tm-clock-column-content{
+	gap: 2px;
+}
+html.fusion body#mainbody .tm-header-remote .tm-analog-clock{
+	width: 56px;
+	height: 56px;
+}
+html.fusion body#mainbody .tm-header-remote .tm-hour-hand{
+	height: 14px;
+}
+html.fusion body#mainbody .tm-header-remote .tm-minute-hand{
+	height: 19px;
+}
+html.fusion body#mainbody .tm-header-remote .tm-second-hand{
+	height: 22px;
+}
+html.fusion body#mainbody .tm-header-remote .tm-digital-clock{
+	font-size: 22px;
+	line-height: 1;
+	letter-spacing: 0;
+}
+html.fusion body#mainbody .tm-header-remote .tm-current-date{
+	font-size: 10px;
+	line-height: 1.1;
+	white-space: nowrap;
+}
+html.fusion body#mainbody .tm-header-remote .tm-workshift-info{
+	max-width: 100%;
+	box-sizing: border-box;
+	padding: 3px 6px;
+	font-size: 10px;
+	white-space: nowrap;
+}
+html.fusion body#mainbody .tm-header-remote .tm-button-form{
+	width: 100%;
+}
+html.fusion body#mainbody .tm-header-remote .tm-button{
+	display: flex;
+	width: 100%;
+	height: 40px;
+	min-height: 40px;
+	align-items: center;
+	justify-content: center;
+	margin: 0 !important;
+	padding: 0 6px;
+}
+@media only screen and (max-width: 1450px){
+	html.fusion body#mainbody.page-index .tm-header-layout,
+	html.fusion body#mainbody.page-manager .tm-header-layout{
+		grid-template-columns: 1fr;
+	}
+}
+@media only screen and (max-width: 720px){
+	html.fusion body#mainbody.page-index .tm-header-dropdowns,
+	html.fusion body#mainbody.page-manager .tm-header-dropdowns,
+	html.fusion body#mainbody.page-index .tm-nav-buttons-line1,
+	html.fusion body#mainbody.page-manager .tm-nav-buttons-line1,
+	html.fusion body#mainbody.page-index .tm-nav-buttons-line2,
+	html.fusion body#mainbody.page-manager .tm-nav-buttons-line2{
+		flex-wrap: wrap;
+		align-self: stretch;
+		width: 100%;
+	}
+	html.fusion body#mainbody.page-index .tm-header-dropdowns .tm-nav-form-margin,
+	html.fusion body#mainbody.page-manager .tm-header-dropdowns .tm-nav-form-margin{
+		flex-basis: 100%;
+		max-width: none;
+	}
+}
 
 /* ====================================================================== *
  *  THE SIDEBAR (single unified menu)                                      *
@@ -712,8 +954,8 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 	html.fusion #fz-sidebar{transform:translateX(-100%);width:var(--fz-sb-w);box-shadow:0 0 40px rgba(0,0,0,.45)}
 	html.fusion.fz-drawer #fz-sidebar{transform:translateX(0)}
 	html.fusion.fz-drawer #fz-scrim{opacity:1;visibility:visible}
-	html.fusion #id-container{margin-left:0 !important;width:100% !important;padding-top:var(--fz-topbar-h) !important}
-	html.fusion #id-right{margin-left:0 !important}
+	html.fusion body#mainbody #id-container{margin-left:0 !important;width:100% !important;padding-top:var(--fz-topbar-h) !important}
+	html.fusion body#mainbody #id-right{margin-left:0 !important}
 	/* never use the icons-only mode in portrait */
 	html.fusion.fz-collapsed #fz-sidebar{width:var(--fz-sb-w)}
 	html.fusion.fz-collapsed #fz-brand .fz-brand-name,
