@@ -635,8 +635,8 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 /* A real logo (wide wordmark when expanded, square icon when collapsed): show it
    as-is, sized by HEIGHT so the width just follows the image. Both logos are framed
    to the same scale, so this single rule renders them consistently in both modes. */
-#fz-brand .fz-logo.has-logo{width:auto;height:auto;background:none;border-radius:0;overflow:visible}
-#fz-brand .fz-logo.has-logo img{width:auto;height:55px;max-width:none}
+#fz-brand .fz-logo.has-logo{width:auto;height:auto;background:none;border-radius:var(--fz-radius);overflow:hidden}
+#fz-brand .fz-logo.has-logo img{width:auto;height:55px;max-width:none;border-radius:inherit}
 #fz-brand .fz-brand-name{font-weight:700;color:var(--fz-nav-fg);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
 /* Dolibarr version badge, pushed to the right edge (margin-left:auto), with room
    kept on the right for the floating collapse button */
