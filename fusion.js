@@ -563,24 +563,30 @@
 			searchSlot.remove();
 			searchToggle.remove();
 		}
-		// every remaining tool dropdown (quick-add, bookmark, import, module tools)
-		var loginTools = $(".login_block_tools");
-		if (loginTools) {
-			$all(".dropdown", loginTools).forEach(function (n) {
-				if (n.closest("#fz-tools")) return;       // already moved
+		// every remaining tool dropdown (quick-add, bookmark, import, module tools).
+		// Dolibarr >= 21 groups them in .login_block_tools, but v20 and older print
+		// the quick-add and bookmark dropdowns inside .login_block_user, right next
+		// to the user menu (main.inc.php) — there they used to travel to the footer
+		// with the user block instead of joining the icon row. Match them by id too,
+		// so both layouts land in the same place; the user dropdown stays behind.
+		var loginBlock = $(".login_block");
+		if (loginBlock) {
+			$all(".login_block_tools .dropdown, #topmenu-quickadd-dropdown, #topmenu-bookmark-dropdown, #topmenu-uploadfile-dropdown", loginBlock).forEach(function (n) {
+				if (n.closest("#fz-tools")) return;       // already moved (search slot)
+				if (n.closest("#topmenu-login-dropdown")) return; // user menu -> footer
 				if (n.parentNode && n.parentNode.closest(".dropdown")) return; // nested
 				extraSlot.appendChild(n);
 			});
 		}
-		// the "other" top-right tools (module builder, print, help, and any plugin
-		// icons added via the printTopRightMenu hook) are .login_block_elem / .login,
-		// not .dropdown, so they were dropped. Bring them too — but keep the logout
-		// (it goes to the footer) and the version label out of the icon row.
+		// the "other" top-right tools (module builder, print, help, the logout icon
+		// Dolibarr <= 20 prints there, and any plugin icons added via the
+		// printTopRightMenu hook) are .login_block_elem / .login, not .dropdown, so
+		// they were dropped. Bring them too — only the version label stays out of
+		// the icon row.
 		var loginOther = $(".login_block_other");
 		if (loginOther) {
 			Array.prototype.slice.call(loginOther.children).forEach(function (n) {
 				if (n.nodeType !== 1 || n.closest("#fz-tools")) return;
-				if (n.classList.contains("logout-btn") || n.querySelector("a[href*='logout']")) return;
 				if (n.querySelector(".aversion")) return; // version label, not an icon
 				extraSlot.appendChild(n);
 			});
@@ -593,16 +599,11 @@
 
 		// ---- 6. Footer : help/version + user dropdown -------------------------
 		var userBlock = $(".login_block_user");
-		var logoutBlock = $(".login_block_other .logout-btn, .login_block_other a[href*='logout']");
 		if (helpBlock) foot.appendChild(helpBlock);
 		// color-mode segmented control (its own row)
 		foot.appendChild(makeModeToggle());
 		var userWrap = el("div"); userWrap.id = "fz-user";
 		if (userBlock) userWrap.appendChild(userBlock);
-		if (logoutBlock && !userWrap.contains(logoutBlock)) {
-			var lb = logoutBlock.closest(".login_block_elem") || logoutBlock;
-			userWrap.appendChild(lb);
-		}
 		var userToggle = userWrap.querySelector("#topmenu-login-dropdown > a");
 		var userHeader = userWrap.querySelector("#topmenu-login-dropdown .user-header p");
 		stripUserHeaderLogin(userHeader);
