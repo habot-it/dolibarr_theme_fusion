@@ -6,6 +6,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+## [1.0.27] — 2026-08-13
+
+### Fixed
+- On Dolibarr 20 and older, the bookmark, quick-add and logout icons now sit in the sidebar tool row
+  next to the print button, as on Dolibarr 21+. Those releases print the bookmark and quick-add
+  dropdowns inside the user block instead of a `.login_block_tools` container, so they used to be
+  carried down to the footer along with the user menu.
+
+## [1.0.26] — 2026-08-07
+
+### Changed
+- The brand logo is clipped to the theme corner radius, so a squared logo file gets the same rounded
+  corners as the placeholder tile.
+
+## [1.0.25] — 2026-08-05
+
 ### Fixed
 - Fusion's content width and sidebar offset now take precedence over module-level layout overrides.
 - Large jQuery UI popups are sized and centered against Fusion's actual content area, and update while
@@ -14,6 +30,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
   actions stay inside their available column and wrap instead of overflowing the page.
 - The embedded TimeMoto clock is reorganized into a compact horizontal card with clock, details and
   two stacked 40 px actions.
+
+## [1.0.24] — 2026-08-04
+
+### Changed
+- Fusion is now self-contained: the Dolibarr 22.0.5 component stylesheet base, its includes and its
+  image resources are bundled and versioned with the theme. No runtime dependency on `theme/eldy`
+  remains.
+
+## [1.0.23] — 2026-08-03
 
 ### Added
 - Configurable dashboard grid on every page that shows widgets (the home page and the module home
@@ -29,9 +54,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 - A button in every widget header opens that widget in a Dolibarr dialog, at full size.
 
 ### Changed
-- Fusion is now self-contained: the Dolibarr 22.0.5 component stylesheet base, its includes and its
-  image resources are bundled and versioned with the theme. No runtime dependency on `theme/eldy`
-  remains.
 - Dolibarr's close cross and move grip are taken out of the widget header: removing a widget is now
   done from its toolbar in *Customize* mode, so a stray click cannot drop a widget any more. The cross
   itself is kept, hidden, because core's own removal handler is bound to it.
@@ -221,6 +243,10 @@ Initial release.
   change: a retractable left sidebar in landscape, a top bar with a slide-in drawer in portrait.
 - `style.css.php` layered on top of eldy, `fusion.js`, `activate_fusion.sql` and the theme thumbnail.
 
+[1.0.26]: https://github.com/habot-it/dolibarr_theme_fusion/commit/4fc5406
+[1.0.25]: https://github.com/habot-it/dolibarr_theme_fusion/commit/7b26a98
+[1.0.24]: https://github.com/habot-it/dolibarr_theme_fusion/commit/b6723a9
+[1.0.23]: https://github.com/habot-it/dolibarr_theme_fusion/commit/20049c3
 [1.0.22]: https://github.com/habot-it/dolibarr_theme_fusion/commit/874badd
 [1.0.21]: https://github.com/habot-it/dolibarr_theme_fusion/commit/8f0865e
 [1.0.20]: https://github.com/habot-it/dolibarr_theme_fusion/commit/46ef730
