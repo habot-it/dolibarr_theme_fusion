@@ -3339,6 +3339,49 @@ li.tmenu:hover .tmenuimage:not(.menuhider), li.tmenu:hover .tmenuimage:not(.menu
 			}
 		}
 	}
+
+	// A top-menu entry can only carry a picto that is a <span …> or an "fa-…" class:
+	// print_text_menu_entry() (core/menus/standard/eldy.lib.php) prints those two as they
+	// are and replaces anything else by an EMPTY <span class="tmenuimageforpng">. A module
+	// declaring an image picto — img_picto('', 'logo.png@mymodule'), stored as <img src="…">
+	// in llx_menu.prefix — therefore loses its icon entirely, in the native top bar as much
+	// as in the Fusion rail, which reuses that node. Re-attach the image as a background on
+	// div.mainmenu.<code> (the element Fusion clones into the rail), the same way the module
+	// icons above are declared, so the entry gets its icon back with no core or module change.
+	$sql = "SELECT DISTINCT mainmenu, prefix FROM ".MAIN_DB_PREFIX."menu";
+	$sql .= " WHERE type = 'top' AND mainmenu <> '' AND prefix LIKE '<img%'";
+	$resqlmenupicto = $db->query($sql);
+	if ($resqlmenupicto) {
+		$menupictodone = array();
+		while ($objmenupicto = $db->fetch_object($resqlmenupicto)) {
+			$menupictocode = preg_replace('/[^a-z0-9_-]/i', '', $objmenupicto->mainmenu);
+			$reg = array();
+			if ($menupictocode === '' || isset($menupictodone[$menupictocode])) {
+				continue;
+			}
+			if (!preg_match('/<img[^>]*\ssrc=["\']([^"\']+)["\']/i', $objmenupicto->prefix, $reg)) {
+				continue;
+			}
+			// keep only what can appear in a url, so nothing can escape the url() token
+			$menupictourl = preg_replace('/[^A-Za-z0-9_\-\.\/\?=&%:@,+~#]/', '', $reg[1]);
+			if ($menupictourl === '') {
+				continue;
+			}
+			$menupictodone[$menupictocode] = 1;
+			print "div.mainmenu.".$menupictocode." {\n";
+			print "	background-image: url(".$menupictourl.");\n";
+			print "	background-repeat: no-repeat;\n";
+			print "	background-position: center center;\n";
+			print "	background-size: contain;\n";
+			print "}\n";
+			// hide the generic glyph printed above when the module has no icon file,
+			// so it cannot show through the image
+			print "div.mainmenu.".$menupictocode." span::before {\n";
+			print "	content: none;\n";
+			print "}\n";
+		}
+		$db->free($resqlmenupicto);
+	}
 	// End of part to add more div class css
 	?>
 <?php } // End test if $dol_hide_topmenu?>
