@@ -67,6 +67,36 @@ if (!function_exists('fz_fusion_dashboard_sanitize')) {
 	 */
 	function fz_fusion_dashboard_sanitize($data)
 	{
+		// v4: one board, every widget carrying its own rectangle {x, y, w, h} —
+		// x and w in tracks over 24, y and h in units of 8 pixels. Rows are gone; a
+		// layout stored by an earlier version still arrives in the shape below and is
+		// converted client-side, so both shapes have to survive this function.
+		if (is_array($data) && !empty($data['items']) && is_array($data['items'])) {
+			$items = array();
+			foreach (array_slice($data['items'], 0, 120) as $item) {
+				if (!is_array($item) || !isset($item['id'])) {
+					continue;
+				}
+				$id = (string) $item['id'];
+				if (!preg_match('/^[a-zA-Z0-9_]{1,32}$/', $id)) {
+					continue;
+				}
+				$w = isset($item['w']) ? (int) $item['w'] : 12;
+				$x = isset($item['x']) ? (int) $item['x'] : 0;
+				$w = max(1, min(24, $w));
+				$x = max(0, min(24 - $w, $x));
+				$items[] = array(
+					'id' => $id,
+					'x' => $x,
+					'y' => max(0, min(4000, isset($item['y']) ? (int) $item['y'] : 0)),
+					'w' => $w,
+					'h' => max(8, min(500, isset($item['h']) ? (int) $item['h'] : 40)),
+				);
+			}
+
+			return count($items) ? array('v' => 4, 'items' => $items) : null;
+		}
+
 		if (!is_array($data) || empty($data['rows']) || !is_array($data['rows'])) {
 			return null;
 		}

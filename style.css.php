@@ -962,11 +962,24 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
  * ---------------------------------------------------------------------- */
 @media only screen and (max-width: 920px){
 	html.fusion #fz-topbar{display:flex}
-	html.fusion #fz-sidebar{transform:translateX(-100%);width:var(--fz-sb-w);box-shadow:0 0 40px rgba(0,0,0,.45)}
-	html.fusion.fz-drawer #fz-sidebar{transform:translateX(0)}
+	/* The drawer is parked off-canvas, but a box-shadow paints OUTSIDE the box: its
+	   right edge sits exactly on x=0, so a 40px halo was bleeding down the left of the
+	   page all the time, drawer closed included. It belongs to the open drawer only. */
+	html.fusion #fz-sidebar{transform:translateX(-100%);width:var(--fz-sb-w);box-shadow:none}
+	html.fusion.fz-drawer #fz-sidebar{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.45)}
 	html.fusion.fz-drawer #fz-scrim{opacity:1;visibility:visible}
-	html.fusion body#mainbody #id-container{margin-left:0 !important;width:100% !important;padding-top:var(--fz-topbar-h) !important}
-	html.fusion body#mainbody #id-right{margin-left:0 !important}
+	/* THE offset of the portrait layout: .fz-collapsed / .fz-peek keep the container at
+	   the collapsed rail's width, and those selectors carry one class MORE than the
+	   plain portrait one — so they won the cascade here, media query or not, and the
+	   page sat 66px to the right of the screen with no rail to justify it. The state
+	   classes survive in portrait because the collapsed preference is remembered. */
+	html.fusion body#mainbody #id-container,
+	html.fusion.fz-collapsed body#mainbody #id-container,
+	html.fusion.fz-peek body#mainbody #id-container{
+		margin-left:0 !important;width:100% !important;padding-top:var(--fz-topbar-h) !important}
+	html.fusion body#mainbody #id-right,
+	html.fusion.fz-collapsed body#mainbody #id-right,
+	html.fusion.fz-peek body#mainbody #id-right{margin-left:0 !important}
 	/* never use the icons-only mode in portrait */
 	html.fusion.fz-collapsed #fz-sidebar{width:var(--fz-sb-w)}
 	html.fusion.fz-collapsed #fz-brand .fz-brand-name,
@@ -990,6 +1003,22 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 	html.fusion #fz-tools .fz-tools-search #topmenu-global-search-dropdown{background:none !important;border:0 !important;
 		box-shadow:none !important;padding:0 !important;width:100% !important}
 	html.fusion #fz-tools .fz-tools-extra{flex-direction:row !important;justify-content:space-evenly !important}
+	/* Same leak as the container margin above: `fz-collapsed` survives in portrait, and
+	   the folded-rail flyout pins the "search into …" scope list open IN FLOW
+	   (`display:block !important; position:static !important`, by design there, so the
+	   field and its list fade together). In the drawer that list was therefore
+	   permanently sitting between the field and the menu, pushing everything down, with
+	   its own 50vh scroll clipping its first entry. Portrait puts it back to what it is
+	   everywhere else: hidden, and shown as a flyout only while the field has focus. */
+	html.fz-collapsed #fz-tools .search-dropdown-body,
+	html.fusion #fz-tools .search-dropdown-body{display:none !important}
+	html.fusion #fz-tools #topmenu-global-search-dropdown:focus-within .search-dropdown-body{
+		display:block !important;position:absolute !important;
+		left:8px;right:8px;top:52px;margin-top:0 !important;z-index:1500;
+		padding:12px 14px !important;background:var(--fz-surface) !important;
+		border:1px solid var(--fz-border) !important;border-radius:var(--fz-radius);
+		box-shadow:0 12px 34px rgba(0,0,0,.4) !important;
+		max-height:40vh;overflow:auto}
 	html.fusion #fz-tools .dropdown-menu{left:8px !important;right:8px !important;width:auto !important;top:calc(100% + 6px) !important}
 }
 
@@ -1331,17 +1360,28 @@ html.fusion #fz-dash{
 	--fz-dash-gap:16px;
 	display:flex;flex-direction:column;gap:var(--fz-dash-gap);
 	position:relative;padding-bottom:4px}
-html.fusion #fz-dash .fz-dash-row{position:relative}
 html.fusion #fz-dash .fz-dash-grid{
-	display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
-	grid-auto-rows:8px;grid-auto-flow:dense;
+	display:grid;grid-template-columns:repeat(24,minmax(0,1fr));
+	grid-auto-rows:8px;
 	column-gap:var(--fz-dash-gap);row-gap:0;align-items:start}
-/* THE rule of the whole feature: a widget is a span on the row's 12 tracks.
-   minmax(0,1fr) above is what lets a wide table shrink instead of blowing the row
-   apart, which is how the content adapts to the width it is given. */
+/* THE rule of the whole feature: a widget is a rectangle ON the board — a start and a
+   span on both axes, straight out of the four numbers the layout stores. Twenty-four
+   fluid tracks across, eight-pixel units down. minmax(0,1fr) above is what lets a wide
+   table shrink instead of blowing the board apart, which is how the content keeps
+   adapting to the width it is given even though the placement is explicit. */
 html.fusion #fz-dash .fz-dash-cell{
-	grid-column:span var(--fz-cw,6);min-width:0;position:relative;
+	grid-column:calc(var(--fz-cx,0) + 1) / span var(--fz-cw,12);
+	grid-row:calc(var(--fz-cy,0) + 1) / span var(--fz-cu,40);
+	/* the stored height, minus the gap the next widget starts after */
+	--fz-ch:calc(var(--fz-cu,40) * 8px - var(--fz-dash-gap));
+	min-width:0;position:relative;
 	margin-bottom:var(--fz-dash-gap)}
+/* the widget being carried rides over the others, which are free to sit under it:
+   an explicitly placed grid item may overlap, and the drop is what sorts it out */
+html.fusion #fz-dash .fz-dash-cell.fz-dash-moving{z-index:7}
+html.fusion #fz-dash.fz-dash-dragging{user-select:none}
+html.fusion #fz-dash.fz-dash-dragging .fz-dash-cell{transition:none !important}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-grip{cursor:move}
 html.fusion #fz-dash .fz-dash-cellinner{min-width:0}
 /* A pinned height resizes THE WIDGET, not the slot holding it. The height has to be
    carried all the way down to `table.boxtable`: div.box has no background of its own,
@@ -1389,6 +1429,31 @@ html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-wor
 	flex:1 1 auto;min-height:0;aspect-ratio:auto}
 html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .clearview-worldmap__ranking{
 	flex:0 0 auto}
+/* Same treatment, but driven by the marked chain (see buildCell) instead of
+   ClearView class names — the installed module puts a bare <canvas> in the cell. The
+   height is passed down that chain in percent, NOT by making the row's <td> a flex
+   container: `display:flex` takes the cell out of table layout (the table then wraps it
+   in an anonymous cell), its `height:100%` stops claiming the row, and the leftover
+   height goes to the empty footer row instead — which is the band of white the chart
+   was floating above. Chart.js is configured `responsive: true, maintainAspectRatio:
+   false`, so it redraws into whatever height the chain ends up giving it. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .fz-dash-grow-node{
+	box-sizing:border-box;height:100%;min-height:0;max-height:none}
+/* an intermediate wrapper passes the height on the same way it received it */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive div.fz-dash-grow-node{
+	position:relative;display:flex;flex-direction:column}
+/* THE reason a chart grew but never shrank: a table row is never shorter than the
+   content it holds, so the canvas propped the row open at its largest size ever, and
+   Chart.js — which measures the canvas's PARENT — kept reading that floor. Taking the
+   drawing out of flow removes the floor: the row is then sized by the table alone, and
+   the canvas follows it down as well as up. `min-height` guards the collapse to zero
+   this would otherwise allow on a row that holds nothing else. */
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive tr.fz-dash-grow-row > td{
+	position:relative;min-height:60px}
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive canvas.fz-dash-grow-node,
+html.fusion #fz-dash .fz-dash-cell.fz-has-height.fz-dash-adaptive .fz-dash-grow-node > canvas{
+	position:absolute;inset:0;
+	width:100% !important;height:100% !important;min-height:0 !important;max-height:none !important}
 html.fusion #fz-dash .fz-dash-cell.fz-has-height > .fz-dash-cellinner > .box > table.boxtable{
 	flex:1 1 auto;min-height:0;height:100%}
 /* Inside that stretched table, the content row is the one that must absorb the extra
@@ -1496,32 +1561,41 @@ html.fusion #fz-dash.fz-dash-edit .fz-dash-toggle{
 	background:var(--colorbackhmenu1,#2563eb);border-color:transparent;color:#fff}
 html.fusion #fz-dash .fz-dash-reset,
 html.fusion #fz-dash .fz-dash-done,
-html.fusion #fz-dash .fz-dash-addrow,
-html.fusion #fz-dash .fz-dash-rowtools,
 html.fusion #fz-dash .fz-dash-celltools{display:none}
 html.fusion #fz-dash.fz-dash-edit .fz-dash-reset,
 html.fusion #fz-dash.fz-dash-edit .fz-dash-done{display:inline-flex}
-html.fusion #fz-dash.fz-dash-edit .fz-dash-addrow{
-	display:flex;align-items:center;justify-content:center;gap:8px;
-	height:38px;border:1px dashed var(--fz-border);border-radius:var(--fz-radius);
-	background:transparent;color:var(--fz-text-dim);font-size:12px;cursor:pointer}
-html.fusion #fz-dash.fz-dash-edit .fz-dash-addrow:hover{
-	border-color:var(--fz-text-dim);color:var(--fz-text)}
 
-/* Edit mode lighting up every control of every row and widget at once is
-   unreadable. The space is reserved (so nothing jumps), but a toolbar only becomes
-   visible on the element it acts upon — hovered, or holding the focus. */
-html.fusion #fz-dash.fz-dash-edit .fz-dash-rowtools,
+/* Edit mode lighting up every control of every widget at once is unreadable. The
+   space is reserved (so nothing jumps), but a toolbar only becomes visible on the
+   widget it acts upon — hovered, or holding the focus. */
 html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools{
 	visibility:hidden;opacity:0;transition:opacity .12s ease}
-html.fusion #fz-dash.fz-dash-edit .fz-dash-row:hover > .fz-dash-rowtools,
-html.fusion #fz-dash.fz-dash-edit .fz-dash-row:focus-within > .fz-dash-rowtools,
 html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:hover > .fz-dash-celltools,
 html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:focus-within > .fz-dash-celltools{
 	visibility:visible;opacity:1}
 
-html.fusion #fz-dash.fz-dash-edit .fz-dash-rowtools{
-	display:flex;gap:4px;align-items:center;justify-content:flex-end;margin-bottom:4px}
+/* Corner grip that resizes a widget by dragging, the gesture of Prosono's
+   Drag-And-Drop-Card. It rides on the widget's own bottom-right corner,
+   inside the frame like the toolbar above, and only in edit mode. */
+html.fusion #fz-dash .fz-dash-resize{display:none}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-resize{
+	display:flex;align-items:center;justify-content:center;
+	position:absolute;right:2px;bottom:2px;z-index:4;
+	width:22px;height:22px;padding:0;border:0;background:transparent;
+	color:var(--fz-text-dim);cursor:nwse-resize;
+	touch-action:none;                       /* the drag must not scroll the page */
+	visibility:hidden;opacity:0;transition:opacity .12s ease}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-resize i{transform:rotate(-45deg)} /* points at the corner */
+html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:hover > .fz-dash-resize,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:focus-within > .fz-dash-resize{
+	visibility:visible;opacity:1}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-resize:hover,
+html.fusion #fz-dash.fz-dash-edit .fz-dash-resize:focus{color:var(--fz-text)}
+/* while a corner is being dragged: no text selection, and no animation racing the pointer */
+html.fusion #fz-dash.fz-dash-resizing{user-select:none}
+html.fusion #fz-dash.fz-dash-resizing .fz-dash-cell,
+html.fusion #fz-dash.fz-dash-resizing .fz-dash-resize{transition:none !important}
+
 /* The widget toolbar sits ON the widget, in its header, where the expand button is
    the rest of the time — the controls belong to the widget, not to the slot around
    it, so they must not float outside its frame. */
@@ -1529,13 +1603,11 @@ html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools{
 	display:flex;gap:4px;align-items:center;
 	position:absolute;top:7px;right:8px;z-index:4}
 html.fusion #fz-dash.fz-dash-edit .fz-dash-expand{display:none}
-html.fusion #fz-dash.fz-dash-edit .fz-dash-rowtools button,
 html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools button{
 	display:flex;align-items:center;justify-content:center;
 	width:26px;height:26px;padding:0;border:1px solid var(--fz-border);
 	border-radius:var(--fz-radius);background:var(--fz-surface);color:var(--fz-text-dim);
 	font-size:11px;cursor:pointer}
-html.fusion #fz-dash.fz-dash-edit .fz-dash-rowtools button:hover,
 html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools button:hover{color:var(--fz-text);border-color:var(--fz-text-dim)}
 html.fusion #fz-dash.fz-dash-edit .fz-dash-grip{cursor:move}
 html.fusion #fz-dash.fz-dash-edit .fz-dash-del:hover{
@@ -1572,25 +1644,48 @@ html.fusion #fz-dash.fz-dash-edit .fz-dash-cell:focus-within{
 /* While a widget is being resized, kill text selection and cursor flicker. */
 html.fz-dash-resizing,html.fz-dash-resizing body{user-select:none;cursor:nwse-resize}
 
-/* Empty rows must stay droppable while editing. */
+/* An emptied board must keep a surface to drop a widget back onto. */
 html.fusion #fz-dash.fz-dash-edit .fz-dash-grid{min-height:56px}
-html.fusion #fz-dash .fz-dash-ph{
-	grid-column:span var(--fz-cw,6);min-height:70px;
-	border:1px dashed var(--fz-text-dim);border-radius:var(--fz-radius);
-	background:color-mix(in srgb,var(--fz-text-dim) 10%,transparent)}
-html.fusion #fz-dash .fz-dash-rowph{
-	min-height:56px;border:1px dashed var(--fz-text-dim);border-radius:var(--fz-radius)}
-/* jQuery UI drags with an absolutely positioned helper: it must not keep the grid
-   span of the row it came from, or it covers half the screen while moving. */
-html.fusion #fz-dash .ui-sortable-helper{box-shadow:0 18px 40px rgba(0,0,0,.25);opacity:.96}
 
 /* ---- narrow / portrait ----------------------------------------------- */
-/* Same breakpoint as the shell: below it there is no room to place widgets side by
-   side, so each one takes the full width and pinned heights are released. */
+/* Same breakpoint as the shell. Below it there is no room to place widgets side by
+   side — and a stored y would only produce holes, since every widget is about to
+   take the full width. So the board stops being a grid at all: it becomes a plain
+   column, in the reading order the cells are rendered in (top to bottom, then left
+   to right), each widget back to its natural height. Switching the container to flex
+   is what makes grid-column / grid-row inert, rather than trying to override the two
+   placements of every cell. */
 @media only screen and (max-width:920px){
-	html.fusion #fz-dash .fz-dash-cell{grid-column:span 12 !important}
-	html.fusion #fz-dash .fz-dash-cell.fz-has-height{height:auto}
-	html.fusion #fz-dash .fz-dash-cell.fz-has-height > .fz-dash-cellinner{height:auto;overflow:visible}
+	/* align-items:stretch is NOT redundant: the landscape rule sets align-items:start
+	   for the grid, and in a column flex container the cross axis is the horizontal
+	   one — inherited as is, every card would be as wide as its own content instead
+	   of the screen. */
+	html.fusion #fz-dash .fz-dash-grid{
+		display:flex;flex-direction:column;gap:var(--fz-dash-gap);align-items:stretch}
+	html.fusion #fz-dash .fz-dash-cell{
+		margin-bottom:0;width:auto;min-width:0;max-width:none}
+	/* The widget area must span the screen. The chain that wraps it — div.fiche, then
+	   .fichecenter, then .twocolumns — carries the horizontal insets of a desktop
+	   layout (div.fiche alone is indented by 44px, a quarter of a phone), and they add
+	   up. Everything above the board is flattened, with one 8px gutter kept at the
+	   outermost level. The "add a widget" select sits in the same chain, which is why
+	   it was inset exactly like the cards. */
+	/* the component base indents div.fiche by up to 44px, a tenth of a phone screen */
+	html.fusion body#mainbody div.fiche{margin-left:8px !important;margin-right:8px !important}
+	/* A widget made of text or rows is best left at its natural height here… */
+	html.fusion #fz-dash .fz-dash-cell:not(.fz-dash-adaptive),
+	html.fusion #fz-dash .fz-dash-cell.fz-has-height:not(.fz-dash-adaptive){height:auto !important}
+	html.fusion #fz-dash .fz-dash-cell.fz-has-height:not(.fz-dash-adaptive) > .fz-dash-cellinner{
+		height:auto;overflow:visible}
+	/* …but a chart has NO natural height: released the same way it collapses into the
+	   strip of squashed labels this rule exists to prevent. A chart widget therefore
+	   keeps a definite box — the height it was given on the board, capped so one
+	   pinned tall there cannot eat a whole phone screen. Its canvas keeps the
+	   out-of-flow fill of the landscape rules, which is what lets it shrink. */
+	html.fusion #fz-dash .fz-dash-cell.fz-dash-adaptive.fz-has-height{
+		height:min(var(--fz-ch), 45vh) !important}
+	/* placing is a landscape gesture: there is nothing to aim at in a single column */
+	html.fusion #fz-dash .fz-dash-resize{display:none !important}
 }
 
 

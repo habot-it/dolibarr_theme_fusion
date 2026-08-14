@@ -6,6 +6,51 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-08-14
+
+### Added
+- Widgets are placed on the board instead of flowing into rows. Each one carries its own rectangle
+  `{x, y, w, h}` — x and w over 24 fluid tracks, y and h in units of 8 pixels — so it can be put
+  where it is wanted, holes included, twice as finely as the twelve tracks of the row model. The
+  tracks stay fractional, which is what keeps a board adapting to the width it is given; a fixed
+  pixel canvas, as Home Assistant's Drag-And-Drop-Card uses, would have cost that and asked for one
+  layout per screen size.
+- Moving and resizing are direct gestures: the title bar or the grip drags a widget, the corner grip
+  resizes it, both snapping to the tracks and units, and both reachable from the keyboard. Dropping a
+  widget pushes whatever it covered downwards, in cascade — never sideways, so nothing the user
+  placed is rearranged behind their back. The layout dialog stays for setting a size by hand.
+
+### Changed
+- Rows are gone from the model and from the interface: no row toolbars, and no "add a row" — a widget
+  is simply dropped where there is room. Layouts stored by the earlier versions are converted on
+  load: each row becomes a band as tall as its tallest widget, so the picture the user left is the
+  picture they get back, and from there every widget moves on its own.
+- A height is now always explicit. The "automatic height" of the row model cannot survive an explicit
+  y — the widgets below would have nowhere to be until their neighbour above had finished rendering —
+  so a widget whose content outgrows its box scrolls inside it. Migration reads what each widget
+  occupied on screen, so nothing changes size on the way over.
+- `dashboard.php` stores the new shape and still reads the old one; the order sent to `llx_boxes` (the
+  degraded view, theme disabled) follows the board's reading order, top to bottom then left to right.
+- In portrait the board stops being a grid: it becomes one column in that same reading order, each
+  widget at its natural height, and the placement gestures are disabled — there is nothing to aim at
+  in a single column.
+
+### Fixed
+- Charts follow the size of their widget, in both directions. A chart is recognised by its `canvas`
+  rather than by ClearView class names that match no markup in the installed module, the height is
+  handed down the chain from the row's cell to the drawing, and the canvas is taken out of flow —
+  a table row is never shorter than its content, which is why a chart grew but never shrank. Chart.js
+  instances are asked to re-measure directly, since Chart.js 3 observes its container and never the
+  window event that was being raised for it.
+- In portrait the page sat 66px to the right of the screen: `.fz-collapsed` / `.fz-peek` keep the
+  container at the folded rail's offset and carry one class more than the portrait rule, so they won
+  the cascade with no rail on screen to justify it. Same leak, same fix, for the native "search into…"
+  scope list, which the folded-rail flyout pinned open in the drawer, above the menu.
+- The drawer parked off-canvas painted its shadow outside its box — that is, down the left edge of
+  the page — at all times. It belongs to the open drawer.
+- A chart widget keeps a definite height in portrait, capped at 45% of the screen: released like the
+  others it collapsed into a strip of overlapping labels.
+
 ## [1.0.34] — 2026-08-14
 
 ### Changed
@@ -307,6 +352,7 @@ Initial release.
   change: a retractable left sidebar in landscape, a top bar with a slide-in drawer in portrait.
 - `style.css.php` layered on top of eldy, `fusion.js`, `activate_fusion.sql` and the theme thumbnail.
 
+[1.0.34]: https://github.com/habot-it/dolibarr_theme_fusion/commit/8072749
 [1.0.33]: https://github.com/habot-it/dolibarr_theme_fusion/commit/ee755df
 [1.0.32]: https://github.com/habot-it/dolibarr_theme_fusion/commit/3dc3ebf
 [1.0.31]: https://github.com/habot-it/dolibarr_theme_fusion/commit/690f3b6
