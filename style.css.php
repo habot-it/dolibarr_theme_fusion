@@ -1135,7 +1135,11 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 #fz-user .dropdown-menu .user-footer > div{flex:1 1 auto;min-width:0;margin:0 !important}
 #fz-user .dropdown-menu .user-footer > .pull-left + .pull-left{flex:0 0 auto} /* icon-only virtual card */
 #fz-user .dropdown-menu .user-footer .clearboth{display:none}                 /* float clearer, useless here */
+/* the heavier bottom edge is what gives the three buttons their relief. It is mixed from
+   the border and the text color, so it darkens in the light palette and lightens in the
+   dark one without a second variable. */
 #fz-user .dropdown-menu .user-footer .button-top-menu-dropdown{border:1px solid var(--fz-border) !important;
+	border-bottom:2px solid color-mix(in srgb, var(--fz-border) 65%, var(--fz-text)) !important;
 	background:var(--fz-content-bg) !important;color:var(--fz-text) !important;
 	border-radius:var(--fz-radius);height:36px;min-width:32px;box-sizing:border-box;padding:0 8px;text-decoration:none;
 	display:inline-flex;align-items:center;justify-content:center;gap:4px;line-height:1;

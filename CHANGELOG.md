@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+## [1.0.31] — 2026-08-14
+
+### Changed
+- The three buttons of the user panel carry a heavier bottom edge, which gives them relief. Its color
+  is mixed from the border and the text color, so it reads as a darker line in the light palette and a
+  lighter one in the dark palette without needing a second variable.
+
 ## [1.0.30] — 2026-08-14
 
 ### Changed
@@ -275,6 +282,7 @@ Initial release.
   change: a retractable left sidebar in landscape, a top bar with a slide-in drawer in portrait.
 - `style.css.php` layered on top of eldy, `fusion.js`, `activate_fusion.sql` and the theme thumbnail.
 
+[1.0.30]: https://github.com/habot-it/dolibarr_theme_fusion/commit/00363a7
 [1.0.29]: https://github.com/habot-it/dolibarr_theme_fusion/commit/2e7d60a
 [1.0.28]: https://github.com/habot-it/dolibarr_theme_fusion/commit/2ee7dd0
 [1.0.27]: https://github.com/habot-it/dolibarr_theme_fusion/commit/64ff188
