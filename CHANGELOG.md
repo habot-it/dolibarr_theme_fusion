@@ -6,6 +6,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+## [1.0.32] — 2026-08-14
+
+### Fixed
+- The buttons of the user panel get their bottom edge back. The sidebar carries a safety net that
+  strips the underline Dolibarr draws as a `border-bottom` on every link of `#fz-user`; being written
+  with two ids, it outranked the rule that styles those buttons and erased their bottom border — so
+  they had been missing it all along, and the relief added in 1.0.31 never showed. The underline
+  killer now skips `.button-top-menu-dropdown`, whose border is deliberate.
+
 ## [1.0.31] — 2026-08-14
 
 ### Changed
@@ -282,6 +291,7 @@ Initial release.
   change: a retractable left sidebar in landscape, a top bar with a slide-in drawer in portrait.
 - `style.css.php` layered on top of eldy, `fusion.js`, `activate_fusion.sql` and the theme thumbnail.
 
+[1.0.31]: https://github.com/habot-it/dolibarr_theme_fusion/commit/690f3b6
 [1.0.30]: https://github.com/habot-it/dolibarr_theme_fusion/commit/00363a7
 [1.0.29]: https://github.com/habot-it/dolibarr_theme_fusion/commit/2e7d60a
 [1.0.28]: https://github.com/habot-it/dolibarr_theme_fusion/commit/2ee7dd0
