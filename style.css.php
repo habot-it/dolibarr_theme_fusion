@@ -1108,7 +1108,11 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 /* the panel itself */
 #fz-user .dropdown-menu{
 	position:absolute !important;left:0;right:0;bottom:54px;top:auto !important;box-sizing:border-box;
-	width:auto !important;min-width:0 !important;max-height:70vh;overflow:auto;
+	/* wider than the rail (it overflows to the right, over the content) so the three
+	   footer buttons fit on one row without shrinking their labels; never wider than
+	   the viewport left of the rail */
+	width:auto !important;min-width:min(300px, calc(100vw - var(--fz-sb-w-collapsed) - 32px)) !important;
+	max-height:70vh;overflow:auto;
 	display:none;background:var(--fz-surface);color:var(--fz-text);
 	border:1px solid var(--fz-border);border-radius:var(--fz-radius);box-shadow:0 12px 34px rgba(0,0,0,.45);
 	padding:10px;z-index:1500;font-size:13px}
@@ -1118,12 +1122,25 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
    which breaks the themed (esp. dark) panel — re-skin them with theme variables. */
 #fz-user .dropdown-menu .user-header{text-align:center;border-bottom:1px solid var(--fz-border);padding-bottom:8px;margin-bottom:8px;
 	background:transparent !important;color:var(--fz-text) !important}
-#fz-user .dropdown-menu .user-footer{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--fz-border);
-	padding-top:8px;margin-top:8px;background:transparent !important}
+/* Card / virtual card / logout stay on ONE row. eldy lays them out with floats
+   (.pull-left ×2 + .pull-right + .clearboth), which in a panel this narrow drops
+   the logout onto a second line: the row is a nowrap flex line instead, the two
+   labelled buttons share the leftover width and the square virtual-card button
+   keeps its size. Labels ellipsis rather than wrap if the panel gets narrower. */
+#fz-user .dropdown-menu .user-footer{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;
+	border-top:1px solid var(--fz-border);
+	/* the bundled base pads the footer by 10px all round; drop the side padding so the
+	   row uses the full panel width and aligns with the header above it */
+	padding:8px 0 0;margin-top:8px;background:transparent !important}
+#fz-user .dropdown-menu .user-footer > div{flex:1 1 auto;min-width:0;margin:0 !important}
+#fz-user .dropdown-menu .user-footer > .pull-left + .pull-left{flex:0 0 auto} /* icon-only virtual card */
+#fz-user .dropdown-menu .user-footer .clearboth{display:none}                 /* float clearer, useless here */
 #fz-user .dropdown-menu .user-footer .button-top-menu-dropdown{border:1px solid var(--fz-border) !important;
 	background:var(--fz-content-bg) !important;color:var(--fz-text) !important;
-	border-radius:var(--fz-radius);height:36px;min-width:36px;box-sizing:border-box;padding:0 14px;text-decoration:none;
-	display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1}
+	border-radius:var(--fz-radius);height:36px;min-width:36px;box-sizing:border-box;padding:0 10px;text-decoration:none;
+	display:inline-flex;align-items:center;justify-content:center;gap:5px;line-height:1;
+	width:100%;max-width:100%;white-space:nowrap;overflow:hidden;margin-left:0 !important}
+#fz-user .dropdown-menu .user-footer .button-top-menu-dropdown > span{min-width:0;overflow:hidden;text-overflow:ellipsis}
 #fz-user .dropdown-menu .user-footer .button-top-menu-dropdown:hover{background:var(--fz-row-hover) !important;color:var(--fz-text) !important}
 #fz-user .dropdown-menu .pull-left,#fz-user .dropdown-menu .pull-right{float:none !important;display:flex}
 html.fz-collapsed #fz-user .dropdown-menu{

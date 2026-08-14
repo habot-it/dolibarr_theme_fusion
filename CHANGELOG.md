@@ -6,6 +6,16 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+## [1.0.29] — 2026-08-14
+
+### Changed
+- The three buttons at the bottom of the user panel (card, virtual card, logout) sit on a single row.
+  Dolibarr lays them out with floats (`.pull-left` ×2 + `.pull-right`), which dropped the logout onto a
+  second line in a panel that narrow: the row is now a nowrap flex line where the two labelled buttons
+  share the leftover width and the icon-only virtual-card button keeps its size, the panel is a little
+  wider than the rail so the labels fit whole, and a label ellipsises instead of wrapping if the panel
+  ever gets narrower.
+
 ## [1.0.28] — 2026-08-14
 
 ### Fixed
@@ -257,6 +267,7 @@ Initial release.
   change: a retractable left sidebar in landscape, a top bar with a slide-in drawer in portrait.
 - `style.css.php` layered on top of eldy, `fusion.js`, `activate_fusion.sql` and the theme thumbnail.
 
+[1.0.28]: https://github.com/habot-it/dolibarr_theme_fusion/commit/2ee7dd0
 [1.0.27]: https://github.com/habot-it/dolibarr_theme_fusion/commit/64ff188
 [1.0.26]: https://github.com/habot-it/dolibarr_theme_fusion/commit/4fc5406
 [1.0.25]: https://github.com/habot-it/dolibarr_theme_fusion/commit/7b26a98
