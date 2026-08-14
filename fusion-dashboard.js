@@ -5,22 +5,26 @@
  * .twocolumns > #boxhalfleft + #boxhalfright, each box being a
  * <div class="box divboxtable boxdraggable" id="boxto_<id>">.
  *
- * This script replaces that area, with NO core change, by the Home Assistant model:
+ * This script replaces that area, with NO core change, by ONE board on which every
+ * widget is placed:
  *
- *   row     an independent band, twelve grid tracks wide (HA's "section")
- *   widget  one Dolibarr box, carrying its own width (1..12 tracks) and height
+ *   board   a single grid, 24 fluid tracks across, 8-pixel units down
+ *   widget  one Dolibarr box, carrying its own rectangle {x, y, w, h} on that board
  *
- * There is no column object. Widgets simply flow inside their row and wrap when
- * they no longer fit, so two widgets sitting one above the other is just what the
- * widths produce — the same way HA lays out its cards. Sizing a widget is
- * therefore the only structural gesture: everything else follows from it.
+ * There is no row and no column object: a widget is where the user put it, holes
+ * included, and two widgets side by side is a fact of their coordinates rather than
+ * a consequence of their widths. The tracks stay fractional, so a board keeps
+ * adapting to the width it is given — which is what a fixed pixel canvas gives up.
+ * Moving and resizing are the same gesture on two different pairs of numbers, and a
+ * drop pushes whatever it covered downwards, never sideways.
  *
  * Widgets are MOVED, never rebuilt, so every link, graph, tooltip and permission
  * stays intact.
  *
  * The layout is stored per user and per zone through theme/fusion/dashboard.php
- * (llx_user_param), with localStorage as an instant cache so the grid renders
- * before the round trip. Dolibarr's own llx_boxes stays in sync for the part it
+ * (llx_user_param) as {v:4, items:[{id,x,y,w,h}]}, with localStorage as an instant
+ * cache so the board renders before the round trip. Layouts stored by the earlier
+ * row-based versions are converted on load, keeping the picture they described. Dolibarr's own llx_boxes stays in sync for the part it
  * can express (which widgets are active, and a two-column reading order), so
  * disabling the theme brings back a sane native page.
  *
@@ -32,15 +36,22 @@
 
 	var ROOT = document.documentElement;
 	var SELF = document.currentScript;
-	var COLS = 12;             // a row is twelve tracks wide, like HA's grid
-	var DEFAULT_SPAN = 6;      // a new widget takes half a row (the native two-column feel)
-	var WORKBOARD_SPAN = 12;   // the working board is a wide summary, never a half row
+	// v4: the board is ONE grid, not a stack of rows. A widget carries where it sits
+	// (x, y) as well as how big it is (w, h) — x and w in tracks, y and h in units of
+	// UNIT_H pixels. Twenty-four tracks rather than twelve: the finer step is the whole
+	// point of placing a widget instead of letting it flow.
+	var COLS = 24;             // tracks across the board
+	var UNIT_H = 8;            // one vertical unit, in pixels
+	var DEFAULT_SPAN = 12;     // a new widget takes half the width
+	var WORKBOARD_SPAN = 24;   // the working board is a wide summary, never a half row
+	var DEFAULT_UNITS = 40;    // …and 320px tall until it is resized
+	var MIN_UNITS = 8;
 	var MIN_HEIGHT = 120;
 	var MAX_HEIGHT = 4000;
 	var ROW_UNIT = 60;         // one row of the layout picker, in pixels
+	var RESIZE_STEP = 4;       // units gained per arrow-key press on the resize grip
 	var PICKER_ROWS = 8;
 	var SAVE_DELAY = 500;
-	var MASONRY_UNIT = 8;
 	var MASONRY_GAP = 16;
 	var masonryObserved = new WeakSet();
 	var masonryObserver = null;
@@ -87,6 +98,25 @@
 		if (!isFinite(value) || value <= 0) return 0; // 0 = automatic height
 		return Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, value));
 	}
+	// v4 coordinates. A placed widget has a height like it has a width: explicit. The
+	// "automatic" height of v3 cannot survive an explicit y — the widgets under it
+	// would have nowhere to be until their neighbour above had finished rendering.
+	function clampUnits(value) {
+		value = Math.round(parseFloat(value));
+		if (!isFinite(value) || value <= 0) return DEFAULT_UNITS;
+		return Math.max(MIN_UNITS, Math.min(Math.round(MAX_HEIGHT / UNIT_H), value));
+	}
+	function clampX(value) {
+		value = Math.round(parseFloat(value));
+		if (!isFinite(value) || value < 0) return 0;
+		return Math.max(0, Math.min(COLS - 1, value));
+	}
+	function clampY(value) {
+		value = Math.round(parseFloat(value));
+		return (!isFinite(value) || value < 0) ? 0 : value;
+	}
+	// px -> units, the conversion used by the layout dialog and by the v3 migration
+	function unitsFromPx(px) { return clampUnits(Math.round((parseFloat(px) || 0) / UNIT_H)); }
 	function done() { ROOT.classList.remove("fz-dash-boot"); }
 
 	// Resizing a widget changes the box a chart was drawn into, and a canvas does not
@@ -103,20 +133,29 @@
 				window.dispatchEvent(legacy);
 			} catch (ignore) {}
 		}
+		// Chart.js 3 does not listen to the window — it observes the canvas's
+		// parent — so the event above reaches none of the dashboard charts. Ask each
+		// instance to re-measure instead; the call is idempotent and costs a layout read.
+		try {
+			var ChartLib = window.Chart;
+			if (ChartLib && typeof ChartLib.getChart === "function") {
+				$all("#fz-dash canvas").forEach(function (canvasEl) {
+					var chart = ChartLib.getChart(canvasEl);
+					if (chart) chart.resize();
+				});
+			}
+		} catch (e) {}
 		scheduleMasonry();
 	}
 
 	// CSS Grid does not provide cross-browser masonry yet. Give each dashboard
 	// cell a span over tiny implicit rows; `grid-auto-flow:dense` can then place a
 	// following widget in the free space below a shorter neighbour.
-	function layoutMasonry(root) {
-		root = root || document;
-		$all(root === document ? "#fz-dash .fz-dash-cell" : ".fz-dash-cell", root).forEach(function (cell) {
-			var height = cell.getBoundingClientRect().height;
-			if (!height) return;
-			cell.style.gridRowEnd = "span " + Math.max(1, Math.ceil((height + MASONRY_GAP) / MASONRY_UNIT));
-		});
-	}
+	// v4 places every widget on explicit grid rows, so nothing has to be measured to
+	// know where it goes: the masonry pass that computed a span from the rendered
+	// height would now fight the stored height. Kept as a no-op — the observers and
+	// the call sites still exist, and a size change simply has nothing left to correct.
+	function layoutMasonry() {}
 
 	function scheduleMasonry(root) {
 		if (masonryScheduled) return;
@@ -206,108 +245,178 @@
 
 	/* ------------------------------------------------------------------ *
 	 *  Layout model                                                       *
-	 *  {v:3, rows:[ {items:[{id, w:1..12, h}]} ]}                         *
+	 *  {v:4, items:[ {id, x:0..23, y:0.., w:1..24, h: units} ]}           *
 	 * ------------------------------------------------------------------ */
 
-	// v1 already sized each widget the same way, so it needs no conversion. v2 wrapped
-	// widgets in explicit columns: flatten those, each widget inheriting its column's
-	// width, which draws the same picture without the extra object.
-	function migrate(layout) {
-		if (!layout || !layout.rows) return layout;
-		return {
-			v: 3,
-			rows: layout.rows.map(function (row) {
-				if (row && row.items) return { items: row.items };
-				var items = [];
-				((row && row.cols) || []).forEach(function (col) {
-					((col && col.items) || []).forEach(function (item) {
-						items.push({ id: item.id, w: col.w, h: item.h });
-					});
+	// v1/v2/v3 all described a stack of rows: widgets flowed inside a row and a row
+	// was as tall as its tallest widget. v4 gives every widget its own coordinates, so
+	// the conversion has to invent the y each row never had. Rows are laid out top to
+	// bottom, each one as tall as the tallest widget it holds — the picture the user
+	// left is the picture they get back, and from there each widget can be moved on
+	// its own. `measure` reports what a widget currently occupies on screen, which is
+	// how a v3 automatic height becomes an explicit one.
+	function migrate(layout, measure) {
+		if (!layout || layout.v === 4) return layout;
+		if (!layout.rows) return layout;
+
+		var items = [];
+		var y = 0;
+		layout.rows.forEach(function (row) {
+			var rowItems = [];
+			if (row && row.items) rowItems = row.items;
+			else ((row && row.cols) || []).forEach(function (col) {
+				((col && col.items) || []).forEach(function (item) {
+					rowItems.push({ id: item.id, w: col.w, h: item.h });
 				});
-				return { items: items };
-			})
-		};
+			});
+
+			var x = 0;
+			var tallest = MIN_UNITS;
+			rowItems.forEach(function (item) {
+				if (!item || item.id == null) return;
+				// twelve tracks became twenty-four: every old width covers the same space
+				var w = Math.max(1, Math.min(COLS, (parseInt(item.w, 10) || 6) * 2));
+				if (x + w > COLS) { x = 0; }
+				var units = item.h ? unitsFromPx(item.h) : unitsFromPx(measure ? measure(String(item.id)) : 0);
+				items.push({ id: String(item.id), x: x, y: y, w: w, h: units });
+				tallest = Math.max(tallest, units);
+				x += w;
+			});
+			y += tallest;
+		});
+
+		return { v: 4, items: items };
 	}
 
-	// Keep only the widgets actually on the page, then append the ones the layout has
-	// never seen (first run, or a widget just added from the combo).
-	function normalize(layout, widgets) {
-		layout = migrate(layout);
+	// Does the rectangle `a` overlap `b`? Placement is free, so this is only used to
+	// push widgets out of the way once a gesture ends, never to forbid a position.
+	function overlaps(a, b) {
+		return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+	}
+
+	// Where a widget of that size fits without covering anything. Candidate rows are
+	// the top of the board and the bottom edge of each widget already placed — no other
+	// y can open a gap — and for each of them the leftmost free column wins. That is
+	// what puts two half-width widgets side by side rather than one under the other.
+	function firstFreeSpot(items, w, h) {
+		var ys = [0];
+		items.forEach(function (item) { ys.push(item.y + item.h); });
+		ys.sort(function (a, b) { return a - b; });
+		for (var i = 0; i < ys.length; i++) {
+			for (var x = 0; x + w <= COLS; x++) {
+				var candidate = { x: x, y: ys[i], w: w, h: h };
+				var taken = items.some(function (item) { return overlaps(candidate, item); });
+				if (!taken) return { x: x, y: ys[i] };
+			}
+		}
+		return { x: 0, y: ys[ys.length - 1] || 0 };
+	}
+
+	// Keep only the widgets actually on the page, then place the ones the layout has
+	// never seen (first run, or a widget just added from the combo) under everything.
+	function normalize(layout, widgets, measure) {
+		layout = migrate(layout, measure);
 
 		var byId = {};
 		widgets.forEach(function (widget) { byId[widget.id] = widget; });
 
 		var placed = {};
-		var rows = [];
-		((layout && layout.rows) || []).forEach(function (row) {
-			var items = [];
-			((row && row.items) || []).forEach(function (item) {
-				var id = item && item.id != null ? String(item.id) : "";
-				if (!id || !byId[id] || placed[id]) return;
-				placed[id] = true;
-				items.push({ id: id, w: clampSpan(item.w), h: clampHeight(item.h) });
-			});
-			if (items.length) rows.push({ items: items });
+		var items = [];
+		((layout && layout.items) || []).forEach(function (item) {
+			var id = item && item.id != null ? String(item.id) : "";
+			if (!id || !byId[id] || placed[id]) return;
+			placed[id] = true;
+			var w = clampSpan(item.w);
+			var x = clampX(item.x);
+			if (x + w > COLS) x = Math.max(0, COLS - w);
+			items.push({ id: id, x: x, y: clampY(item.y), w: w, h: clampUnits(item.h) });
 		});
 
 		widgets.forEach(function (widget) {
 			if (placed[widget.id]) return;
 			placed[widget.id] = true;
-			var span = (widget.id === "work" ? WORKBOARD_SPAN : DEFAULT_SPAN);
-			var last = rows[rows.length - 1];
-			var used = 0;
-			if (last) last.items.forEach(function (item) { used += item.w; });
-			if (!last || used + span > COLS) {
-				last = { items: [] };
-				rows.push(last);
-			}
-			last.items.push({ id: widget.id, w: span, h: 0 });
+			var w = (widget.id === "work" ? WORKBOARD_SPAN : DEFAULT_SPAN);
+			var h = unitsFromPx(measure ? measure(widget.id) : 0);
+			var spot = firstFreeSpot(items, w, h);
+			items.push({ id: widget.id, x: spot.x, y: spot.y, w: w, h: h });
 		});
 
-		if (!rows.length) rows.push({ items: [] });
+		return { v: 4, items: items };
+	}
 
-		return { v: 3, rows: rows };
+	// What a widget currently occupies on screen. Used to turn the automatic heights of
+	// v3 — and of a widget just added from the combo — into the explicit one v4 needs.
+	// Read while the widgets still sit in the native columns, so the number is real.
+	// Under the shell's breakpoint the board is a single column: x, y and w have no
+	// effect there, so a drag would silently rewrite a layout the user cannot see.
+	function isNarrow() {
+		try { return window.matchMedia("(max-width:920px)").matches; } catch (e) { return false; }
+	}
+
+	function measurer(widgets) {
+		var heights = {};
+		widgets.forEach(function (widget) {
+			heights[widget.id] = widget.node.getBoundingClientRect().height;
+		});
+		return function (id) { return heights[id] || 0; };
+	}
+
+	function rectFromCell(cell) {
+		return {
+			id: cell.getAttribute("data-fz-box"),
+			x: clampX(cell.style.getPropertyValue("--fz-cx")),
+			y: clampY(cell.style.getPropertyValue("--fz-cy")),
+			w: clampSpan(cell.style.getPropertyValue("--fz-cw")),
+			h: clampUnits(cell.style.getPropertyValue("--fz-cu"))
+		};
 	}
 
 	function layoutFromDom(dash) {
-		var rows = [];
-		$all(".fz-dash-row", dash).forEach(function (rowEl) {
-			var items = [];
-			$all(".fz-dash-cell", rowEl).forEach(function (cell) {
-				items.push({
-					id: cell.getAttribute("data-fz-box"),
-					w: clampSpan(cell.style.getPropertyValue("--fz-cw")),
-					h: cell.classList.contains("fz-has-height") ? clampHeight(parseFloat(cell.style.getPropertyValue("--fz-ch"))) : 0
-				});
-			});
-			// An empty row is a scratch area while editing; there is nothing to persist.
-			if (items.length) rows.push({ items: items });
-		});
-		return { v: 3, rows: rows };
+		var items = $all(".fz-dash-cell", dash).map(rectFromCell);
+		// reading order: top to bottom, then left to right
+		items.sort(function (a, b) { return (a.y - b.y) || (a.x - b.x); });
+		return { v: 4, items: items };
 	}
 
 	/* ------------------------------------------------------------------ *
 	 *  Rendering                                                          *
 	 * ------------------------------------------------------------------ */
 
-	function applySize(cell, span, height) {
-		cell.style.setProperty("--fz-cw", String(span));
-		cell.setAttribute("data-fz-span", span + "/" + COLS);
+	// The four numbers of the model, written as the four custom properties the grid
+	// reads. Nothing else places a cell: what is stored IS what CSS lays out.
+	function applyRect(cell, rect) {
+		var w = clampSpan(rect.w);
+		var x = clampX(rect.x);
+		if (x + w > COLS) x = Math.max(0, COLS - w);
+		cell.style.setProperty("--fz-cx", String(x));
+		cell.style.setProperty("--fz-cy", String(clampY(rect.y)));
+		cell.style.setProperty("--fz-cw", String(w));
+		cell.style.setProperty("--fz-cu", String(clampUnits(rect.h)));
+		cell.setAttribute("data-fz-span", w + "/" + COLS);
+		// v3 pinned a height only sometimes; v4 always does, and the whole sizing and
+		// adaptive-chart chain of the stylesheet keys on this class.
+		cell.classList.add("fz-has-height");
+	}
 
-		if (height) {
-			cell.style.setProperty("--fz-ch", height + "px");
-			cell.classList.add("fz-has-height");
-		} else {
-			cell.style.removeProperty("--fz-ch");
-			cell.classList.remove("fz-has-height");
-		}
-		scheduleMasonry();
+	// A size change alone, keeping the widget where it is (layout dialog, keyboard).
+	function applySize(cell, span, height) {
+		var rect = rectFromCell(cell);
+		rect.w = clampSpan(span);
+		if (height) rect.h = unitsFromPx(height);
+		applyRect(cell, rect);
+	}
+
+	// The corner grip of Prosono's Drag-And-Drop-Card, ported to this grid: that card
+	// drags a card's corner over a pixel canvas and snaps to 10px, here it snaps to
+	// the board's tracks and units. The layout dialog stays — this is the direct
+	// gesture, not its replacement.
+	function buildResizeHandle() {
+		return button("fz-dash-resize", "fa-angle-down", tr("dash-resize", "Resize this widget"));
 	}
 
 	// A widget's toolbar, the three actions Home Assistant puts on a card: move it,
-	// open its layout, remove it. The size itself is not set from here — dragging
-	// handles on a live widget proved both hard to aim and hard to find, so it is set
-	// in the layout dialog below, where the choice is visible as a grid.
+	// open its layout, remove it. The size can also be set from the corner grip above,
+	// but the dialog is where the choice is visible as a grid.
 	function buildCellTools() {
 		var tools = el("div", "fz-dash-celltools");
 		tools.appendChild(button("fz-dash-grip", "fa-arrows-alt", tr("dash-move", "Move this widget")));
@@ -359,13 +468,26 @@
 		if (widget.node.querySelector(".clearview-box-cell")) {
 			cell.classList.add("fz-dash-clearview");
 		}
-		var adaptiveContent = widget.node.querySelector(".clearview-interactive-chart, .clearview-worldmap, .clearview-box-graph");
+		// `canvas` and `.dolgraphchart` are what actually identify a chart.
+		// The ClearView selectors below match no markup in the installed module — its
+		// boxes emit a bare <canvas height="400"> — so this whole adaptive path never
+		// ran for them and their chart kept the height it was drawn at, inside a box
+		// that had been resized around it. They are kept for other ClearView versions.
+		var adaptiveContent = widget.node.querySelector("canvas, .dolgraphchart, .clearview-interactive-chart, .clearview-worldmap, .clearview-box-graph");
 		if (adaptiveContent) {
 			cell.classList.add("fz-dash-adaptive");
 			var adaptiveRow = adaptiveContent.closest("tr");
 			var adaptiveTable = adaptiveContent.closest("table.boxtable");
 			if (adaptiveRow) adaptiveRow.classList.add("fz-dash-grow-row");
 			if (adaptiveTable) adaptiveTable.classList.add("fz-dash-adaptive-table");
+			// A percentage height only resolves against a definite one, so the height has
+			// to be handed down node by node from the row's cell to the drawing. Marking
+			// the chain — rather than every child of the cell — is what keeps a KPI line
+			// sitting above its chart at its natural height.
+			for (var node = adaptiveContent; node && node !== adaptiveRow; node = node.parentNode) {
+				if (node.nodeType !== 1 || node.tagName === "TD") break;
+				node.classList.add("fz-dash-grow-node");
+			}
 		}
 
 		// The edit controls stay in the DOM and are only revealed by CSS, so toggling
@@ -383,7 +505,8 @@
 			var del = $(".fz-dash-del", cell);
 			if (del) del.remove();
 		}
-		applySize(cell, clampSpan(item.w), clampHeight(item.h));
+		applyRect(cell, item);
+		cell.appendChild(buildResizeHandle());
 
 		return cell;
 	}
@@ -403,10 +526,12 @@
 		var jq = window.jQuery;
 		if (!cell || !jq || !jq.fn || !jq.fn.dialog) return;
 
-		var startSpan = clampSpan(cell.style.getPropertyValue("--fz-cw"));
-		var startHeight = cell.classList.contains("fz-has-height")
-			? clampHeight(parseFloat(cell.style.getPropertyValue("--fz-ch")))
-			: 0;
+		// v4 keeps the height in units and lets CSS derive the pixels, so the dialog —
+		// which talks in pixels, and offers a "automatic height" the model no longer
+		// has — converts on the way in and on the way out.
+		var startRect = rectFromCell(cell);
+		var startSpan = startRect.w;
+		var startHeight = startRect.h * UNIT_H;
 
 		var state = { w: startSpan, h: startHeight };
 		var dialogFinished = false;
@@ -472,7 +597,7 @@
 			if (!pcell) return;
 			ev.preventDefault();
 			state.w = parseInt(pcell.getAttribute("data-w"), 10);
-			state.h = auto.checked ? 0 : parseInt(pcell.getAttribute("data-h"), 10) * ROW_UNIT;
+			state.h = auto.checked ? startHeight : parseInt(pcell.getAttribute("data-h"), 10) * ROW_UNIT;
 			paint();
 			notifyResize();
 		});
@@ -482,7 +607,7 @@
 			notifyResize();
 		});
 		auto.addEventListener("change", function () {
-			state.h = auto.checked ? 0 : (startHeight || ROW_UNIT * 3);
+			state.h = auto.checked ? startHeight : (startHeight || ROW_UNIT * 3);
 			paint();
 			notifyResize();
 		});
@@ -568,39 +693,28 @@
 		});
 	}
 
-	function buildRow(row, byId) {
-		var rowEl = el("div", "fz-dash-row");
-
-		var tools = el("div", "fz-dash-rowtools");
-		tools.appendChild(button("fz-dash-rowgrip", "fa-grip-vertical", tr("dash-moverow", "Move this row")));
-		tools.appendChild(button("fz-dash-rowdel", "fa-trash-alt", tr("dash-delrow", "Delete this row")));
-		rowEl.appendChild(tools);
-
-		var grid = el("div", "fz-dash-grid");
-		(row.items || []).forEach(function (item) {
-			var widget = byId[item.id];
-			if (widget) grid.appendChild(buildCell(item, widget));
-		});
-		rowEl.appendChild(grid);
-
-		return rowEl;
-	}
-
 	function render(dash, layout, widgets) {
 		var byId = {};
 		widgets.forEach(function (widget) { byId[widget.id] = widget; });
 
 		// Build into a fragment first: appending a widget moves it out of the old cell,
 		// so the container can then be emptied without ever detaching a live node twice.
-		var frag = document.createDocumentFragment();
-		layout.rows.forEach(function (row) { frag.appendChild(buildRow(row, byId)); });
+		var grid = el("div", "fz-dash-grid");
+		// DOM order IS the portrait order: below the breakpoint the board collapses to a
+		// plain column and the cells are read in the order they were rendered, so they
+		// have to be rendered top to bottom, then left to right.
+		var ordered = (layout.items || []).slice().sort(function (a, b) {
+			return (a.y - b.y) || (a.x - b.x);
+		});
+		ordered.forEach(function (item) {
+			var widget = byId[item.id];
+			if (widget) grid.appendChild(buildCell(item, widget));
+		});
 
 		var bar = $(".fz-dash-bar", dash);
-		var addRow = $(".fz-dash-addrow", dash);
 		dash.textContent = "";
 		if (bar) dash.appendChild(bar);
-		dash.appendChild(frag);
-		if (addRow) dash.appendChild(addRow);
+		dash.appendChild(grid);
 	}
 
 	/* ------------------------------------------------------------------ *
@@ -664,10 +778,10 @@
 	// two-column page behind if the theme is ever disabled.
 	function boxOrderString(layout) {
 		var ids = [];
-		layout.rows.forEach(function (row) {
-			row.items.forEach(function (item) {
-				if (/^\d+$/.test(item.id)) ids.push(item.id);
-			});
+		// layoutFromDom() already sorts top to bottom then left to right, which is the
+		// closest thing to a reading order a free placement can offer core.
+		(layout.items || []).forEach(function (item) {
+			if (/^\d+$/.test(item.id)) ids.push(item.id);
 		});
 		var half = Math.ceil(ids.length / 2);
 		var left = ids.slice(0, half);
@@ -720,11 +834,8 @@
 		bar.appendChild(doneBtn);
 
 		dash.appendChild(bar);
-
-		var addRow = el("button", "fz-dash-addrow",
-			'<i class="fas fa-plus"></i><span>' + tr("dash-addrow", "Add a row") + '</span>');
-		addRow.type = "button";
-		dash.appendChild(addRow);
+		// No "add a row" any more: there are no rows to add to, a widget is simply
+		// dropped where there is room.
 	}
 
 	function boot() {
@@ -752,7 +863,8 @@
 		host.insertBefore(dash, left);
 
 		buildBar(dash);
-		render(dash, normalize(store.cached(), widgets), widgets);
+		var measure = measurer(widgets); // heights read before the widgets are moved
+		render(dash, normalize(store.cached(), widgets, measure), widgets);
 		done();
 		// The widgets were drawn server-side for the native half-width columns and have
 		// just landed in cells of a different size: let the charts redraw for it.
@@ -765,7 +877,7 @@
 		// only costs a re-render when the two actually differ (another browser).
 		store.load(function (remote) {
 			if (remote) {
-				var merged = normalize(remote, widgets);
+				var merged = normalize(remote, widgets, measure);
 				if (JSON.stringify(merged) !== JSON.stringify(grid.layout())) {
 					render(dash, merged, widgets);
 					grid.refresh();
@@ -805,7 +917,6 @@
 	};
 
 	Grid.prototype.refresh = function () {
-		this.wireSortables();
 		watchMasonry(this.dash);
 	};
 
@@ -814,129 +925,174 @@
 		this.dash.classList.toggle("fz-dash-edit", editing);
 		var toggle = $(".fz-dash-toggle", this.dash);
 		if (toggle) toggle.setAttribute("aria-pressed", editing ? "true" : "false");
-		this.enableSortables(editing);
-		if (!editing) {
-			this.dropEmptyRows();
-			this.save(true);
-		}
+		if (!editing) this.save(true);
 	};
 
-	// A row the user emptied while editing has no reason to survive the session, but
-	// the grid must never end up with no row at all to drop widgets into.
-	Grid.prototype.dropEmptyRows = function () {
-		var rows = $all(".fz-dash-row", this.dash);
-		var empty = rows.filter(function (rowEl) { return !$(".fz-dash-cell", rowEl); });
-		var keepOne = (empty.length === rows.length);
-		empty.forEach(function (rowEl, index) {
-			if (keepOne && index === 0) return;
-			rowEl.remove();
-		});
-	};
-
-	// Called after core removed a closed widget from the DOM.
+	// Called after core removed a closed widget from the DOM. The hole it leaves is
+	// not filled: a free placement means the user decides what moves.
 	Grid.prototype.dropMissing = function () {
 		$all(".fz-dash-cell", this.dash).forEach(function (cell) {
 			if (!$(".box", cell)) cell.remove();
 		});
-		this.dropEmptyRows();
-	};
-
-	Grid.prototype.addRow = function () {
-		this.dash.insertBefore(buildRow({ items: [] }, {}), $(".fz-dash-addrow", this.dash));
-		this.refresh();
-	};
-
-	// Deleting a row never destroys widgets: they fall back into the neighbouring row.
-	Grid.prototype.deleteRow = function (rowEl) {
-		var rows = $all(".fz-dash-row", this.dash);
-		if (rows.length < 2) return;
-		var index = rows.indexOf(rowEl);
-		var target = rows[index > 0 ? index - 1 : 1];
-		var targetGrid = $(".fz-dash-grid", target);
-		$all(".fz-dash-cell", rowEl).forEach(function (cell) { targetGrid.appendChild(cell); });
-		rowEl.remove();
-		this.refresh();
-		this.save();
 	};
 
 	Grid.prototype.reset = function () {
-		render(this.dash, normalize(null, this.widgets), this.widgets);
+		render(this.dash, normalize(null, this.widgets, measurer(this.widgets)), this.widgets);
 		this.refresh();
 		this.save(true);
 	};
 
-	/* ---- drag & drop ------------------------------------------------- */
+	/* ---- drag: moving a widget on the board -------------------------- */
 
-	// jQuery UI is already loaded on every page that shows widgets (core uses its
-	// sortable for the native two columns), so reuse it. Without it the grid stays
-	// fully usable: only reordering by drag is unavailable.
-	Grid.prototype.jq = function () {
-		var jq = window.jQuery;
-		return (jq && jq.fn && jq.fn.sortable) ? jq : null;
+	// The board is a grid with explicitly placed items, so a drag has nothing to
+	// reorder: it writes two numbers, and CSS puts the widget there. Overlapping is
+	// allowed while dragging — the grid stacks the cells — and resolved on drop by
+	// pushing what was underneath further down, never by rearranging the board.
+	Grid.prototype.metrics = function () {
+		var gridEl = $(".fz-dash-grid", this.dash);
+		var gap = parseFloat(getComputedStyle(this.dash).getPropertyValue("--fz-dash-gap")) || MASONRY_GAP;
+		var width = gridEl ? gridEl.getBoundingClientRect().width : 0;
+		return { gridEl: gridEl, gap: gap, pitch: (width + gap) / COLS, unit: UNIT_H };
 	};
 
-	Grid.prototype.enableSortables = function (editing) {
-		var jq = this.jq();
-		if (!jq) return;
-		jq(this.dash).add(jq(".fz-dash-grid", this.dash)).each(function () {
-			try { jq(this).sortable("option", "disabled", !editing); } catch (e) {}
-		});
-	};
+	// Push every widget the moved one now covers straight down, then repeat for what
+	// those in turn cover. Downwards only: a widget the user placed never moves aside.
+	Grid.prototype.resolveOverlaps = function (movedCell) {
+		var cells = $all(".fz-dash-cell", this.dash);
+		var byCell = cells.map(function (cell) { return { cell: cell, rect: rectFromCell(cell) }; });
+		var moved = byCell.filter(function (entry) { return entry.cell === movedCell; })[0];
+		if (!moved) return;
 
-	Grid.prototype.wireSortables = function () {
-		var jq = this.jq();
-		if (!jq) return;
-		var grid = this;
-
-		// Widgets, inside a row and across rows.
-		jq(".fz-dash-grid", this.dash).each(function () {
-			try { jq(this).sortable("destroy"); } catch (e) {}
-			jq(this).sortable({
-				items: "> .fz-dash-cell",
-				// The widget's own title bar drags it, like its native handle used to;
-				// the grip is there for widgets that have no title bar.
-				handle: ".fz-dash-grip, .box_titre",
-				// jQuery UI refuses to start a drag from anything matching `cancel`, and
-				// its default list contains "button" — which is exactly what our handles
-				// are (real buttons, so they stay focusable and keyboard-operable). Keep
-				// only the controls that must keep their own click: form fields, links,
-				// and Dolibarr's close-widget cross inside the title bar.
-				cancel: "input,textarea,select,option,a,.boxclose",
-				connectWith: "#fz-dash .fz-dash-grid",
-				placeholder: "fz-dash-ph",
-				forcePlaceholderSize: true,
-				tolerance: "pointer",
-				disabled: !grid.editing,
-				start: function (event, ui) {
-					// A pixel-sized placeholder means nothing to a grid track: give it the
-					// dragged widget's own span so the hole matches where it will land.
-					ui.placeholder[0].style.setProperty("--fz-cw", ui.item[0].style.getPropertyValue("--fz-cw") || String(DEFAULT_SPAN));
-					ui.placeholder[0].style.gridRowEnd = ui.item[0].style.gridRowEnd || "span 10";
-				},
-				// Deferred by a tick: rebuilding the sortables from inside the stop of the
-				// very sortable that is still finishing its own cleanup is a good way to
-				// tear the widget apart under jQuery UI's feet.
-				stop: function () {
-					setTimeout(function () {
-						grid.refresh();
-						grid.save();
-					}, 0);
-				}
+		var queue = [moved];
+		var guard = 0;
+		while (queue.length && guard++ < 200) {
+			var current = queue.shift();
+			byCell.forEach(function (entry) {
+				if (entry === current || !overlaps(current.rect, entry.rect)) return;
+				entry.rect.y = current.rect.y + current.rect.h;
+				applyRect(entry.cell, entry.rect);
+				queue.push(entry);
 			});
+		}
+	};
+
+	Grid.prototype.wireDrag = function () {
+		var grid = this;
+		var dash = this.dash;
+
+		dash.addEventListener("pointerdown", function (ev) {
+			if (!grid.editing || ev.button || isNarrow()) return;
+			if (ev.target.closest(".fz-dash-resize, .fz-dash-layout, .fz-dash-del, .fz-dash-expand")) return;
+			var handle = ev.target.closest(".fz-dash-grip, .box_titre");
+			if (!handle) return;
+			var cell = handle.closest(".fz-dash-cell");
+			if (!cell) return;
+
+			ev.preventDefault();
+			try { handle.setPointerCapture(ev.pointerId); } catch (e) {}
+
+			var metrics = grid.metrics();
+			var start = rectFromCell(cell);
+			var startX = ev.clientX;
+			var startY = ev.clientY;
+			dash.classList.add("fz-dash-dragging");
+			cell.classList.add("fz-dash-moving");
+
+			function move(moveEv) {
+				applyRect(cell, {
+					x: start.x + Math.round((moveEv.clientX - startX) / metrics.pitch),
+					y: Math.max(0, start.y + Math.round((moveEv.clientY - startY) / metrics.unit)),
+					w: start.w,
+					h: start.h
+				});
+			}
+			function up() {
+				handle.removeEventListener("pointermove", move);
+				handle.removeEventListener("pointerup", up);
+				handle.removeEventListener("pointercancel", up);
+				dash.classList.remove("fz-dash-dragging");
+				cell.classList.remove("fz-dash-moving");
+				grid.resolveOverlaps(cell);
+				grid.save();
+			}
+			handle.addEventListener("pointermove", move);
+			handle.addEventListener("pointerup", up);
+			handle.addEventListener("pointercancel", up);
+		});
+	};
+
+	/* ---- corner resize ------------------------------------------------ */
+
+	// Same gesture as the move, on the other two numbers. Pointer events rather than
+	// jQuery UI's resizable — which Dolibarr does bundle: resizable writes an inline
+	// width/height in pixels, while a cell here is placed by grid tracks and units,
+	// and the two would fight on every frame.
+	Grid.prototype.wireResize = function () {
+		var grid = this;
+		var dash = this.dash;
+
+		dash.addEventListener("pointerdown", function (ev) {
+			if (!grid.editing || ev.button || isNarrow()) return;
+			var handle = ev.target.closest ? ev.target.closest(".fz-dash-resize") : null;
+			if (!handle) return;
+			var cell = handle.closest(".fz-dash-cell");
+			if (!cell) return;
+
+			ev.preventDefault();
+			ev.stopPropagation();      // the move gesture must not start as well
+			try { handle.setPointerCapture(ev.pointerId); } catch (e) {}
+
+			var metrics = grid.metrics();
+			var start = rectFromCell(cell);
+			var startX = ev.clientX;
+			var startY = ev.clientY;
+			dash.classList.add("fz-dash-resizing");
+
+			function move(moveEv) {
+				var w = start.w + Math.round((moveEv.clientX - startX) / metrics.pitch);
+				var h = start.h + Math.round((moveEv.clientY - startY) / metrics.unit);
+				applyRect(cell, {
+					x: start.x,
+					y: start.y,
+					w: Math.max(1, Math.min(COLS - start.x, w)),
+					h: Math.max(MIN_UNITS, h)
+				});
+			}
+			function up() {
+				handle.removeEventListener("pointermove", move);
+				handle.removeEventListener("pointerup", up);
+				handle.removeEventListener("pointercancel", up);
+				dash.classList.remove("fz-dash-resizing");
+				grid.resolveOverlaps(cell);
+				notifyResize(); // a chart redraws into the box it was just given
+				grid.save();
+			}
+			handle.addEventListener("pointermove", move);
+			handle.addEventListener("pointerup", up);
+			handle.addEventListener("pointercancel", up);
 		});
 
-		// Rows.
-		try { jq(this.dash).sortable("destroy"); } catch (e) {}
-		jq(this.dash).sortable({
-			items: "> .fz-dash-row",
-			handle: ".fz-dash-rowgrip",
-			cancel: "input,textarea,select,option,a", // see the note above
-			placeholder: "fz-dash-rowph",
-			forcePlaceholderSize: true,
-			tolerance: "pointer",
-			axis: "y",
-			disabled: !this.editing,
-			stop: function () { grid.save(); }
+		// The grip is a real button, so the same sizes are reachable from the keyboard —
+		// which is also the answer to a corner being hard to aim at with a mouse.
+		dash.addEventListener("keydown", function (ev) {
+			if (!grid.editing) return;
+			var handle = ev.target.closest ? ev.target.closest(".fz-dash-resize") : null;
+			if (!handle) return;
+			var cell = handle.closest(".fz-dash-cell");
+			if (!cell) return;
+			var rect = rectFromCell(cell);
+
+			if (ev.key === "ArrowRight") rect.w = Math.min(COLS - rect.x, rect.w + 1);
+			else if (ev.key === "ArrowLeft") rect.w = Math.max(1, rect.w - 1);
+			else if (ev.key === "ArrowDown") rect.h = rect.h + RESIZE_STEP;
+			else if (ev.key === "ArrowUp") rect.h = Math.max(MIN_UNITS, rect.h - RESIZE_STEP);
+			else return;
+
+			ev.preventDefault();
+			applyRect(cell, rect);
+			grid.resolveOverlaps(cell);
+			notifyResize();
+			grid.save();
 		});
 	};
 
@@ -955,7 +1111,6 @@
 			}
 			if (target.closest(".fz-dash-toggle")) { grid.setEditing(!grid.editing); return; }
 			if (target.closest(".fz-dash-done")) { grid.setEditing(false); return; }
-			if (target.closest(".fz-dash-addrow")) { grid.addRow(); return; }
 			if (target.closest(".fz-dash-reset")) {
 				if (window.confirm(tr("dash-resetask", "Reset the dashboard layout?"))) grid.reset();
 				return;
@@ -974,17 +1129,17 @@
 				if (control) control.click();
 				return;
 			}
-			var del = target.closest(".fz-dash-rowdel");
-			if (del) { grid.deleteRow(del.closest(".fz-dash-row")); return; }
 			// The grips are buttons so they can be focused; a plain click must not
 			// submit anything or scroll the page.
-			if (target.closest(".fz-dash-grip, .fz-dash-rowgrip")) ev.preventDefault();
+			if (target.closest(".fz-dash-grip")) ev.preventDefault();
 		});
 
 		document.addEventListener("keydown", function (ev) {
 			if (ev.key === "Escape" && grid.editing) grid.setEditing(false);
 		});
 
+		this.wireDrag();
+		this.wireResize();
 		this.refresh();
 		this.overrideCore();
 	};
