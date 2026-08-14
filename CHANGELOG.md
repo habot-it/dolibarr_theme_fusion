@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+## [1.0.30] — 2026-08-14
+
+### Changed
+- The user panel is back to the width of the rail, instead of spilling over the content area: its
+  three footer buttons keep their single row at that width through tighter paddings, gaps and a
+  narrower icon-only virtual-card button. The panel opened from the collapsed rail is given the same
+  width, so it does not change size when the rail is folded.
+
 ## [1.0.29] — 2026-08-14
 
 ### Changed
@@ -267,6 +275,7 @@ Initial release.
   change: a retractable left sidebar in landscape, a top bar with a slide-in drawer in portrait.
 - `style.css.php` layered on top of eldy, `fusion.js`, `activate_fusion.sql` and the theme thumbnail.
 
+[1.0.29]: https://github.com/habot-it/dolibarr_theme_fusion/commit/2e7d60a
 [1.0.28]: https://github.com/habot-it/dolibarr_theme_fusion/commit/2ee7dd0
 [1.0.27]: https://github.com/habot-it/dolibarr_theme_fusion/commit/64ff188
 [1.0.26]: https://github.com/habot-it/dolibarr_theme_fusion/commit/4fc5406
