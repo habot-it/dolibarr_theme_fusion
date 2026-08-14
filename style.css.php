@@ -762,7 +762,8 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 	display:inline-flex !important;align-items:center;justify-content:center;width:20px !important;min-width:20px !important;
 	height:20px !important;margin:0 !important;padding:0 !important;line-height:20px !important;text-align:center !important;
 	vertical-align:middle !important;background-repeat:no-repeat !important;background-position:center center !important;
-	background-size:20px 20px !important;position:static !important;top:auto !important;left:auto !important}
+	/* contain, not a forced 20x20: a module logo that is not square keeps its ratio */
+	background-size:contain !important;position:static !important;top:auto !important;left:auto !important}
 .fz-head .fz-ic img.fz-native-menu-icon,.fz-head .fz-ic .fz-native-menu-icon img{
 	display:block !important;max-width:20px !important;max-height:20px !important;width:auto !important;height:auto !important;
 	object-fit:contain;margin:0 !important;padding:0 !important}

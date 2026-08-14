@@ -6,6 +6,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+## [1.0.28] — 2026-08-14
+
+### Fixed
+- A top-menu entry whose picto is an image — `img_picto('', 'logo.png@mymodule')`, stored as
+  `<img src="…">` in `llx_menu.prefix` — shows its icon again. Dolibarr only prints a picto that is a
+  `<span …>` or an `fa-` class and silently replaces anything else by an empty `.tmenuimageforpng`
+  span, so the image was lost in the native top bar as much as in the Fusion rail, which reuses that
+  node. The image is re-attached as a background on `div.mainmenu.<code>`, the way module icons are
+  already declared, with no core and no module change.
+
+### Changed
+- Native menu icons are scaled with `background-size: contain` instead of a forced 20×20 box, so a
+  module logo that is not square keeps its ratio.
+
 ## [1.0.27] — 2026-08-13
 
 ### Fixed
@@ -243,6 +257,7 @@ Initial release.
   change: a retractable left sidebar in landscape, a top bar with a slide-in drawer in portrait.
 - `style.css.php` layered on top of eldy, `fusion.js`, `activate_fusion.sql` and the theme thumbnail.
 
+[1.0.27]: https://github.com/habot-it/dolibarr_theme_fusion/commit/64ff188
 [1.0.26]: https://github.com/habot-it/dolibarr_theme_fusion/commit/4fc5406
 [1.0.25]: https://github.com/habot-it/dolibarr_theme_fusion/commit/7b26a98
 [1.0.24]: https://github.com/habot-it/dolibarr_theme_fusion/commit/b6723a9
