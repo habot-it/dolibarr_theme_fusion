@@ -6,6 +6,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+## [1.0.34] — 2026-08-14
+
+### Changed
+- The buttons of the user panel are back to an even 1 px border on all four sides: the heavier bottom
+  edge of 1.0.31 is dropped, along with the `--fz-border-strong` palette color added for it. The
+  exclusion that keeps the underline killer off those buttons stays, so their bottom side is still
+  drawn.
+
 ## [1.0.33] — 2026-08-14
 
 ### Fixed
@@ -299,6 +307,7 @@ Initial release.
   change: a retractable left sidebar in landscape, a top bar with a slide-in drawer in portrait.
 - `style.css.php` layered on top of eldy, `fusion.js`, `activate_fusion.sql` and the theme thumbnail.
 
+[1.0.33]: https://github.com/habot-it/dolibarr_theme_fusion/commit/ee755df
 [1.0.32]: https://github.com/habot-it/dolibarr_theme_fusion/commit/3dc3ebf
 [1.0.31]: https://github.com/habot-it/dolibarr_theme_fusion/commit/690f3b6
 [1.0.30]: https://github.com/habot-it/dolibarr_theme_fusion/commit/00363a7

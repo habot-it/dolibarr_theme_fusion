@@ -221,8 +221,6 @@ html.fusion{
 	--fz-content-bg: var(--colorbackbody, #f4f6fb);
 	--fz-surface: var(--colorbacktabcard1, var(--colorbacklinepair1, #ffffff));
 	--fz-border: var(--inputbordercolor, var(--colorboxstatsborder, #e6e9f0));
-	/* the same line, drawn strong enough to read as an edge rather than a hairline */
-	--fz-border-strong: rgba(0,0,0,.42);
 	--fz-text: var(--colortext, #1f2733);
 	--fz-text-dim: color-mix(in srgb, var(--fz-text) 62%, transparent);
 	--fz-row-hover: <?php echo $fz_row_hover; ?>;
@@ -246,7 +244,6 @@ $fz_dark_palette = <<<'FZDARK'
 	--fz-sub-bg: color-mix(in srgb, var(--colorbackvmenu1, #2b2c2e) 92%, #000);
 	--fz-sub-hover: rgba(255,255,255,.08);
 	--fz-content-bg:#1d1e20; --fz-surface:#26272b; --fz-border:#3a3b3e;
-	--fz-border-strong:rgba(255,255,255,.38);
 	--fz-text:#dcdcdc; --fz-text-dim:#9aa0a8; --fz-topbar-bg:#3d3e40; --fz-topbar-fg:rgb(220,220,220);
 	/* eldy core */
 	--colorbackhmenu1:#3d3e40; --colorbackvmenu1:#2b2c2e; --colorbacktitle1:#3b3c3e;
@@ -1148,11 +1145,7 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 #fz-user .dropdown-menu .user-footer > div{flex:1 1 auto;min-width:0;margin:0 !important}
 #fz-user .dropdown-menu .user-footer > .pull-left + .pull-left{flex:0 0 auto} /* icon-only virtual card */
 #fz-user .dropdown-menu .user-footer .clearboth{display:none}                 /* float clearer, useless here */
-/* the heavier bottom edge is what gives the three buttons their relief: a plain color from
-   the palette rather than a color-mix() of the hairline, which stayed too close to the other
-   three edges to read as anything. */
 #fz-user .dropdown-menu .user-footer .button-top-menu-dropdown{border:1px solid var(--fz-border) !important;
-	border-bottom:2px solid var(--fz-border-strong) !important;
 	background:var(--fz-content-bg) !important;color:var(--fz-text) !important;
 	border-radius:var(--fz-radius);height:36px;min-width:32px;box-sizing:border-box;padding:0 8px;text-decoration:none;
 	display:inline-flex;align-items:center;justify-content:center;gap:4px;line-height:1;
