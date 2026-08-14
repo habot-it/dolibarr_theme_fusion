@@ -614,12 +614,22 @@ html.fusion #fz-topbar a,html.fusion #fz-topbar a:hover{
 html.fusion #fz-sidebar .atoplogin:hover,html.fusion #fz-sidebar .alogin:hover,
 html.fusion #fz-sidebar .atoplogin:focus,html.fusion #fz-topbar .atoplogin:hover{
 	text-decoration:none !important;text-decoration-line:none !important}
-/* ultra-specific safety net for the user toggle (3 ids) + kill any border underline */
+/* ultra-specific safety net for the user toggle (3 ids) */
 html.fusion #fz-sidebar #fz-user a,html.fusion #fz-sidebar #fz-user a:hover,
 html.fusion #fz-sidebar #fz-user a:focus,html.fusion #fz-sidebar #fz-user a:active,
 html.fusion #fz-sidebar #fz-user a span,html.fusion #fz-sidebar #fz-user a:hover span,
 html.fusion #fz-sidebar #fz-user .atoploginusername{
-	text-decoration:none !important;text-decoration-line:none !important;border-bottom:0 !important}
+	text-decoration:none !important;text-decoration-line:none !important}
+/* …and kill the underline drawn as a border, EXCEPT on the buttons of the panel footer:
+   they are links too, and this selector (2 ids) outranks the one that styles them, so it
+   used to erase their bottom edge — hence a bottom border that could not be set there. */
+html.fusion #fz-sidebar #fz-user a:not(.button-top-menu-dropdown),
+html.fusion #fz-sidebar #fz-user a:not(.button-top-menu-dropdown):hover,
+html.fusion #fz-sidebar #fz-user a:not(.button-top-menu-dropdown):focus,
+html.fusion #fz-sidebar #fz-user a:not(.button-top-menu-dropdown):active,
+html.fusion #fz-sidebar #fz-user a span,html.fusion #fz-sidebar #fz-user a:hover span,
+html.fusion #fz-sidebar #fz-user .atoploginusername{
+	border-bottom:0 !important}
 
 /* Brand + collapse button */
 #fz-brand{
