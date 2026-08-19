@@ -5347,11 +5347,6 @@ span.dashboardlineko {
 	display: inline-block;
 	vertical-align: middle;
 }
-.divboxtable {
-	margin-bottom: 25px !important;
-}
-
-
 .fichecenter .tableforfield:not(.margintable) tr td, .tagtr.table-border-row {
 	background-color: var(--colorbacklineimpair2);
 }

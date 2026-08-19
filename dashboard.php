@@ -55,8 +55,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 if (!function_exists('fz_fusion_dashboard_sanitize')) {
 	/**
 	 * Rebuild a layout from untrusted input, keeping only what the grid understands:
-	 * rows of widgets, each widget carrying its width over the row's twelve tracks and
-	 * its height.
+	 * widgets carrying their own horizontal and vertical grid coordinates.
 	 *
 	 * An intermediate version wrapped widgets in explicit columns (rows[].cols[]);
 	 * those are flattened here, each widget inheriting its column's width, which draws
@@ -67,11 +66,15 @@ if (!function_exists('fz_fusion_dashboard_sanitize')) {
 	 */
 	function fz_fusion_dashboard_sanitize($data)
 	{
-		// v4: one board, every widget carrying its own rectangle {x, y, w, h} —
-		// x and w in tracks over 24, y and h in units of 8 pixels. Rows are gone; a
-		// layout stored by an earlier version still arrives in the shape below and is
-		// converted client-side, so both shapes have to survive this function.
+		// v4 used 24 horizontal tracks; v5 uses 192 so the horizontal resize step is
+		// roughly as fine as the eight-pixel vertical one. Both are accepted because the
+		// client migrates v4 by an exact factor of eight. Earlier row layouts still arrive
+		// in the shape below and are also converted client-side.
 		if (is_array($data) && !empty($data['items']) && is_array($data['items'])) {
+			$version = (isset($data['v']) && (int) $data['v'] >= 5) ? 5 : 4;
+			$columns = ($version === 5) ? 192 : 24;
+			$minwidth = ($version === 5) ? 8 : 1;
+			$defaultwidth = (int) ($columns / 2);
 			$items = array();
 			foreach (array_slice($data['items'], 0, 120) as $item) {
 				if (!is_array($item) || !isset($item['id'])) {
@@ -81,10 +84,10 @@ if (!function_exists('fz_fusion_dashboard_sanitize')) {
 				if (!preg_match('/^[a-zA-Z0-9_]{1,32}$/', $id)) {
 					continue;
 				}
-				$w = isset($item['w']) ? (int) $item['w'] : 12;
+				$w = isset($item['w']) ? (int) $item['w'] : $defaultwidth;
 				$x = isset($item['x']) ? (int) $item['x'] : 0;
-				$w = max(1, min(24, $w));
-				$x = max(0, min(24 - $w, $x));
+				$w = max($minwidth, min($columns, $w));
+				$x = max(0, min($columns - $w, $x));
 				$items[] = array(
 					'id' => $id,
 					'x' => $x,
@@ -94,7 +97,7 @@ if (!function_exists('fz_fusion_dashboard_sanitize')) {
 				);
 			}
 
-			return count($items) ? array('v' => 4, 'items' => $items) : null;
+			return count($items) ? array('v' => $version, 'items' => $items) : null;
 		}
 
 		if (!is_array($data) || empty($data['rows']) || !is_array($data['rows'])) {

@@ -34,6 +34,7 @@
 	// so the legacy menus are hidden before they can flash on screen.
 	var ROOT = document.documentElement;
 	ROOT.classList.add("fusion");
+	var ROOT_STYLE = null;
 
 	// Our own <script> element: its url is how the theme locates its companion files
 	// (see loadDashboard), its nonce is how they stay loadable under a nonce-based CSP.
@@ -80,7 +81,8 @@
 	function cssTextVar(name, fallback) {
 		var value = "";
 		try {
-			value = getComputedStyle(ROOT).getPropertyValue(name).trim();
+			if (!ROOT_STYLE) ROOT_STYLE = getComputedStyle(ROOT);
+			value = ROOT_STYLE.getPropertyValue(name).trim();
 		} catch (e) {}
 		if (!value) return fallback;
 		return value.replace(/^["']|["']$/g, "") || fallback;
@@ -200,7 +202,7 @@
 		nav.addEventListener("scroll", function () {
 			clearTimeout(timer);
 			timer = setTimeout(function () { saveNavScroll(nav); }, 60);
-		});
+		}, { passive: true });
 		nav.addEventListener("click", function () { saveNavScroll(nav); }, true);
 		window.addEventListener("beforeunload", function () { saveNavScroll(nav); });
 		document.addEventListener("visibilitychange", function () {
@@ -322,37 +324,19 @@
 		if (rows.length === 1 && titleOf(rows[0]) === groupLabel(group)) return false;
 		return true;
 	}
-	function rootHasMeaningfulSub(root, group) {
-		var probe = el("div");
-		fillSubFromRoot(probe, root);
-		return subHasMeaningfulItems(probe, group);
-	}
 	function isSameOriginHref(href) {
 		try { return new URL(href, window.location.href).origin === window.location.origin; } catch (e) { return false; }
 	}
-	function detectTopGroupSubmenus(nav) {
+	function markTopGroupCandidates(nav) {
 		$all(".fz-group", nav).forEach(function (group) {
 			var sub = group.querySelector(".fz-sub");
 			if (subHasMeaningfulItems(sub, group)) { markGroupHasSub(group, true); return; }
 			var head = group.querySelector(".fz-head[href]");
 			var href = head ? head.getAttribute("href") : "";
-			if (!href || href === "#" || head.getAttribute("target") || !isSameOriginHref(href)) {
-				markGroupHasSub(group, false);
-				return;
-			}
-			var key = "fzhasmain:" + href + "\n" + groupLabel(group);
-			var cached = fzCacheGet(key);
-			if (cached !== null) {
-				markGroupHasSub(group, cached === "1");
-				return;
-			}
-			fzQueue.push({ href: href, done: function (htmlText) {
-				var doc = new DOMParser().parseFromString(htmlText, "text/html");
-				var hasSub = rootHasMeaningfulSub(doc, group);
-				fzCacheSet(key, hasSub ? "1" : "0");
-				markGroupHasSub(group, hasSub);
-			} });
-			fzPump();
+			// Unknown same-origin sections are cheap candidates: their real left menu is
+			// fetched only if the user opens the chevron. This avoids downloading every
+			// module home page merely to decide whether the chevron should be visible.
+			markGroupHasSub(group, !!href && href !== "#" && !head.getAttribute("target") && isSameOriginHref(href));
 		});
 	}
 
@@ -542,7 +526,7 @@
 				asub.textContent = "";
 			}
 		}
-		detectTopGroupSubmenus(nav);
+		markTopGroupCandidates(nav);
 
 		// ---- 4. Favorites / bookmark section ----------------------------------
 		if (bookmarksBlock) {
@@ -620,21 +604,31 @@
 		syncPrimaryTooltips(sidebar);
 		setTimeout(function () { suppressNonPrimaryTooltips(sidebar); syncPrimaryTooltips(sidebar); }, 0);
 		try {
-			new MutationObserver(function () {
-				syncBrandLogoState();
-				syncPrimaryTooltips(sidebar);
-			}).observe(ROOT, { attributes: true, attributeFilter: ["class"] });
-		} catch (e) {}
-		try {
 			var tooltipCleanupQueued = false;
-			new MutationObserver(function () {
-				if (tooltipCleanupQueued) return;
+			new MutationObserver(function (records) {
+				// Menu open/close and hover states change classes frequently. Only a
+				// newly introduced tooltip marker requires a cleanup pass.
+				var needsCleanup = records.some(function (record) {
+					if (record.type === "attributes") {
+						if (record.attributeName === "title") return record.target.hasAttribute("title");
+						return record.attributeName === "class"
+							&& record.target.classList.contains("classfortooltip");
+					}
+					return Array.prototype.some.call(record.addedNodes || [], function (node) {
+						if (node.nodeType !== 1) return false;
+						return (node.matches && node.matches("[title], .classfortooltip"))
+							|| (node.querySelector && node.querySelector("[title], .classfortooltip"));
+					});
+				});
+				if (!needsCleanup || tooltipCleanupQueued) return;
 				tooltipCleanupQueued = true;
-				setTimeout(function () {
+				var cleanup = function () {
 					tooltipCleanupQueued = false;
 					suppressNonPrimaryTooltips(sidebar);
 					syncPrimaryTooltips(sidebar);
-				}, 0);
+				};
+				if (window.requestAnimationFrame) window.requestAnimationFrame(cleanup);
+				else setTimeout(cleanup, 0);
 			}).observe(sidebar, { subtree: true, childList: true, attributes: true, attributeFilter: ["title", "class"] });
 		} catch (e) {}
 		watchNavScroll(nav);
@@ -1056,9 +1050,9 @@
 		return [];
 	}
 
-	// Background fetch queue (limited concurrency) + per-session cache, so the recursive
-	// preload doesn't hammer the server and is reused across navigations.
-	var FZ_MAX = 4, fzActive = 0, fzQueue = [];
+	// Background fetch queue (limited concurrency) + per-session cache, so recursive
+	// submenu discovery stays light on both the browser and the server.
+	var FZ_MAX = 2, fzActive = 0, fzQueue = [];
 	function fzCacheGet(k) { return storageGet("sessionStorage", "fzpm:" + k); }
 	function fzCacheSet(k, v) { storageSet("sessionStorage", "fzpm:" + k, v); }
 	function fzPump() {
@@ -1071,39 +1065,46 @@
 		}
 	}
 
-	// Recursively preload EVERY collapsible node under `container` so all chevrons show
-	// and every level opens instantly. Leaves are tried once and left as plain links.
+	// Discover deeper contextual levels while the browser is idle. The visible menu is
+	// usable immediately; cached/fetched children still appear before they are needed,
+	// without competing with the page's first layout and paint.
 	function preloadAll(container) {
-		$all(".menu_titre, .menu_contenu", container).forEach(function (row) {
-			if (row._fzTried || row.classList.contains("fz-subhead")) return;
-			var link = row.querySelector("a[href]");
-			var href = link && link.getAttribute("href");
-			if (!href || href === "#") return;
-			row._fzTried = true;
-			var title = titleOf(row), lvl = rowLevel(row), key = href + "\n" + title + "\n" + lvl;
-			function build(kids) {
-				if (row.classList.contains("fz-subhead") || !kids.length) return;
-				buildTreeUnder(row, lvl, kids);
-				var owningGroup = row.closest(".fz-group");
-				if (owningGroup) ensureSubMenuContext(row.nextElementSibling, owningGroup);
-				preloadAll(row.nextElementSibling);
-			}
-			var cached = fzCacheGet(key);
-			if (cached !== null) {
-				if (cached) {
-					var d = new DOMParser().parseFromString("<ul class=\"vmenu\"><div class=\"blockvmenu\">" + cached + "</div></ul>", "text/html");
-					build($all(".menu_titre, .menu_contenu", d));
+		if (!container || container._fzPreloadQueued) return;
+		container._fzPreloadQueued = true;
+		function discover() {
+			$all(".menu_titre, .menu_contenu", container).forEach(function (row) {
+				if (row._fzTried || row.classList.contains("fz-subhead")) return;
+				var link = row.querySelector("a[href]");
+				var href = link && link.getAttribute("href");
+				if (!href || href === "#" || !isSameOriginHref(href)) return;
+				row._fzTried = true;
+				var title = titleOf(row), lvl = rowLevel(row), key = href + "\n" + title + "\n" + lvl;
+				function build(kids) {
+					if (row.classList.contains("fz-subhead") || !kids.length) return;
+					buildTreeUnder(row, lvl, kids);
+					var owningGroup = row.closest(".fz-group");
+					if (owningGroup) ensureSubMenuContext(row.nextElementSibling, owningGroup);
+					preloadAll(row.nextElementSibling);
 				}
-				return;
-			}
-			fzQueue.push({ href: href, done: function (htmlText) {
-				var doc = new DOMParser().parseFromString(htmlText, "text/html");
-				var kids = childrenFromDoc(doc, title, lvl);
-				fzCacheSet(key, kids.map(function (k) { return k.outerHTML; }).join(""));
-				build(kids);
-			} });
-			fzPump();
-		});
+				var cached = fzCacheGet(key);
+				if (cached !== null) {
+					if (cached) {
+						var d = new DOMParser().parseFromString("<ul class=\"vmenu\"><div class=\"blockvmenu\">" + cached + "</div></ul>", "text/html");
+						build($all(".menu_titre, .menu_contenu", d));
+					}
+					return;
+				}
+				fzQueue.push({ href: href, done: function (htmlText) {
+					var doc = new DOMParser().parseFromString(htmlText, "text/html");
+					var kids = childrenFromDoc(doc, title, lvl);
+					fzCacheSet(key, kids.map(function (k) { return k.outerHTML; }).join(""));
+					build(kids);
+				} });
+				fzPump();
+			});
+		}
+		if (window.requestIdleCallback) window.requestIdleCallback(discover, { timeout: 1200 });
+		else setTimeout(discover, 200);
 	}
 
 	// Accordion: keep a single section unfolded at a time by collapsing every
@@ -1207,7 +1208,7 @@
 
 		var script = document.createElement("script");
 		var dashboardSrc = SELF.src.replace(/fusion\.js/, "fusion-dashboard.js");
-		script.src = dashboardSrc + (dashboardSrc.indexOf("?") === -1 ? "?" : "&") + "fzv=20260730-3";
+		script.src = dashboardSrc + (dashboardSrc.indexOf("?") === -1 ? "?" : "&") + "fzv=20260817-7";
 		var nonce = SELF.nonce || SELF.getAttribute("nonce");
 		if (nonce) script.setAttribute("nonce", nonce);
 		script.onerror = function () {
