@@ -8,7 +8,7 @@
  * This script replaces that area, with NO core change, by ONE board on which every
  * widget is placed:
  *
- *   board   a single grid, 24 fluid tracks across, 8-pixel units down
+	 *   board   a single grid, 192 fluid tracks across, 8-pixel units down
  *   widget  one Dolibarr box, carrying its own rectangle {x, y, w, h} on that board
  *
  * There is no row and no column object: a widget is where the user put it, holes
@@ -22,7 +22,7 @@
  * stays intact.
  *
  * The layout is stored per user and per zone through theme/fusion/dashboard.php
- * (llx_user_param) as {v:4, items:[{id,x,y,w,h}]}, with localStorage as an instant
+	 * (llx_user_param) as {v:5, items:[{id,x,y,w,h}]}, with localStorage as an instant
  * cache so the board renders before the round trip. Layouts stored by the earlier
  * row-based versions are converted on load, keeping the picture they described. Dolibarr's own llx_boxes stays in sync for the part it
  * can express (which widgets are active, and a two-column reading order), so
@@ -36,26 +36,25 @@
 
 	var ROOT = document.documentElement;
 	var SELF = document.currentScript;
-	// v4: the board is ONE grid, not a stack of rows. A widget carries where it sits
+	// v5: the board is ONE grid, not a stack of rows. A widget carries where it sits
 	// (x, y) as well as how big it is (w, h) — x and w in tracks, y and h in units of
-	// UNIT_H pixels. Twenty-four tracks rather than twelve: the finer step is the whole
-	// point of placing a widget instead of letting it flow.
-	var COLS = 24;             // tracks across the board
+	// UNIT_H pixels. 192 horizontal tracks make the usual desktop step roughly as fine
+	// as the fixed eight-pixel vertical step while widths remain fluid.
+	var LAYOUT_VERSION = 5;
+	var LEGACY_COLS = 24;
+	var COLS = 192;            // tracks across the board
 	var UNIT_H = 8;            // one vertical unit, in pixels
-	var DEFAULT_SPAN = 12;     // a new widget takes half the width
-	var WORKBOARD_SPAN = 24;   // the working board is a wide summary, never a half row
+	var MIN_SPAN = COLS / LEGACY_COLS; // same minimum visual width as one legacy track
+	var DEFAULT_SPAN = COLS / 2;       // a new widget takes half the width
+	var WORKBOARD_SPAN = COLS;         // the working board is a wide summary
 	var DEFAULT_UNITS = 40;    // …and 320px tall until it is resized
 	var MIN_UNITS = 8;
-	var MIN_HEIGHT = 120;
 	var MAX_HEIGHT = 4000;
-	var ROW_UNIT = 60;         // one row of the layout picker, in pixels
+	var MAX_UNITS = Math.round(MAX_HEIGHT / UNIT_H);
 	var RESIZE_STEP = 4;       // units gained per arrow-key press on the resize grip
-	var PICKER_ROWS = 8;
 	var SAVE_DELAY = 500;
-	var MASONRY_GAP = 16;
-	var masonryObserved = new WeakSet();
-	var masonryObserver = null;
-	var masonryScheduled = false;
+	var notifyScheduled = false;
+	var ROOT_STYLE = null;
 
 	function $(sel, ctx) { return (ctx || document).querySelector(sel); }
 	function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
@@ -83,7 +82,8 @@
 	function tr(key, fallback) {
 		var value = "";
 		try {
-			value = getComputedStyle(ROOT).getPropertyValue("--fz-t-" + key).trim();
+			if (!ROOT_STYLE) ROOT_STYLE = getComputedStyle(ROOT);
+			value = ROOT_STYLE.getPropertyValue("--fz-t-" + key).trim();
 		} catch (e) {}
 		if (!value) return fallback;
 		return value.replace(/^["']|["']$/g, "") || fallback;
@@ -91,20 +91,15 @@
 	function clampSpan(value) {
 		value = parseInt(value, 10);
 		if (!isFinite(value)) value = DEFAULT_SPAN;
-		return Math.max(1, Math.min(COLS, value));
+		return Math.max(MIN_SPAN, Math.min(COLS, value));
 	}
-	function clampHeight(value) {
-		value = parseInt(value, 10);
-		if (!isFinite(value) || value <= 0) return 0; // 0 = automatic height
-		return Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, value));
-	}
-	// v4 coordinates. A placed widget has a height like it has a width: explicit. The
+	// v5 coordinates. A placed widget has a height like it has a width: explicit. The
 	// "automatic" height of v3 cannot survive an explicit y — the widgets under it
 	// would have nowhere to be until their neighbour above had finished rendering.
 	function clampUnits(value) {
 		value = Math.round(parseFloat(value));
 		if (!isFinite(value) || value <= 0) return DEFAULT_UNITS;
-		return Math.max(MIN_UNITS, Math.min(Math.round(MAX_HEIGHT / UNIT_H), value));
+		return Math.max(MIN_UNITS, Math.min(MAX_UNITS, value));
 	}
 	function clampX(value) {
 		value = Math.round(parseFloat(value));
@@ -115,7 +110,7 @@
 		value = Math.round(parseFloat(value));
 		return (!isFinite(value) || value < 0) ? 0 : value;
 	}
-	// px -> units, the conversion used by the layout dialog and by the v3 migration
+	// px -> units, the conversion used by the v3 migration and new-widget sizing
 	function unitsFromPx(px) { return clampUnits(Math.round((parseFloat(px) || 0) / UNIT_H)); }
 	function done() { ROOT.classList.remove("fz-dash-boot"); }
 
@@ -123,59 +118,36 @@
 	// reflow on its own. Every charting library redraws on the window's resize event,
 	// so raise one: that is what makes the CONTENT follow the size, instead of just
 	// being clipped by it.
+	// Dispatching a window resize reaches every chart library and every page listener,
+	// and Chart.js instances are re-measured on top — heavy enough that a burst of calls
+	// (a dialog repaint, a gesture end) must collapse to one pass on the next frame.
 	function notifyResize() {
-		try {
-			window.dispatchEvent(new Event("resize"));
-		} catch (e) {
-			try {
-				var legacy = document.createEvent("Event");
-				legacy.initEvent("resize", true, true);
-				window.dispatchEvent(legacy);
-			} catch (ignore) {}
-		}
-		// Chart.js 3 does not listen to the window — it observes the canvas's
-		// parent — so the event above reaches none of the dashboard charts. Ask each
-		// instance to re-measure instead; the call is idempotent and costs a layout read.
-		try {
-			var ChartLib = window.Chart;
-			if (ChartLib && typeof ChartLib.getChart === "function") {
-				$all("#fz-dash canvas").forEach(function (canvasEl) {
-					var chart = ChartLib.getChart(canvasEl);
-					if (chart) chart.resize();
-				});
-			}
-		} catch (e) {}
-		scheduleMasonry();
-	}
-
-	// CSS Grid does not provide cross-browser masonry yet. Give each dashboard
-	// cell a span over tiny implicit rows; `grid-auto-flow:dense` can then place a
-	// following widget in the free space below a shorter neighbour.
-	// v4 places every widget on explicit grid rows, so nothing has to be measured to
-	// know where it goes: the masonry pass that computed a span from the rendered
-	// height would now fight the stored height. Kept as a no-op — the observers and
-	// the call sites still exist, and a size change simply has nothing left to correct.
-	function layoutMasonry() {}
-
-	function scheduleMasonry(root) {
-		if (masonryScheduled) return;
-		masonryScheduled = true;
+		if (notifyScheduled) return;
+		notifyScheduled = true;
 		window.requestAnimationFrame(function () {
-			masonryScheduled = false;
-			layoutMasonry(root || document);
+			notifyScheduled = false;
+			try {
+				window.dispatchEvent(new Event("resize"));
+			} catch (e) {
+				try {
+					var legacy = document.createEvent("Event");
+					legacy.initEvent("resize", true, true);
+					window.dispatchEvent(legacy);
+				} catch (ignore) {}
+			}
+			// Chart.js 3 does not listen to the window — it observes the canvas's
+			// parent — so the event above reaches none of the dashboard charts. Ask each
+			// instance to re-measure instead; the call is idempotent and costs a layout read.
+			try {
+				var ChartLib = window.Chart;
+				if (ChartLib && typeof ChartLib.getChart === "function") {
+					$all("#fz-dash canvas").forEach(function (canvasEl) {
+						var chart = ChartLib.getChart(canvasEl);
+						if (chart) chart.resize();
+					});
+				}
+			} catch (e) {}
 		});
-	}
-
-	function watchMasonry(dash) {
-		if (typeof ResizeObserver !== "undefined" && !masonryObserver) {
-			masonryObserver = new ResizeObserver(function () { scheduleMasonry(dash); });
-		}
-		$all(".fz-dash-cell", dash).forEach(function (cell) {
-			if (masonryObserved.has(cell)) return;
-			masonryObserved.add(cell);
-			if (masonryObserver) masonryObserver.observe(cell);
-		});
-		scheduleMasonry(dash);
 	}
 
 	/* ------------------------------------------------------------------ *
@@ -245,18 +217,34 @@
 
 	/* ------------------------------------------------------------------ *
 	 *  Layout model                                                       *
-	 *  {v:4, items:[ {id, x:0..23, y:0.., w:1..24, h: units} ]}           *
+	 *  {v:5, items:[ {id, x:0..191, y:0.., w:8..192, h: units} ]}         *
 	 * ------------------------------------------------------------------ */
 
 	// v1/v2/v3 all described a stack of rows: widgets flowed inside a row and a row
-	// was as tall as its tallest widget. v4 gives every widget its own coordinates, so
+	// was as tall as its tallest widget. v4 gave every widget its own coordinates, so
 	// the conversion has to invent the y each row never had. Rows are laid out top to
 	// bottom, each one as tall as the tallest widget it holds — the picture the user
 	// left is the picture they get back, and from there each widget can be moved on
 	// its own. `measure` reports what a widget currently occupies on screen, which is
-	// how a v3 automatic height becomes an explicit one.
+	// how a v3 automatic height becomes an explicit one. v5 only multiplies v4's
+	// horizontal coordinates by eight, preserving every position exactly.
 	function migrate(layout, measure) {
-		if (!layout || layout.v === 4) return layout;
+		if (!layout || layout.v === LAYOUT_VERSION) return layout;
+		if (layout.v === 4 && layout.items) {
+			var scale = COLS / LEGACY_COLS;
+			return {
+				v: LAYOUT_VERSION,
+				items: layout.items.map(function (item) {
+					return {
+						id: item.id,
+						x: (parseInt(item.x, 10) || 0) * scale,
+						y: item.y,
+						w: (parseInt(item.w, 10) || (LEGACY_COLS / 2)) * scale,
+						h: item.h
+					};
+				})
+			};
+		}
 		if (!layout.rows) return layout;
 
 		var items = [];
@@ -274,8 +262,8 @@
 			var tallest = MIN_UNITS;
 			rowItems.forEach(function (item) {
 				if (!item || item.id == null) return;
-				// twelve tracks became twenty-four: every old width covers the same space
-				var w = Math.max(1, Math.min(COLS, (parseInt(item.w, 10) || 6) * 2));
+				// The original row model used twelve tracks; scale without changing width.
+				var w = Math.max(MIN_SPAN, Math.min(COLS, (parseInt(item.w, 10) || 6) * (COLS / 12)));
 				if (x + w > COLS) { x = 0; }
 				var units = item.h ? unitsFromPx(item.h) : unitsFromPx(measure ? measure(String(item.id)) : 0);
 				items.push({ id: String(item.id), x: x, y: y, w: w, h: units });
@@ -285,7 +273,7 @@
 			y += tallest;
 		});
 
-		return { v: 4, items: items };
+		return { v: LAYOUT_VERSION, items: items };
 	}
 
 	// Does the rectangle `a` overlap `b`? Placement is free, so this is only used to
@@ -341,11 +329,11 @@
 			items.push({ id: widget.id, x: spot.x, y: spot.y, w: w, h: h });
 		});
 
-		return { v: 4, items: items };
+		return { v: LAYOUT_VERSION, items: items };
 	}
 
 	// What a widget currently occupies on screen. Used to turn the automatic heights of
-	// v3 — and of a widget just added from the combo — into the explicit one v4 needs.
+	// v3 — and of a widget just added from the combo — into the explicit one v5 needs.
 	// Read while the widgets still sit in the native columns, so the number is real.
 	// Under the shell's breakpoint the board is a single column: x, y and w have no
 	// effect there, so a drag would silently rewrite a layout the user cannot see.
@@ -375,7 +363,7 @@
 		var items = $all(".fz-dash-cell", dash).map(rectFromCell);
 		// reading order: top to bottom, then left to right
 		items.sort(function (a, b) { return (a.y - b.y) || (a.x - b.x); });
-		return { v: 4, items: items };
+		return { v: LAYOUT_VERSION, items: items };
 	}
 
 	/* ------------------------------------------------------------------ *
@@ -393,34 +381,51 @@
 		cell.style.setProperty("--fz-cw", String(w));
 		cell.style.setProperty("--fz-cu", String(clampUnits(rect.h)));
 		cell.setAttribute("data-fz-span", w + "/" + COLS);
-		// v3 pinned a height only sometimes; v4 always does, and the whole sizing and
+		cell.classList.toggle("fz-at-left-edge", x === 0);
+		cell.classList.toggle("fz-at-right-edge", x + w === COLS);
+		// v3 pinned a height only sometimes; v5 always does, and the whole sizing and
 		// adaptive-chart chain of the stylesheet keys on this class.
 		cell.classList.add("fz-has-height");
 	}
 
-	// A size change alone, keeping the widget where it is (layout dialog, keyboard).
-	function applySize(cell, span, height) {
-		var rect = rectFromCell(cell);
-		rect.w = clampSpan(span);
-		if (height) rect.h = unitsFromPx(height);
-		applyRect(cell, rect);
+	// Move one corner while the opposite corner stays fixed. Horizontal movement snaps
+	// to tracks and vertical movement to UNIT_H pixels, exactly like widget placement.
+	function resizeFromCorner(rect, corner, deltaX, deltaY) {
+		var next = { id: rect.id, x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+		var right = rect.x + rect.w;
+		var bottom = rect.y + rect.h;
+
+		if (corner.indexOf("w") !== -1) {
+			next.x = Math.max(0, Math.min(right - MIN_SPAN, rect.x + deltaX));
+			next.w = right - next.x;
+		} else {
+			next.w = Math.max(MIN_SPAN, Math.min(COLS - rect.x, rect.w + deltaX));
+		}
+
+		if (corner.indexOf("n") !== -1) {
+			var minY = Math.max(0, bottom - MAX_UNITS);
+			var maxY = bottom - MIN_UNITS;
+			next.y = Math.max(minY, Math.min(maxY, rect.y + deltaY));
+			next.h = bottom - next.y;
+		} else {
+			next.h = Math.max(MIN_UNITS, Math.min(MAX_UNITS, rect.h + deltaY));
+		}
+
+		return next;
 	}
 
-	// The corner grip of Prosono's Drag-And-Drop-Card, ported to this grid: that card
-	// drags a card's corner over a pixel canvas and snaps to 10px, here it snaps to
-	// the board's tracks and units. The layout dialog stays — this is the direct
-	// gesture, not its replacement.
-	function buildResizeHandle() {
-		return button("fz-dash-resize", "fa-angle-down", tr("dash-resize", "Resize this widget"));
+	function buildResizeHandle(corner) {
+		var label = tr("dash-resize", "Resize this widget") + " (" + corner.toUpperCase() + ")";
+		var handle = button("fz-dash-resize fz-dash-resize-" + corner, "fa-angle-down", label);
+		handle.setAttribute("data-fz-corner", corner);
+		return handle;
 	}
 
-	// A widget's toolbar, the three actions Home Assistant puts on a card: move it,
-	// open its layout, remove it. The size can also be set from the corner grip above,
-	// but the dialog is where the choice is visible as a grid.
+	// A widget's edit toolbar: move it or remove it. Size is changed directly from
+	// the corner grip, with no second layout interface to keep in sync.
 	function buildCellTools() {
 		var tools = el("div", "fz-dash-celltools");
 		tools.appendChild(button("fz-dash-grip", "fa-arrows-alt", tr("dash-move", "Move this widget")));
-		tools.appendChild(button("fz-dash-layout", "fa-pen", tr("dash-layout", "Layout")));
 		tools.appendChild(button("fz-dash-del", "fa-trash-alt", tr("dash-delwidget", "Remove this widget")));
 		return tools;
 	}
@@ -465,15 +470,12 @@
 	function buildCell(item, widget) {
 		var cell = el("div", "fz-dash-cell");
 		cell.setAttribute("data-fz-box", item.id);
-		if (widget.node.querySelector(".clearview-box-cell")) {
-			cell.classList.add("fz-dash-clearview");
+		if (widget.node.querySelector(".tm-widget-container > .tm-clock-wrapper")) {
+			cell.classList.add("fz-dash-remoteclocking");
 		}
-		// `canvas` and `.dolgraphchart` are what actually identify a chart.
-		// The ClearView selectors below match no markup in the installed module — its
-		// boxes emit a bare <canvas height="400"> — so this whole adaptive path never
-		// ran for them and their chart kept the height it was drawn at, inside a box
-		// that had been resized around it. They are kept for other ClearView versions.
-		var adaptiveContent = widget.node.querySelector("canvas, .dolgraphchart, .clearview-interactive-chart, .clearview-worldmap, .clearview-box-graph");
+		// Keep only generic drawing primitives here. Modules that own responsive widget
+		// content adapt themselves to the cell size without a theme-specific selector.
+		var adaptiveContent = widget.node.querySelector("canvas, .dolgraphchart");
 		if (adaptiveContent) {
 			cell.classList.add("fz-dash-adaptive");
 			var adaptiveRow = adaptiveContent.closest("tr");
@@ -506,147 +508,11 @@
 			if (del) del.remove();
 		}
 		applyRect(cell, item);
-		cell.appendChild(buildResizeHandle());
+		["nw", "ne", "sw", "se"].forEach(function (corner) {
+			cell.appendChild(buildResizeHandle(corner));
+		});
 
 		return cell;
-	}
-
-	/* ------------------------------------------------------------------ *
-	 *  The layout dialog                                                  *
-	 * ------------------------------------------------------------------ */
-
-	// Home Assistant sets a card's size in a "Layout" tab: a grid where the chosen
-	// width and height are simply the highlighted rectangle. That is what this is —
-	// twelve columns wide, and rows of ROW_UNIT pixels, plus the two escapes the model
-	// needs (full width, automatic height).
-	//
-	// A size is applied only after a click in the grid. Moving the pointer must not
-	// resize the widget unexpectedly; Cancel puts back the size the dialog opened with.
-	function openLayoutDialog(cell, grid) {
-		var jq = window.jQuery;
-		if (!cell || !jq || !jq.fn || !jq.fn.dialog) return;
-
-		// v4 keeps the height in units and lets CSS derive the pixels, so the dialog —
-		// which talks in pixels, and offers a "automatic height" the model no longer
-		// has — converts on the way in and on the way out.
-		var startRect = rectFromCell(cell);
-		var startSpan = startRect.w;
-		var startHeight = startRect.h * UNIT_H;
-
-		var state = { w: startSpan, h: startHeight };
-		var dialogFinished = false;
-
-		var host = el("div", "fz-dash-layoutdlg");
-		var picker = el("div", "fz-dash-picker");
-		var cells = [];
-		for (var row = 1; row <= PICKER_ROWS; row++) {
-			for (var col = 1; col <= COLS; col++) {
-				var pcell = el("button", "fz-dash-pcell");
-				pcell.type = "button";
-				pcell.setAttribute("data-w", String(col));
-				pcell.setAttribute("data-h", String(row));
-				pcell.setAttribute("aria-label", col + "/" + COLS + " × " + row);
-				picker.appendChild(pcell);
-				cells.push(pcell);
-			}
-		}
-		host.appendChild(picker);
-
-		var readout = el("div", "fz-dash-readout", "");
-		host.appendChild(readout);
-
-		var opts = el("div", "fz-dash-opts");
-		var fullLabel = el("label", "fz-dash-opt");
-		var full = document.createElement("input");
-		full.type = "checkbox";
-		fullLabel.appendChild(full);
-		fullLabel.appendChild(document.createTextNode(" " + tr("dash-fullwidth", "Full width")));
-		opts.appendChild(fullLabel);
-
-		var autoLabel = el("label", "fz-dash-opt");
-		var auto = document.createElement("input");
-		auto.type = "checkbox";
-		autoLabel.appendChild(auto);
-		autoLabel.appendChild(document.createTextNode(" " + tr("dash-autoheight", "Automatic height")));
-		opts.appendChild(autoLabel);
-		host.appendChild(opts);
-
-		// Reflect `state` everywhere: the widget itself, the highlighted rectangle, the
-		// readout and the two checkboxes.
-		function paint(preview) {
-			var shown = preview || state;
-			var rows = shown.h ? Math.max(1, Math.round(shown.h / ROW_UNIT)) : 0;
-			cells.forEach(function (pcell) {
-				var on = (parseInt(pcell.getAttribute("data-w"), 10) <= shown.w)
-					&& (rows ? parseInt(pcell.getAttribute("data-h"), 10) <= rows : parseInt(pcell.getAttribute("data-h"), 10) === 1);
-				pcell.classList.toggle("is-on", on);
-				pcell.classList.toggle("is-auto", on && !rows);
-			});
-			readout.textContent = shown.w + "/" + COLS + " · "
-				+ (shown.h ? (rows + " × " + ROW_UNIT + "px") : tr("dash-autoheight", "Automatic height"));
-			full.checked = (state.w === COLS);
-			auto.checked = !state.h;
-			applySize(cell, shown.w, shown.h);
-			// ClearView SVGs and third-party canvas charts must recompute against
-			// the selected dimensions.
-			notifyResize();
-		}
-
-		picker.addEventListener("click", function (ev) {
-			var pcell = ev.target.closest(".fz-dash-pcell");
-			if (!pcell) return;
-			ev.preventDefault();
-			state.w = parseInt(pcell.getAttribute("data-w"), 10);
-			state.h = auto.checked ? startHeight : parseInt(pcell.getAttribute("data-h"), 10) * ROW_UNIT;
-			paint();
-			notifyResize();
-		});
-		full.addEventListener("change", function () {
-			state.w = full.checked ? COLS : Math.min(startSpan, COLS - 1) || DEFAULT_SPAN;
-			paint();
-			notifyResize();
-		});
-		auto.addEventListener("change", function () {
-			state.h = auto.checked ? startHeight : (startHeight || ROW_UNIT * 3);
-			paint();
-			notifyResize();
-		});
-
-		paint();
-
-		var buttons = {};
-		buttons[tr("dash-cancel", "Cancel")] = function () {
-			applySize(cell, startSpan, startHeight);
-			notifyResize();
-			dialogFinished = true;
-			jq(this).dialog("close");
-		};
-		buttons[tr("dash-save", "Save")] = function () {
-			applySize(cell, state.w, state.h);
-			notifyResize();
-			grid.save(true);
-			dialogFinished = true;
-			jq(this).dialog("close");
-		};
-
-		document.body.appendChild(host);
-		jq(host).dialog({
-			title: tr("dash-layout", "Layout"),
-			modal: true,
-			width: Math.min(560, Math.round(window.innerWidth * 0.92)),
-			closeText: "",
-			buttons: buttons,
-			close: function () {
-				// The title-bar close button and Escape bypass the Cancel callback.
-				// They must still undo a live hover preview.
-				if (!dialogFinished) {
-					applySize(cell, startSpan, startHeight);
-					notifyResize();
-				}
-				jq(this).dialog("destroy");
-				host.remove();
-			}
-		});
 	}
 
 	/* ------------------------------------------------------------------ *
@@ -834,6 +700,18 @@
 		bar.appendChild(doneBtn);
 
 		dash.appendChild(bar);
+
+		// Put the native "add widget" form (#addbox) on the same line as the toolbar
+		// buttons: move it to the front of the bar (it sits left, the buttons stay right).
+		var addbox = document.getElementById("addbox");
+		if (addbox) {
+			// The home title bar ("&nbsp;" + this form) only added an empty top margin;
+			// once the form is on our toolbar, hide that now-empty title row. Done here,
+			// not in CSS, so the native fallback (JS off) still shows the add-widget form.
+			var titleHost = addbox.closest("table.table-fiche-title");
+			bar.insertBefore(addbox, bar.firstChild);
+			if (titleHost) titleHost.style.display = "none";
+		}
 		// No "add a row" any more: there are no rows to add to, a widget is simply
 		// dropped where there is room.
 	}
@@ -880,7 +758,6 @@
 				var merged = normalize(remote, widgets, measure);
 				if (JSON.stringify(merged) !== JSON.stringify(grid.layout())) {
 					render(dash, merged, widgets);
-					grid.refresh();
 					notifyResize();
 				}
 			} else if (store.cached()) {
@@ -916,10 +793,6 @@
 		else this.saveTimer = setTimeout(run, SAVE_DELAY);
 	};
 
-	Grid.prototype.refresh = function () {
-		watchMasonry(this.dash);
-	};
-
 	Grid.prototype.setEditing = function (editing) {
 		this.editing = editing;
 		this.dash.classList.toggle("fz-dash-edit", editing);
@@ -938,7 +811,6 @@
 
 	Grid.prototype.reset = function () {
 		render(this.dash, normalize(null, this.widgets, measurer(this.widgets)), this.widgets);
-		this.refresh();
 		this.save(true);
 	};
 
@@ -950,9 +822,8 @@
 	// pushing what was underneath further down, never by rearranging the board.
 	Grid.prototype.metrics = function () {
 		var gridEl = $(".fz-dash-grid", this.dash);
-		var gap = parseFloat(getComputedStyle(this.dash).getPropertyValue("--fz-dash-gap")) || MASONRY_GAP;
 		var width = gridEl ? gridEl.getBoundingClientRect().width : 0;
-		return { gridEl: gridEl, gap: gap, pitch: (width + gap) / COLS, unit: UNIT_H };
+		return { gridEl: gridEl, pitch: width / COLS, unit: UNIT_H };
 	};
 
 	// Push every widget the moved one now covers straight down, then repeat for what
@@ -982,7 +853,7 @@
 
 		dash.addEventListener("pointerdown", function (ev) {
 			if (!grid.editing || ev.button || isNarrow()) return;
-			if (ev.target.closest(".fz-dash-resize, .fz-dash-layout, .fz-dash-del, .fz-dash-expand")) return;
+			if (ev.target.closest(".fz-dash-resize, .fz-dash-del, .fz-dash-expand")) return;
 			var handle = ev.target.closest(".fz-dash-grip, .box_titre");
 			if (!handle) return;
 			var cell = handle.closest(".fz-dash-cell");
@@ -998,7 +869,14 @@
 			dash.classList.add("fz-dash-dragging");
 			cell.classList.add("fz-dash-moving");
 
-			function move(moveEv) {
+			// Coalesce pointer moves to one grid re-place per frame: the browser fires
+			// pointermove faster than it paints, and each applyRect relays the whole grid.
+			var moveRaf = 0, lastMove = null;
+			function paintMove() {
+				moveRaf = 0;
+				if (!lastMove) return;
+				var moveEv = lastMove;
+				lastMove = null;
 				applyRect(cell, {
 					x: start.x + Math.round((moveEv.clientX - startX) / metrics.pitch),
 					y: Math.max(0, start.y + Math.round((moveEv.clientY - startY) / metrics.unit)),
@@ -1006,7 +884,16 @@
 					h: start.h
 				});
 			}
+			function move(moveEv) {
+				lastMove = moveEv;
+				if (moveRaf) return;
+				moveRaf = window.requestAnimationFrame(paintMove);
+			}
 			function up() {
+				if (moveRaf) {
+					window.cancelAnimationFrame(moveRaf);
+					paintMove();
+				}
 				handle.removeEventListener("pointermove", move);
 				handle.removeEventListener("pointerup", up);
 				handle.removeEventListener("pointercancel", up);
@@ -1037,6 +924,7 @@
 			if (!handle) return;
 			var cell = handle.closest(".fz-dash-cell");
 			if (!cell) return;
+			var corner = handle.getAttribute("data-fz-corner") || "se";
 
 			ev.preventDefault();
 			ev.stopPropagation();      // the move gesture must not start as well
@@ -1046,23 +934,32 @@
 			var start = rectFromCell(cell);
 			var startX = ev.clientX;
 			var startY = ev.clientY;
-			dash.classList.add("fz-dash-resizing");
+			dash.classList.add("fz-dash-resizing", "fz-dash-resizing-" + corner);
 
+			var moveRaf = 0, lastMove = null;
+			function paintMove() {
+				moveRaf = 0;
+				if (!lastMove) return;
+				var moveEv = lastMove;
+				lastMove = null;
+				var deltaX = Math.round((moveEv.clientX - startX) / metrics.pitch);
+				var deltaY = Math.round((moveEv.clientY - startY) / metrics.unit);
+				applyRect(cell, resizeFromCorner(start, corner, deltaX, deltaY));
+			}
 			function move(moveEv) {
-				var w = start.w + Math.round((moveEv.clientX - startX) / metrics.pitch);
-				var h = start.h + Math.round((moveEv.clientY - startY) / metrics.unit);
-				applyRect(cell, {
-					x: start.x,
-					y: start.y,
-					w: Math.max(1, Math.min(COLS - start.x, w)),
-					h: Math.max(MIN_UNITS, h)
-				});
+				lastMove = moveEv;
+				if (moveRaf) return;
+				moveRaf = window.requestAnimationFrame(paintMove);
 			}
 			function up() {
+				if (moveRaf) {
+					window.cancelAnimationFrame(moveRaf);
+					paintMove();
+				}
 				handle.removeEventListener("pointermove", move);
 				handle.removeEventListener("pointerup", up);
 				handle.removeEventListener("pointercancel", up);
-				dash.classList.remove("fz-dash-resizing");
+				dash.classList.remove("fz-dash-resizing", "fz-dash-resizing-" + corner);
 				grid.resolveOverlaps(cell);
 				notifyResize(); // a chart redraws into the box it was just given
 				grid.save();
@@ -1081,15 +978,18 @@
 			var cell = handle.closest(".fz-dash-cell");
 			if (!cell) return;
 			var rect = rectFromCell(cell);
+			var corner = handle.getAttribute("data-fz-corner") || "se";
+			var deltaX = 0;
+			var deltaY = 0;
 
-			if (ev.key === "ArrowRight") rect.w = Math.min(COLS - rect.x, rect.w + 1);
-			else if (ev.key === "ArrowLeft") rect.w = Math.max(1, rect.w - 1);
-			else if (ev.key === "ArrowDown") rect.h = rect.h + RESIZE_STEP;
-			else if (ev.key === "ArrowUp") rect.h = Math.max(MIN_UNITS, rect.h - RESIZE_STEP);
+			if (ev.key === "ArrowRight") deltaX = 1;
+			else if (ev.key === "ArrowLeft") deltaX = -1;
+			else if (ev.key === "ArrowDown") deltaY = RESIZE_STEP;
+			else if (ev.key === "ArrowUp") deltaY = -RESIZE_STEP;
 			else return;
 
 			ev.preventDefault();
-			applyRect(cell, rect);
+			applyRect(cell, resizeFromCorner(rect, corner, deltaX, deltaY));
 			grid.resolveOverlaps(cell);
 			notifyResize();
 			grid.save();
@@ -1115,12 +1015,6 @@
 				if (window.confirm(tr("dash-resetask", "Reset the dashboard layout?"))) grid.reset();
 				return;
 			}
-			var layout = target.closest(".fz-dash-layout");
-			if (layout) {
-				ev.preventDefault();
-				openLayoutDialog(layout.closest(".fz-dash-cell"), grid);
-				return;
-			}
 			var delWidget = target.closest(".fz-dash-del");
 			if (delWidget) {
 				// Delegate to Dolibarr's own close control: it is what knows how to put the
@@ -1140,7 +1034,6 @@
 
 		this.wireDrag();
 		this.wireResize();
-		this.refresh();
 		this.overrideCore();
 	};
 

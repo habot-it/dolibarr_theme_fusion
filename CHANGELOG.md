@@ -6,6 +6,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+### Fixed
+- The Remote Clocking dashboard widget now keeps the same 44px header height and typography as the
+  other widgets, truncates its title on one line in narrow cells, and centers its clock, status and
+  actions inside the height selected by the user.
+
+### Performance
+- Main-menu chevrons no longer require downloading and parsing every module home page on startup.
+  Only the section actually opened by the user is fetched; deeper contextual levels are discovered
+  during browser idle time with at most two background requests at once.
+- Dashboard redraw requests are coalesced to one pass per animation frame, and pointer-driven moves
+  and resizes no longer recompute the grid more often than the browser can paint it.
+- The obsolete masonry observer has been removed from the explicit-position v4 dashboard. Widget
+  size changes therefore no longer schedule an empty layout pass.
+- Sidebar tooltip cleanup now reacts only when a tooltip marker is actually added, instead of
+  rescanning the complete navigation after every open, close, hover or active-state class change.
+
 ## [1.1.0] — 2026-08-14
 
 ### Added
