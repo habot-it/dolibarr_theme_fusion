@@ -1208,7 +1208,7 @@
 
 		var script = document.createElement("script");
 		var dashboardSrc = SELF.src.replace(/fusion\.js/, "fusion-dashboard.js");
-		script.src = dashboardSrc + (dashboardSrc.indexOf("?") === -1 ? "?" : "&") + "fzv=20260817-7";
+		script.src = dashboardSrc + (dashboardSrc.indexOf("?") === -1 ? "?" : "&") + "fzv=20260819-1";
 		var nonce = SELF.nonce || SELF.getAttribute("nonce");
 		if (nonce) script.setAttribute("nonce", nonce);
 		script.onerror = function () {

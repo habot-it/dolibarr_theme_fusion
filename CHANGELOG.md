@@ -6,6 +6,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [Unreleased]
 
+### Added
+- Edit mode now draws a ruler over the board: the fine 192-column / 8-pixel grid the layout is
+  actually stored in, plus dashed lines at the useful equal-width fractions — 1/5, 1/4, 1/3, 2/5,
+  1/2, 3/5, 2/3, 3/4 and 4/5 — each labelled in the gap above the board. The overlay is inert, so
+  dragging, resizing and the widget controls keep the whole pointer surface, and it disappears in
+  portrait, where the board collapses to a single column.
+
 ### Fixed
 - The Remote Clocking dashboard widget now keeps the same 44px header height and typography as the
   other widgets, truncates its title on one line in narrow cells, and centers its clock, status and
