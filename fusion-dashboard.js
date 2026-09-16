@@ -559,6 +559,29 @@
 		});
 	}
 
+	function buildGridGuides() {
+		var guides = el("div", "fz-dash-guides");
+		guides.setAttribute("aria-hidden", "true");
+		[
+			{ at: 20, label: "1/5" },
+			{ at: 25, label: "1/4" },
+			{ at: 100 / 3, label: "1/3" },
+			{ at: 40, label: "2/5" },
+			{ at: 50, label: "1/2" },
+			{ at: 60, label: "3/5" },
+			{ at: 200 / 3, label: "2/3" },
+			{ at: 75, label: "3/4" },
+			{ at: 80, label: "4/5" }
+		].forEach(function (guide) {
+			var line = el("span", "fz-dash-guide");
+			line.style.left = guide.at + "%";
+			line.setAttribute("data-fz-guide", guide.label);
+			line.appendChild(el("b", "fz-dash-guide-label", guide.label));
+			guides.appendChild(line);
+		});
+		return guides;
+	}
+
 	function render(dash, layout, widgets) {
 		var byId = {};
 		widgets.forEach(function (widget) { byId[widget.id] = widget; });
@@ -566,6 +589,7 @@
 		// Build into a fragment first: appending a widget moves it out of the old cell,
 		// so the container can then be emptied without ever detaching a live node twice.
 		var grid = el("div", "fz-dash-grid");
+		grid.appendChild(buildGridGuides());
 		// DOM order IS the portrait order: below the breakpoint the board collapses to a
 		// plain column and the cells are read in the order they were rendered, so they
 		// have to be rendered top to bottom, then left to right.

@@ -1347,7 +1347,26 @@ html.fusion #fz-dash{
 html.fusion #fz-dash .fz-dash-grid{
 	display:grid;grid-template-columns:repeat(192,minmax(0,1fr));
 	grid-auto-rows:8px;
-	column-gap:0;row-gap:0;align-items:start}
+	column-gap:0;row-gap:0;align-items:start;position:relative}
+/* Edit-mode ruler: a fine 192-column / 8px grid plus the useful equal-width
+   fractions. It is an inert overlay, so drag, resize and widget controls keep the
+   whole pointer surface. Labels sit in the gap above the board. */
+html.fusion #fz-dash .fz-dash-guides{display:none}
+html.fusion #fz-dash.fz-dash-edit .fz-dash-guides{
+	display:block;position:absolute;z-index:2;inset:0;overflow:visible;pointer-events:none;
+	--fz-guide-fine:color-mix(in srgb,var(--fz-text-dim) 10%,transparent);
+	--fz-guide-major:color-mix(in srgb,var(--fz-text-dim) 48%,transparent);
+	background-image:
+		repeating-linear-gradient(to right,var(--fz-guide-fine) 0,var(--fz-guide-fine) 1px,transparent 1px,transparent .5208333333%),
+		repeating-linear-gradient(to bottom,var(--fz-guide-fine) 0,var(--fz-guide-fine) 1px,transparent 1px,transparent 8px)}
+html.fusion #fz-dash .fz-dash-guide{
+	position:absolute;top:0;bottom:0;width:0;border-left:1px dashed var(--fz-guide-major)}
+html.fusion #fz-dash .fz-dash-guide-label{
+	position:absolute;top:-17px;left:0;transform:translateX(-50%);
+	display:flex;align-items:center;justify-content:center;height:15px;min-width:24px;padding:0 3px;
+	box-sizing:border-box;border:1px solid var(--fz-border);border-radius:4px;
+	background:var(--fz-surface);color:var(--fz-text-dim);
+	font-size:9px;font-weight:700;line-height:1;white-space:nowrap}
 /* THE rule of the whole feature: a widget is a rectangle ON the board — a start and a
 	span on both axes, straight out of the four numbers the layout stores. 192
 	fluid tracks across, eight-pixel units down. minmax(0,1fr) above is what lets a wide
@@ -1672,6 +1691,7 @@ html.fusion #fz-dash.fz-dash-edit .fz-dash-grid{min-height:56px}
 	   of the screen. */
 	html.fusion #fz-dash .fz-dash-grid{
 		display:flex;flex-direction:column;gap:var(--fz-dash-gap);align-items:stretch}
+	html.fusion #fz-dash .fz-dash-guides{display:none !important}
 	html.fusion #fz-dash .fz-dash-cell{
 		margin:0;width:auto;min-width:0;max-width:none}
 	/* The widget area must span the screen. The chain that wraps it — div.fiche, then
