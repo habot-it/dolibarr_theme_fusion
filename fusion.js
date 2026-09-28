@@ -308,6 +308,48 @@
 		window.addEventListener("resize", scheduleDialogSizing);
 		scheduleDialogSizing();
 	}
+	// Full-page lists scroll inside a frame capped to the viewport (style.css.php) so
+	// their horizontal scrollbar stays on screen. Whatever sits above the frame (title,
+	// filter rows, the Breadcrumb module's bar inserted after load…) varies per page,
+	// so measure the frame's real top instead of guessing it in CSS.
+	var LIST_FRAMES = "div.fiche>form>div.div-table-responsive";
+	var fzListFrame = 0;
+	function syncListHeights() {
+		fzListFrame = 0;
+		// clientHeight, not 100vh: vh also counts the area under a page scrollbar
+		var visible = document.documentElement.clientHeight;
+		var right = $("#id-right");
+		var rightPad = right ? parseFloat(getComputedStyle(right).paddingBottom) || 0 : 0;
+		$all(LIST_FRAMES).forEach(function (frame) {
+			var rect = frame.getBoundingClientRect();
+			var top = rect.top + window.pageYOffset;
+			// what follows the frame inside the card (end of form…) must fit too, or the
+			// page still scrolls a little. Measured against .fiche, never the page height:
+			// that one depends on the frame's own height and would shrink it pass after pass.
+			var fiche = frame.closest(".fiche");
+			var below = (fiche ? Math.max(0, fiche.getBoundingClientRect().bottom - rect.bottom) : 0) + rightPad;
+			frame.style.maxHeight = Math.floor(visible - top - below - 4) + "px";
+		});
+	}
+	function scheduleListHeights() {
+		if (fzListFrame) return;
+		fzListFrame = window.requestAnimationFrame ? window.requestAnimationFrame(syncListHeights) : setTimeout(syncListHeights, 0);
+	}
+	function initListHeights() {
+		if (!document.querySelector(LIST_FRAMES)) return;
+		// Re-measure when something lands above the frame after load: the Breadcrumb
+		// module inserts its bar as a body child (before #id-container) without resizing
+		// the container, so watch body's children too. Re-measuring yields the same top
+		// once settled, so the frame's own new height cannot loop.
+		try { new MutationObserver(scheduleListHeights).observe(document.body, { childList: true }); } catch (e) {}
+		var container = $("#id-container");
+		if (container && window.ResizeObserver) {
+			try { new ResizeObserver(scheduleListHeights).observe(container); } catch (e) {}
+		}
+		// a height-only window resize leaves #id-container untouched
+		window.addEventListener("resize", scheduleListHeights);
+		scheduleListHeights();
+	}
 	function markGroupHasSub(group, hasSub) {
 		if (group) group.classList.toggle("fz-has-sub", !!hasSub);
 	}
@@ -634,6 +676,7 @@
 		watchNavScroll(nav);
 		restoreNavScroll(nav);
 		initDialogSizing();
+		initListHeights();
 
 		// ---- 7. Wire interactions ---------------------------------------------
 		// The collapsed PREFERENCE lives in localStorage; the .fz-collapsed class can be
