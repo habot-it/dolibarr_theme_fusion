@@ -715,14 +715,17 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 /* A navigation group = one old top-menu section */
 .fz-group{margin:1px 0}
 .fz-head{
-	display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:var(--fz-radius);
+	display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--fz-radius);
 	color:var(--fz-nav-fg);text-decoration:none;white-space:nowrap;cursor:pointer;position:relative;
 	transition:padding .22s ease;
 }
 .fz-head:hover{background:var(--fz-nav-hover);color:var(--fz-nav-hover-fg)}
 .fz-head .fz-ic{width:20px;flex:0 0 20px;text-align:center;font-size:15px;line-height:1;
 	display:flex;align-items:center;justify-content:center;transition:font-size .22s ease}
-.fz-head .fz-label{flex:1;overflow:hidden;text-overflow:ellipsis}
+.fz-head .fz-label{flex:1;overflow:hidden}
+/* long labels wrap while the rail is expanded; collapsed they are hidden and .fz-head's
+   nowrap keeps them from reflowing during the collapse animation */
+html:not(.fz-collapsed) .fz-head .fz-label{white-space:normal;overflow-wrap:anywhere;line-height:1.3}
 .fz-head .fz-chev{
 	width:26px;height:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:center;
 	margin:-4px -6px -4px 0;border-radius:var(--fz-radius);font-size:11px;color:var(--fz-nav-fg-dim);
@@ -796,8 +799,13 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 .fz-sub .menu_titre:hover{background:var(--fz-sub-hover)}
 .fz-sub .menu_titre a.vmenu::after{content:"";position:absolute;inset:0}
 .fz-sub .menu_titre a.vmenu,.fz-sub .menu_titre span.vmenu{
-	display:flex;align-items:center;gap:7px;color:var(--fz-sub-fg) !important;font-weight:600 !important;
-	text-decoration:none;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+	display:flex;align-items:center;gap:6px;color:var(--fz-sub-fg) !important;font-weight:600 !important;
+	text-decoration:none;font-size:13px;line-height:1.3;white-space:normal;overflow-wrap:anywhere;
+	width:auto !important;min-width:0}  /* core's .vmenu{width:240px} (old left column) would stop the wrap */
+/* core gives the section icon a 20px start-aligned box + 4px padding (pictofixedwidth
+   paddingright): a centred 16px box brings the label closer */
+.fz-sub .menu_titre .vmenu > .pictofixedwidth,.fz-sub .menu_titre .vmenu > img{
+	flex:0 0 16px;width:16px !important;padding:0 !important;margin:0 !important;text-align:center}
 .fz-sub .menu_titre:hover a.vmenu,.fz-sub .menu_titre:hover .fas,
 .fz-sub .menu_titre:hover .far,.fz-sub .menu_titre:hover .fa{color:var(--fz-sub-fg) !important}
 .fz-sub .menu_titre .fas,.fz-sub .menu_titre .far,.fz-sub .menu_titre .fa{color:var(--fz-sub-fg-dim) !important}
@@ -808,7 +816,7 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 .fz-sub .menu_contenu:hover{background:var(--fz-sub-hover) !important}
 .fz-sub .menu_contenu a.vsmenu,.fz-sub .menu_contenu span.vsmenu{
 	display:inline !important;color:var(--fz-sub-fg-dim) !important;
-	text-decoration:none;font-size:13px;font-weight:400 !important;white-space:nowrap}
+	text-decoration:none;font-size:13px;font-weight:400 !important;line-height:1.3;white-space:normal;overflow-wrap:anywhere}
 .fz-sub .menu_contenu.fz-subhead a.vsmenu,.fz-sub .menu_contenu.fz-subhead span.vsmenu{
 	color:var(--fz-sub-fg) !important;font-weight:600 !important}
 .fz-sub .menu_contenu:hover a.vsmenu{color:var(--fz-sub-fg) !important}
@@ -1126,8 +1134,13 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 #fz-user #topmenu-login-dropdown > a:hover .atoploginusername{color:var(--fz-nav-hover-fg) !important}
 #fz-user .photouserphoto,#fz-user .dropdown-user-image{width:34px !important;height:34px !important;
 	box-sizing:border-box !important;border-radius:50% !important;object-fit:cover}
+/* no photo : core prints a font icon (span.fa-user) instead of an img — centre the glyph
+   in the same 34px round slot, on a faint disc so it reads like an avatar */
+#fz-user span.photouserphoto{display:inline-flex !important;align-items:center;justify-content:center;
+	flex:0 0 34px;margin:0 !important;padding:0 !important;font-size:16px;line-height:1 !important;vertical-align:middle;
+	background:rgba(255,255,255,.16)}
 #fz-user .atoploginusername{
-	color:var(--fz-nav-fg) !important;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto}
+	text-align:left;padding-left:0 !important;color:var(--fz-nav-fg) !important;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto}
 /* the panel itself */
 #fz-user .dropdown-menu{
 	position:absolute !important;left:0;right:0;bottom:54px;top:auto !important;box-sizing:border-box;
@@ -1322,6 +1335,23 @@ html.fusion ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fz-text
 html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);background-clip:padding-box;border:3px solid transparent}
 /* keep the navy sidebar's own scrollbars on the light-thumb rule above */
 #fz-sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);background-clip:padding-box;border:2px solid transparent}
+
+/* ====================================================================== *
+ *  Full-page lists : the table scrolls inside its own frame, capped to    *
+ *  the viewport height, so its horizontal scrollbar sits at the bottom of *
+ *  the screen instead of below the last of the (up to 100+) rows.        *
+ * ====================================================================== */
+html.fusion div.fiche>form>div.div-table-responsive{
+	max-height:calc(100vh - var(--fz-list-offset, 145px));overflow:auto}
+/* The column titles stay visible while scrolling vertically inside the frame */
+html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>th,
+html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>td{
+	position:sticky;top:0;z-index:2;background:var(--colorbacktitle1)}
+@media only screen and (max-width: 920px){
+	/* portrait : the fixed top bar also eats into the viewport */
+	html.fusion div.fiche>form>div.div-table-responsive{
+		max-height:calc(100vh - var(--fz-topbar-h) - var(--fz-list-offset, 145px))}
+}
 
 /* ====================================================================== *
  *  DASHBOARD GRID (fusion-dashboard.js)                                   *
