@@ -304,6 +304,28 @@ html.fusion.fz-peek body#mainbody #id-container{
 	width: calc(100% - var(--fz-sb-w-collapsed)) !important;
 }
 html.fz-peek #fz-sidebar{ box-shadow:0 0 40px rgba(0,0,0,.45); }
+/* The Breadcrumb module (custom/breadcrumb) inserts its bar as a body child just before
+   #id-container: give it the same offset, or it slides under the fixed sidebar. */
+html.fusion body#mainbody > .breadCrumbHolder{
+	margin-left: var(--fz-sb-w); width: calc(100% - var(--fz-sb-w));
+	box-sizing: border-box; transition: margin-left .22s ease, width .22s ease;
+	/* stays on screen while the page scrolls, under the sidebar (z-index 1200) */
+	position: sticky; top: 0; z-index: 1000;
+}
+html.fusion.fz-collapsed body#mainbody > .breadCrumbHolder,
+html.fusion.fz-peek body#mainbody > .breadCrumbHolder{
+	margin-left: var(--fz-sb-w-collapsed); width: calc(100% - var(--fz-sb-w-collapsed));
+}
+@media only screen and (max-width: 920px){
+	/* portrait : no rail, but a fixed top bar — the bar sits below it and takes over
+	   the top padding the container reserves for it */
+	html.fusion body#mainbody > .breadCrumbHolder,
+	html.fusion.fz-collapsed body#mainbody > .breadCrumbHolder,
+	html.fusion.fz-peek body#mainbody > .breadCrumbHolder{
+		margin-left: 0; width: 100%; margin-top: var(--fz-topbar-h); top: var(--fz-topbar-h);
+	}
+	html.fusion body#mainbody > div.breadCrumbHolder ~ div#id-container{ padding-top: 0 !important; }  /* div: outranks the .fz-collapsed/.fz-peek container rules */
+}
 html.fusion body#mainbody #id-right{
 	display: block !important;
 	width: auto !important;
@@ -312,6 +334,9 @@ html.fusion body#mainbody #id-right{
 	box-sizing: border-box;
 	min-height: 100vh;
 }
+/* lists: the frame already fills the screen (fusion.js); a 100vh floor would only make the
+   page overflow by whatever sits above #id-container (e.g. the Breadcrumb module's bar) */
+html.fusion body#mainbody.bodyforlist #id-right{ min-height: 0; }
 html.fusion body#mainbody{ background: var(--fz-content-bg); }
 
 /* Neutralize 3rd-party module layout hacks that reserve the legacy left-menu
@@ -1342,16 +1367,12 @@ html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);backgr
  *  the screen instead of below the last of the (up to 100+) rows.        *
  * ====================================================================== */
 html.fusion div.fiche>form>div.div-table-responsive{
-	max-height:calc(100vh - var(--fz-list-offset, 145px));overflow:auto}
-/* The column titles stay visible while scrolling vertically inside the frame */
+	max-height:calc(100vh - 145px);overflow:auto}  /* fallback: fusion.js sets the exact height per frame */
+/* The column titles stay visible while scrolling vertically inside the frame.
+   Opaque: core dims these cells (opacity .8), which let the scrolled rows show through. */
 html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>th,
 html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>td{
-	position:sticky;top:0;z-index:2;background:var(--colorbacktitle1)}
-@media only screen and (max-width: 920px){
-	/* portrait : the fixed top bar also eats into the viewport */
-	html.fusion div.fiche>form>div.div-table-responsive{
-		max-height:calc(100vh - var(--fz-topbar-h) - var(--fz-list-offset, 145px))}
-}
+	position:sticky;top:0;z-index:2;background:var(--colorbacktitle1);opacity:1 !important}
 
 /* ====================================================================== *
  *  DASHBOARD GRID (fusion-dashboard.js)                                   *
