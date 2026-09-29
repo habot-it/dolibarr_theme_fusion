@@ -24,7 +24,7 @@
  */
 
 /**
- *		\file       htdocs/theme/fusion/base.css.php
+ *		\file       htdocs/theme/fusion/base/base.css.php
  *		\brief      Bundled Dolibarr component stylesheet base for Fusion
  */
 
@@ -55,7 +55,7 @@ if (!defined('NOREQUIREAJAX')) {
 define('ISLOADEDBYSTEELSHEET', '1');
 
 
-require __DIR__.'/theme_vars.inc.php';
+require __DIR__.'/../theme_vars.inc.php';	// stays at the theme root: core pages include it from there
 if (defined('THEME_ONLY_CONSTANT')) {
 	return;
 }
@@ -98,7 +98,7 @@ if (defined('THEME_ONLY_CONSTANT')) {
 
 session_cache_limiter('public');
 
-require_once __DIR__.'/../../main.inc.php'; // __DIR__ allow this script to be included in custom themes
+require_once __DIR__.'/../../../main.inc.php'; // __DIR__ allow this script to be included in custom themes
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 /**
  * @var Conf $conf

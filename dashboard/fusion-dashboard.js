@@ -8,7 +8,7 @@
  * This script replaces that area, with NO core change, by ONE board on which every
  * widget is placed:
  *
-	 *   board   a single grid, 192 fluid tracks across, 8-pixel units down
+ *   board   a single grid, 192 fluid tracks across, 8-pixel units down
  *   widget  one Dolibarr box, carrying its own rectangle {x, y, w, h} on that board
  *
  * There is no row and no column object: a widget is where the user put it, holes
@@ -21,12 +21,13 @@
  * Widgets are MOVED, never rebuilt, so every link, graph, tooltip and permission
  * stays intact.
  *
- * The layout is stored per user and per zone through theme/fusion/dashboard.php
-	 * (llx_user_param) as {v:5, items:[{id,x,y,w,h}]}, with localStorage as an instant
+ * The layout is stored per user and per zone through theme/fusion/dashboard/dashboard.php (next to this file)
+ * (llx_user_param) as {v:5, items:[{id,x,y,w,h}]}, with localStorage as an instant
  * cache so the board renders before the round trip. Layouts stored by the earlier
- * row-based versions are converted on load, keeping the picture they described. Dolibarr's own llx_boxes stays in sync for the part it
- * can express (which widgets are active, and a two-column reading order), so
- * disabling the theme brings back a sane native page.
+ * row-based versions are converted on load, keeping the picture they described.
+ * Dolibarr's own llx_boxes stays in sync for the part it can express (which widgets
+ * are active, and a two-column reading order), so disabling the theme brings back a
+ * sane native page.
  *
  * Loaded on demand by fusion.js, only on pages that render the widget area.
  * Companion stylesheet: theme/fusion/style.css.php
@@ -380,7 +381,6 @@
 		cell.style.setProperty("--fz-cy", String(clampY(rect.y)));
 		cell.style.setProperty("--fz-cw", String(w));
 		cell.style.setProperty("--fz-cu", String(clampUnits(rect.h)));
-		cell.setAttribute("data-fz-span", w + "/" + COLS);
 		cell.classList.toggle("fz-at-left-edge", x === 0);
 		cell.classList.toggle("fz-at-right-edge", x + w === COLS);
 		// v3 pinned a height only sometimes; v5 always does, and the whole sizing and
@@ -575,7 +575,6 @@
 		].forEach(function (guide) {
 			var line = el("span", "fz-dash-guide");
 			line.style.left = guide.at + "%";
-			line.setAttribute("data-fz-guide", guide.label);
 			line.appendChild(el("b", "fz-dash-guide-label", guide.label));
 			guides.appendChild(line);
 		});
@@ -707,21 +706,15 @@
 	function buildBar(dash) {
 		var bar = el("div", "fz-dash-bar");
 
-		var edit = el("button", "fz-dash-btn fz-dash-toggle",
-			'<i class="fas fa-sliders-h"></i><span>' + tr("dash-customize", "Customize") + '</span>');
-		edit.type = "button";
-		edit.setAttribute("aria-pressed", "false");
-		bar.appendChild(edit);
-
-		var reset = el("button", "fz-dash-btn fz-dash-reset",
-			'<i class="fas fa-undo"></i><span>' + tr("dash-reset", "Reset") + '</span>');
-		reset.type = "button";
-		bar.appendChild(reset);
-
-		var doneBtn = el("button", "fz-dash-btn fz-dash-done",
-			'<i class="fas fa-check"></i><span>' + tr("dash-done", "Done") + '</span>');
-		doneBtn.type = "button";
-		bar.appendChild(doneBtn);
+		function barButton(cls, icon, label) {
+			var b = el("button", "fz-dash-btn " + cls, '<i class="fas ' + icon + '"></i>');
+			b.type = "button";
+			b.appendChild(el("span")).textContent = label;
+			return bar.appendChild(b);
+		}
+		barButton("fz-dash-toggle", "fa-sliders-h", tr("dash-customize", "Customize")).setAttribute("aria-pressed", "false");
+		barButton("fz-dash-reset", "fa-undo", tr("dash-reset", "Reset"));
+		barButton("fz-dash-done", "fa-check", tr("dash-done", "Done"));
 
 		dash.appendChild(bar);
 
@@ -761,7 +754,6 @@
 
 		var dash = el("div");
 		dash.id = "fz-dash";
-		dash.setAttribute("data-fz-zone", ctx.zone);
 		host.insertBefore(dash, left);
 
 		buildBar(dash);
@@ -844,10 +836,42 @@
 	// reorder: it writes two numbers, and CSS puts the widget there. Overlapping is
 	// allowed while dragging — the grid stacks the cells — and resolved on drop by
 	// pushing what was underneath further down, never by rearranging the board.
-	Grid.prototype.metrics = function () {
+	// One pointer gesture on a cell, shared by the move and the resize. The handle
+	// captures the pointer, and moves are coalesced to one re-place per frame: the
+	// browser fires pointermove faster than it paints, and each applyRect relays the
+	// whole grid. `onMove` receives the offset from the start, in tracks and units.
+	Grid.prototype.track = function (ev, handle, onMove, onEnd) {
+		ev.preventDefault();
+		try { handle.setPointerCapture(ev.pointerId); } catch (e) {}
 		var gridEl = $(".fz-dash-grid", this.dash);
-		var width = gridEl ? gridEl.getBoundingClientRect().width : 0;
-		return { gridEl: gridEl, pitch: width / COLS, unit: UNIT_H };
+		var pitch = (gridEl ? gridEl.getBoundingClientRect().width : 0) / COLS;
+		var startX = ev.clientX;
+		var startY = ev.clientY;
+		var frame = 0, last = null;
+		function paint() {
+			frame = 0;
+			if (!last) return;
+			var moveEv = last;
+			last = null;
+			onMove(Math.round((moveEv.clientX - startX) / pitch), Math.round((moveEv.clientY - startY) / UNIT_H));
+		}
+		function move(moveEv) {
+			last = moveEv;
+			if (!frame) frame = window.requestAnimationFrame(paint);
+		}
+		function up() {
+			if (frame) {
+				window.cancelAnimationFrame(frame);
+				paint();
+			}
+			handle.removeEventListener("pointermove", move);
+			handle.removeEventListener("pointerup", up);
+			handle.removeEventListener("pointercancel", up);
+			onEnd();
+		}
+		handle.addEventListener("pointermove", move);
+		handle.addEventListener("pointerup", up);
+		handle.addEventListener("pointercancel", up);
 	};
 
 	// Push every widget the moved one now covers straight down, then repeat for what
@@ -879,56 +903,20 @@
 			if (!grid.editing || ev.button || isNarrow()) return;
 			if (ev.target.closest(".fz-dash-resize, .fz-dash-del, .fz-dash-expand")) return;
 			var handle = ev.target.closest(".fz-dash-grip, .box_titre");
-			if (!handle) return;
-			var cell = handle.closest(".fz-dash-cell");
+			var cell = handle ? handle.closest(".fz-dash-cell") : null;
 			if (!cell) return;
 
-			ev.preventDefault();
-			try { handle.setPointerCapture(ev.pointerId); } catch (e) {}
-
-			var metrics = grid.metrics();
 			var start = rectFromCell(cell);
-			var startX = ev.clientX;
-			var startY = ev.clientY;
 			dash.classList.add("fz-dash-dragging");
 			cell.classList.add("fz-dash-moving");
-
-			// Coalesce pointer moves to one grid re-place per frame: the browser fires
-			// pointermove faster than it paints, and each applyRect relays the whole grid.
-			var moveRaf = 0, lastMove = null;
-			function paintMove() {
-				moveRaf = 0;
-				if (!lastMove) return;
-				var moveEv = lastMove;
-				lastMove = null;
-				applyRect(cell, {
-					x: start.x + Math.round((moveEv.clientX - startX) / metrics.pitch),
-					y: Math.max(0, start.y + Math.round((moveEv.clientY - startY) / metrics.unit)),
-					w: start.w,
-					h: start.h
-				});
-			}
-			function move(moveEv) {
-				lastMove = moveEv;
-				if (moveRaf) return;
-				moveRaf = window.requestAnimationFrame(paintMove);
-			}
-			function up() {
-				if (moveRaf) {
-					window.cancelAnimationFrame(moveRaf);
-					paintMove();
-				}
-				handle.removeEventListener("pointermove", move);
-				handle.removeEventListener("pointerup", up);
-				handle.removeEventListener("pointercancel", up);
+			grid.track(ev, handle, function (dx, dy) {
+				applyRect(cell, { x: start.x + dx, y: Math.max(0, start.y + dy), w: start.w, h: start.h });
+			}, function () {
 				dash.classList.remove("fz-dash-dragging");
 				cell.classList.remove("fz-dash-moving");
 				grid.resolveOverlaps(cell);
 				grid.save();
-			}
-			handle.addEventListener("pointermove", move);
-			handle.addEventListener("pointerup", up);
-			handle.addEventListener("pointercancel", up);
+			});
 		});
 	};
 
@@ -944,53 +932,22 @@
 
 		dash.addEventListener("pointerdown", function (ev) {
 			if (!grid.editing || ev.button || isNarrow()) return;
-			var handle = ev.target.closest ? ev.target.closest(".fz-dash-resize") : null;
-			if (!handle) return;
-			var cell = handle.closest(".fz-dash-cell");
+			var handle = ev.target.closest(".fz-dash-resize");
+			var cell = handle ? handle.closest(".fz-dash-cell") : null;
 			if (!cell) return;
 			var corner = handle.getAttribute("data-fz-corner") || "se";
 
-			ev.preventDefault();
 			ev.stopPropagation();      // the move gesture must not start as well
-			try { handle.setPointerCapture(ev.pointerId); } catch (e) {}
-
-			var metrics = grid.metrics();
 			var start = rectFromCell(cell);
-			var startX = ev.clientX;
-			var startY = ev.clientY;
 			dash.classList.add("fz-dash-resizing", "fz-dash-resizing-" + corner);
-
-			var moveRaf = 0, lastMove = null;
-			function paintMove() {
-				moveRaf = 0;
-				if (!lastMove) return;
-				var moveEv = lastMove;
-				lastMove = null;
-				var deltaX = Math.round((moveEv.clientX - startX) / metrics.pitch);
-				var deltaY = Math.round((moveEv.clientY - startY) / metrics.unit);
-				applyRect(cell, resizeFromCorner(start, corner, deltaX, deltaY));
-			}
-			function move(moveEv) {
-				lastMove = moveEv;
-				if (moveRaf) return;
-				moveRaf = window.requestAnimationFrame(paintMove);
-			}
-			function up() {
-				if (moveRaf) {
-					window.cancelAnimationFrame(moveRaf);
-					paintMove();
-				}
-				handle.removeEventListener("pointermove", move);
-				handle.removeEventListener("pointerup", up);
-				handle.removeEventListener("pointercancel", up);
+			grid.track(ev, handle, function (dx, dy) {
+				applyRect(cell, resizeFromCorner(start, corner, dx, dy));
+			}, function () {
 				dash.classList.remove("fz-dash-resizing", "fz-dash-resizing-" + corner);
 				grid.resolveOverlaps(cell);
 				notifyResize(); // a chart redraws into the box it was just given
 				grid.save();
-			}
-			handle.addEventListener("pointermove", move);
-			handle.addEventListener("pointerup", up);
-			handle.addEventListener("pointercancel", up);
+			});
 		});
 
 		// The grip is a real button, so the same sizes are reachable from the keyboard —

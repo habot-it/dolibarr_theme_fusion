@@ -10,13 +10,13 @@
  * The DOM merge itself is done by theme/fusion/fusion.js (auto-loaded when the
  * constant ALLOW_THEME_JS = 1).
  *
- * IMPORTANT: no output must be produced before base.css.php is included,
+ * IMPORTANT: no output must be produced before base/base.css.php is included,
  * because it bootstraps Dolibarr and calls top_httphead('text/css').
  */
 
 // Load Fusion's bundled component base. It is versioned with the theme and has
 // no runtime dependency on another Dolibarr theme directory.
-require __DIR__.'/base.css.php';
+require __DIR__.'/base/base.css.php';
 ?>
 
 /* =======================================================================
@@ -116,43 +116,25 @@ if (isset($langs) && is_object($langs) && !empty($langs->defaultlang)) {
 	$fz_langcode = (string) GETPOST('lang', 'aZ09');
 }
 $fz_langprefix = substr(strtolower(str_replace('_', '-', $fz_langcode)), 0, 2);
-$fz_mode_words = array(
-	'en' => array('display' => 'Display mode', 'light' => 'Light', 'auto' => 'Auto', 'dark' => 'Dark'),
-	'fr' => array('display' => 'Mode d\'affichage', 'light' => 'Clair', 'auto' => 'Auto', 'dark' => 'Sombre'),
-	'es' => array('display' => 'Modo de visualización', 'light' => 'Claro', 'auto' => 'Auto', 'dark' => 'Oscuro'),
-	'de' => array('display' => 'Anzeigemodus', 'light' => 'Hell', 'auto' => 'Auto', 'dark' => 'Dunkel'),
-	'it' => array('display' => 'Modalità di visualizzazione', 'light' => 'Chiaro', 'auto' => 'Auto', 'dark' => 'Scuro'),
-	'pt' => array('display' => 'Modo de visualização', 'light' => 'Claro', 'auto' => 'Auto', 'dark' => 'Escuro'),
-	'nl' => array('display' => 'Weergavemodus', 'light' => 'Licht', 'auto' => 'Auto', 'dark' => 'Donker'),
+// Labels Dolibarr has no translation key for (color modes, dashboard grid, the
+// bookmarks heading), one table per language. English is the fallback.
+$fz_words = array(
+	'en' => array('mode-display' => 'Display mode', 'mode-light' => 'Light', 'mode-auto' => 'Auto', 'mode-dark' => 'Dark', 'bookmarks' => 'Bookmarks', 'dash-customize' => 'Customize', 'dash-done' => 'Done', 'dash-move' => 'Move this widget', 'dash-resize' => 'Resize this widget', 'dash-expand' => 'Open in a window', 'dash-delwidget' => 'Remove this widget', 'dash-reset' => 'Reset', 'dash-resetask' => 'Reset the dashboard layout?'),
+	'fr' => array('mode-display' => 'Mode d\'affichage', 'mode-light' => 'Clair', 'mode-auto' => 'Auto', 'mode-dark' => 'Sombre', 'bookmarks' => 'Favoris', 'dash-customize' => 'Personnaliser', 'dash-done' => 'Terminer', 'dash-move' => 'Déplacer ce widget', 'dash-resize' => 'Redimensionner ce widget', 'dash-expand' => 'Ouvrir dans une fenêtre', 'dash-delwidget' => 'Retirer ce widget', 'dash-reset' => 'Réinitialiser', 'dash-resetask' => 'Réinitialiser la disposition du tableau de bord ?'),
+	'es' => array('mode-display' => 'Modo de visualización', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Oscuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Terminar', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir en una ventana', 'dash-delwidget' => 'Quitar este widget', 'dash-reset' => 'Restablecer', 'dash-resetask' => '¿Restablecer la disposición del panel?'),
+	'de' => array('mode-display' => 'Anzeigemodus', 'mode-light' => 'Hell', 'mode-auto' => 'Auto', 'mode-dark' => 'Dunkel', 'bookmarks' => 'Lesezeichen', 'dash-customize' => 'Anpassen', 'dash-done' => 'Fertig', 'dash-move' => 'Dieses Widget verschieben', 'dash-resize' => 'Größe dieses Widgets ändern', 'dash-expand' => 'In einem Fenster öffnen', 'dash-delwidget' => 'Dieses Widget entfernen', 'dash-reset' => 'Zurücksetzen', 'dash-resetask' => 'Anordnung des Dashboards zurücksetzen?'),
+	'it' => array('mode-display' => 'Modalità di visualizzazione', 'mode-light' => 'Chiaro', 'mode-auto' => 'Auto', 'mode-dark' => 'Scuro', 'bookmarks' => 'Segnalibri', 'dash-customize' => 'Personalizza', 'dash-done' => 'Fine', 'dash-move' => 'Sposta questo widget', 'dash-resize' => 'Ridimensiona questo widget', 'dash-expand' => 'Apri in una finestra', 'dash-delwidget' => 'Rimuovi questo widget', 'dash-reset' => 'Ripristina', 'dash-resetask' => 'Ripristinare la disposizione della dashboard?'),
+	'pt' => array('mode-display' => 'Modo de visualização', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Escuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Concluir', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir numa janela', 'dash-delwidget' => 'Remover este widget', 'dash-reset' => 'Repor', 'dash-resetask' => 'Repor a disposição do painel?'),
+	'nl' => array('mode-display' => 'Weergavemodus', 'mode-light' => 'Licht', 'mode-auto' => 'Auto', 'mode-dark' => 'Donker', 'bookmarks' => 'Bladwijzers', 'dash-customize' => 'Aanpassen', 'dash-done' => 'Klaar', 'dash-move' => 'Deze widget verplaatsen', 'dash-resize' => 'Formaat van deze widget wijzigen', 'dash-expand' => 'In een venster openen', 'dash-delwidget' => 'Deze widget verwijderen', 'dash-reset' => 'Herstellen', 'dash-resetask' => 'De indeling van het dashboard herstellen?'),
 );
-$fz_mode_word = isset($fz_mode_words[$fz_langprefix]) ? $fz_mode_words[$fz_langprefix] : $fz_mode_words['en'];
-// Labels of the dashboard grid. Dolibarr has no key for most of them, so they follow
-// the same per-language table as the color modes above.
-$fz_dash_words = array(
-	'en' => array('reset' => 'Reset', 'customize' => 'Customize', 'done' => 'Done', 'move' => 'Move this widget', 'expand' => 'Open in a window', 'delwidget' => 'Remove this widget', 'resetask' => 'Reset the dashboard layout?'),
-	'fr' => array('reset' => 'Réinitialiser', 'customize' => 'Personnaliser', 'done' => 'Terminer', 'move' => 'Déplacer ce widget', 'expand' => 'Ouvrir dans une fenêtre', 'delwidget' => 'Retirer ce widget', 'resetask' => 'Réinitialiser la disposition du tableau de bord ?'),
-	'es' => array('reset' => 'Restablecer', 'customize' => 'Personalizar', 'done' => 'Terminar', 'move' => 'Mover este widget', 'expand' => 'Abrir en una ventana', 'delwidget' => 'Quitar este widget', 'resetask' => '¿Restablecer la disposición del panel?'),
-	'de' => array('reset' => 'Zurücksetzen', 'customize' => 'Anpassen', 'done' => 'Fertig', 'move' => 'Dieses Widget verschieben', 'expand' => 'In einem Fenster öffnen', 'delwidget' => 'Dieses Widget entfernen', 'resetask' => 'Anordnung des Dashboards zurücksetzen?'),
-	'it' => array('reset' => 'Ripristina', 'customize' => 'Personalizza', 'done' => 'Fine', 'move' => 'Sposta questo widget', 'expand' => 'Apri in una finestra', 'delwidget' => 'Rimuovi questo widget', 'resetask' => 'Ripristinare la disposizione della dashboard?'),
-	'pt' => array('reset' => 'Repor', 'customize' => 'Personalizar', 'done' => 'Concluir', 'move' => 'Mover este widget', 'expand' => 'Abrir numa janela', 'delwidget' => 'Remover este widget', 'resetask' => 'Repor a disposição do painel?'),
-	'nl' => array('reset' => 'Herstellen', 'customize' => 'Aanpassen', 'done' => 'Klaar', 'move' => 'Deze widget verplaatsen', 'expand' => 'In een venster openen', 'delwidget' => 'Deze widget verwijderen', 'resetask' => 'De indeling van het dashboard herstellen?'),
-);
-$fz_dash_word = isset($fz_dash_words[$fz_langprefix]) ? $fz_dash_words[$fz_langprefix] : $fz_dash_words['en'];
-$fz_i18n = array(
-	'search' => fz_fusion_trans('Search', 'Search'),
-	'menu' => fz_fusion_trans('Menu', 'Menu'),
-	'user' => fz_fusion_trans('User', 'User'),
-	'mode_display' => $fz_mode_word['display'],
-	'mode_light' => $fz_mode_word['light'],
-	'mode_auto' => $fz_mode_word['auto'],
-	'mode_dark' => $fz_mode_word['dark'],
-	'dash_customize' => $fz_dash_word['customize'],
-	'dash_done' => $fz_dash_word['done'],
-	'dash_move' => $fz_dash_word['move'],
-	'dash_expand' => $fz_dash_word['expand'],
-	'dash_delwidget' => $fz_dash_word['delwidget'],
-	'dash_reset' => $fz_dash_word['reset'],
-	'dash_resetask' => $fz_dash_word['resetask'],
+// Every label fusion.js / fusion-dashboard.js reads with tr('<key>'), exported below
+// as --fz-t-<key>. Search and Menu have a Dolibarr key; the rest comes from the table.
+$fz_i18n = array_merge(
+	array(
+		'search' => fz_fusion_trans('Search', 'Search'),
+		'menu' => fz_fusion_trans('Menu', 'Menu'),
+	),
+	isset($fz_words[$fz_langprefix]) ? $fz_words[$fz_langprefix] : $fz_words['en']
 );
 ?>
 html.fusion{
@@ -161,20 +143,9 @@ html.fusion{
 	--fz-logo-url: <?php echo fz_fusion_css_string($fz_logo_url); ?>;
 	--fz-logo-square-url: <?php echo fz_fusion_css_string($fz_logo_square_url); ?>;
 	--fz-logo-wide: <?php echo $fz_is_empty_appname ? '1' : '0'; ?>;
-	--fz-t-search: <?php echo fz_fusion_css_string($fz_i18n['search']); ?>;
-	--fz-t-menu: <?php echo fz_fusion_css_string($fz_i18n['menu']); ?>;
-	--fz-t-user: <?php echo fz_fusion_css_string($fz_i18n['user']); ?>;
-	--fz-t-mode-display: <?php echo fz_fusion_css_string($fz_i18n['mode_display']); ?>;
-	--fz-t-mode-light: <?php echo fz_fusion_css_string($fz_i18n['mode_light']); ?>;
-	--fz-t-mode-auto: <?php echo fz_fusion_css_string($fz_i18n['mode_auto']); ?>;
-	--fz-t-mode-dark: <?php echo fz_fusion_css_string($fz_i18n['mode_dark']); ?>;
-	--fz-t-dash-customize: <?php echo fz_fusion_css_string($fz_i18n['dash_customize']); ?>;
-	--fz-t-dash-done: <?php echo fz_fusion_css_string($fz_i18n['dash_done']); ?>;
-	--fz-t-dash-move: <?php echo fz_fusion_css_string($fz_i18n['dash_move']); ?>;
-	--fz-t-dash-expand: <?php echo fz_fusion_css_string($fz_i18n['dash_expand']); ?>;
-	--fz-t-dash-delwidget: <?php echo fz_fusion_css_string($fz_i18n['dash_delwidget']); ?>;
-	--fz-t-dash-reset: <?php echo fz_fusion_css_string($fz_i18n['dash_reset']); ?>;
-	--fz-t-dash-resetask: <?php echo fz_fusion_css_string($fz_i18n['dash_resetask']); ?>;
+<?php foreach ($fz_i18n as $fz_key => $fz_label) { ?>
+	--fz-t-<?php echo $fz_key; ?>: <?php echo fz_fusion_css_string($fz_label); ?>;
+<?php } ?>
 	/* ---- geometry ---- */
 	--fz-sb-w: 268px;            /* expanded sidebar width            */
 	--fz-sb-w-collapsed: 66px;   /* icons-only sidebar width          */
@@ -289,7 +260,11 @@ html.fusion body#mainbody #id-container{
 	margin-left: var(--fz-sb-w) !important;
 	width: calc(100% - var(--fz-sb-w)) !important;
 	box-sizing: border-box !important;
-	transition: margin-left .22s ease, width .22s ease;
+	/* No transition on margin/width: only the rail animates, the content takes its
+	   final width in ONE step. Animating it relaid the whole page on every frame, and
+	   every widget watching its own size (ClearView's ResizeObserver per chart,
+	   Chart.js) re-measured and redrew a dozen times per fold — the collapse stuttered
+	   on the dashboard and on long lists. */
 	background: var(--fz-content-bg);
 }
 html.fusion.fz-collapsed body#mainbody #id-container{
@@ -308,7 +283,7 @@ html.fz-peek #fz-sidebar{ box-shadow:0 0 40px rgba(0,0,0,.45); }
    #id-container: give it the same offset, or it slides under the fixed sidebar. */
 html.fusion body#mainbody > .breadCrumbHolder{
 	margin-left: var(--fz-sb-w); width: calc(100% - var(--fz-sb-w));
-	box-sizing: border-box; transition: margin-left .22s ease, width .22s ease;
+	box-sizing: border-box;   /* no width transition either: see #id-container */
 	/* stays on screen while the page scrolls, under the sidebar (z-index 1200) */
 	position: sticky; top: 0; z-index: 1000;
 }
@@ -363,83 +338,68 @@ html.fusion.fz-peek .ui-dialog[role="dialog"]{
 }
 
 /* Compact TimeMoto header: two 40px control rows on desktop, while keeping
-   every row constrained to the content column so narrow screens can wrap. */
-html.fusion body#mainbody.page-index .tm-header-content,
-html.fusion body#mainbody.page-manager .tm-header-content{
+   every row constrained to the content column so narrow screens can wrap.
+   TimeMoto renders the same header on its two pages; :is() keeps the one-class
+   specificity each of them had when the selectors were written out twice. */
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content{
 	min-height: 0;
 	padding: 12px 14px;
 }
-html.fusion body#mainbody.page-index .tm-header-layout,
-html.fusion body#mainbody.page-manager .tm-header-layout{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-layout{
 	grid-template-columns: minmax(520px, 1fr) minmax(0, 1.25fr);
 	align-items: start;
 	gap: 16px;
 }
-html.fusion body#mainbody.page-index .tm-header-title,
-html.fusion body#mainbody.page-manager .tm-header-title{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-title{
 	min-height: 40px;
 	margin: 0 0 8px;
 }
-html.fusion body#mainbody.page-index .tm-header-title > .fas,
-html.fusion body#mainbody.page-manager .tm-header-title > .fas{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-title > .fas{
 	width: 32px;
 	height: 32px;
 }
-html.fusion body#mainbody.page-index .tm-header-dropdowns,
-html.fusion body#mainbody.page-manager .tm-header-dropdowns{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-dropdowns{
 	flex-wrap: nowrap;
 	gap: 8px;
 }
-html.fusion body#mainbody.page-index .tm-header-dropdowns .tm-nav-form-margin,
-html.fusion body#mainbody.page-manager .tm-header-dropdowns .tm-nav-form-margin{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-dropdowns .tm-nav-form-margin{
 	flex: 1 1 140px;
 	min-width: 120px;
 	max-width: 240px;
 	margin: 0;
 }
-html.fusion body#mainbody.page-index .tm-show-disabled-form,
-html.fusion body#mainbody.page-manager .tm-show-disabled-form{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-show-disabled-form{
 	flex: 0 0 auto;
 	margin: 0;
 }
-html.fusion body#mainbody.page-index .tm-show-disabled-label,
-html.fusion body#mainbody.page-manager .tm-show-disabled-label{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-show-disabled-label{
 	min-height: 40px;
 	padding: 0 2px;
 	white-space: nowrap;
 }
-html.fusion body#mainbody.page-index .tm-header-right-cell,
-html.fusion body#mainbody.page-manager .tm-header-right-cell,
-html.fusion body#mainbody.page-index .tm-nav-panel,
-html.fusion body#mainbody.page-manager .tm-nav-panel,
-html.fusion body#mainbody.page-index .tm-nav-buttons-line1,
-html.fusion body#mainbody.page-manager .tm-nav-buttons-line1,
-html.fusion body#mainbody.page-index .tm-nav-buttons-line2,
-html.fusion body#mainbody.page-manager .tm-nav-buttons-line2{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-right-cell,
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-panel,
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-buttons-line1,
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-buttons-line2{
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	box-sizing: border-box;
 }
-html.fusion body#mainbody.page-index .tm-nav-panel,
-html.fusion body#mainbody.page-manager .tm-nav-panel{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-panel{
 	gap: 8px;
 }
-html.fusion body#mainbody.page-index .tm-nav-buttons-line1,
-html.fusion body#mainbody.page-manager .tm-nav-buttons-line1,
-html.fusion body#mainbody.page-index .tm-nav-buttons-line2,
-html.fusion body#mainbody.page-manager .tm-nav-buttons-line2{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-buttons-line1,
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-buttons-line2{
 	gap: 8px;
 }
-html.fusion body#mainbody.page-index .tm-nav-buttons-line2,
-html.fusion body#mainbody.page-manager .tm-nav-buttons-line2{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-buttons-line2{
 	align-self: flex-end;
 	width: fit-content;
 	flex-wrap: nowrap;
 	padding: 4px;
 }
-html.fusion body#mainbody.page-index .tm-header-content .button,
-html.fusion body#mainbody.page-manager .tm-header-content .button{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content .button{
 	display: inline-flex !important;
 	height: 40px !important;
 	min-height: 40px !important;
@@ -450,18 +410,15 @@ html.fusion body#mainbody.page-manager .tm-header-content .button{
 	line-height: 1 !important;
 	white-space: nowrap;
 }
-html.fusion body#mainbody.page-index .tm-header-content .tm-nav-button-small,
-html.fusion body#mainbody.page-manager .tm-header-content .tm-nav-button-small,
-html.fusion body#mainbody.page-index .tm-header-content .tm-nav-arrow-button,
-html.fusion body#mainbody.page-manager .tm-header-content .tm-nav-arrow-button{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content .tm-nav-button-small,
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content .tm-nav-arrow-button{
 	flex: 0 0 40px;
 	width: 40px !important;
 	min-width: 40px !important;
 	max-width: 40px !important;
 	padding: 0 !important;
 }
-html.fusion body#mainbody.page-index .tm-nav-buttons-line2 .tm-nav-inline-form,
-html.fusion body#mainbody.page-manager .tm-nav-buttons-line2 .tm-nav-inline-form{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-buttons-line2 .tm-nav-inline-form{
 	display: flex;
 	flex: 0 1 auto;
 	flex-wrap: wrap;
@@ -470,21 +427,16 @@ html.fusion body#mainbody.page-manager .tm-nav-buttons-line2 .tm-nav-inline-form
 	max-width: 100%;
 	margin: 0;
 }
-html.fusion body#mainbody.page-index .tm-header-content select,
-html.fusion body#mainbody.page-manager .tm-header-content select,
-html.fusion body#mainbody.page-index .tm-header-content .select2-container,
-html.fusion body#mainbody.page-manager .tm-header-content .select2-container,
-html.fusion body#mainbody.page-index .tm-header-content .select2-selection--single,
-html.fusion body#mainbody.page-manager .tm-header-content .select2-selection--single{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content select,
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content .select2-container,
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content .select2-selection--single{
 	height: 40px !important;
 	min-height: 40px !important;
 }
-html.fusion body#mainbody.page-index .tm-header-content .select2-selection__rendered,
-html.fusion body#mainbody.page-manager .tm-header-content .select2-selection__rendered{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content .select2-selection__rendered{
 	line-height: 38px !important;
 }
-html.fusion body#mainbody.page-index .tm-header-content .select2-selection__arrow,
-html.fusion body#mainbody.page-manager .tm-header-content .select2-selection__arrow{
+html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-content .select2-selection__arrow{
 	height: 38px !important;
 }
 
@@ -566,24 +518,19 @@ html.fusion body#mainbody .tm-header-remote .tm-button{
 	padding: 0 6px;
 }
 @media only screen and (max-width: 1450px){
-	html.fusion body#mainbody.page-index .tm-header-layout,
-	html.fusion body#mainbody.page-manager .tm-header-layout{
+	html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-layout{
 		grid-template-columns: 1fr;
 	}
 }
 @media only screen and (max-width: 720px){
-	html.fusion body#mainbody.page-index .tm-header-dropdowns,
-	html.fusion body#mainbody.page-manager .tm-header-dropdowns,
-	html.fusion body#mainbody.page-index .tm-nav-buttons-line1,
-	html.fusion body#mainbody.page-manager .tm-nav-buttons-line1,
-	html.fusion body#mainbody.page-index .tm-nav-buttons-line2,
-	html.fusion body#mainbody.page-manager .tm-nav-buttons-line2{
+	html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-dropdowns,
+	html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-buttons-line1,
+	html.fusion body#mainbody:is(.page-index,.page-manager) .tm-nav-buttons-line2{
 		flex-wrap: wrap;
 		align-self: stretch;
 		width: 100%;
 	}
-	html.fusion body#mainbody.page-index .tm-header-dropdowns .tm-nav-form-margin,
-	html.fusion body#mainbody.page-manager .tm-header-dropdowns .tm-nav-form-margin{
+	html.fusion body#mainbody:is(.page-index,.page-manager) .tm-header-dropdowns .tm-nav-form-margin{
 		flex-basis: 100%;
 		max-width: none;
 	}
@@ -876,7 +823,7 @@ html:not(.fz-collapsed) .fz-head .fz-label{white-space:normal;overflow-wrap:anyw
 #fz-foot .blockvmenuhelp,#fz-foot #blockvmenuhelp{background:none !important;border:0 !important;
 	padding:0 6px 6px !important;font-size:11px}
 #fz-foot a{color:var(--fz-nav-fg-dim) !important}
-#fz-user{display:flex;align-items:center;gap:10px;padding:6px 0;border-radius:var(--fz-radius);min-width:0}
+#fz-user{position:relative;display:flex;align-items:center;gap:10px;padding:6px 0;border-radius:var(--fz-radius);min-width:0}
 #fz-user .login_block_user,#fz-user .login_block_elem{
 	display:flex;align-items:center;gap:10px;color:var(--fz-nav-fg) !important;
 	width:100%;min-width:0;height:auto !important;line-height:normal !important;float:none !important}
@@ -896,7 +843,6 @@ html.fz-collapsed .fz-head .fz-label,
 html.fz-collapsed .fz-head .fz-chev,
 html.fz-collapsed .fz-sec-label,
 html.fz-collapsed .fz-sub,
-html.fz-collapsed #fz-fav a .fz-favlabel,
 html.fz-collapsed #fz-foot .blockvmenuhelp,
 html.fz-collapsed #fz-user .atoploginusername,
 html.fz-collapsed #fz-user .hideonsmartphone{display:none !important}
@@ -1051,52 +997,25 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 /* Contrast safety : force readable text on every nav entry */
 .fz-head,.fz-head .fz-label{color:var(--fz-nav-fg) !important;opacity:1}
 .fz-head .fz-ic{opacity:1}
-<?php if (getDolGlobalString('THEME_MENU_COLORLOGO')) { ?>
-.fz-head .fz-ic:not(.fz-ic-native),
-.fz-head .fz-ic:not(.fz-ic-native) i,
-.fz-head .fz-ic:not(.fz-ic-native) span,
-.fz-head .fz-ic:not(.fz-ic-native) [class*="fa-"],
-.fz-head .fz-ic:not(.fz-ic-native)::before,
-.fz-head .fz-ic:not(.fz-ic-native) i::before,
-.fz-head .fz-ic:not(.fz-ic-native) span::before{
-	color:var(--fz-menu-icon-normal) !important;opacity:1}
 .fz-group.fz-active > .fz-head,.fz-group.fz-active > .fz-head .fz-label{color:var(--fz-nav-active-fg) !important}
-.fz-group.fz-active > .fz-head .fz-ic:not(.fz-ic-native),
-.fz-group.fz-active > .fz-head .fz-ic:not(.fz-ic-native) i,
-.fz-group.fz-active > .fz-head .fz-ic:not(.fz-ic-native) span,
-.fz-group.fz-active > .fz-head .fz-ic:not(.fz-ic-native) [class*="fa-"],
-.fz-group.fz-active > .fz-head .fz-ic:not(.fz-ic-native)::before,
-.fz-group.fz-active > .fz-head .fz-ic:not(.fz-ic-native) i::before,
-.fz-group.fz-active > .fz-head .fz-ic:not(.fz-ic-native) span::before{color:var(--fz-menu-icon-active) !important}
 .fz-head:hover,.fz-head:hover .fz-label{color:var(--fz-nav-hover-fg) !important}
-.fz-head:hover .fz-ic:not(.fz-ic-native),
-.fz-head:hover .fz-ic:not(.fz-ic-native) i,
-.fz-head:hover .fz-ic:not(.fz-ic-native) span,
-.fz-head:hover .fz-ic:not(.fz-ic-native) [class*="fa-"],
-.fz-head:hover .fz-ic:not(.fz-ic-native)::before,
-.fz-head:hover .fz-ic:not(.fz-ic-native) i::before,
-.fz-head:hover .fz-ic:not(.fz-ic-native) span::before{color:var(--fz-menu-icon-hover) !important}
-<?php } else { ?>
-.fz-head .fz-ic,.fz-head .fz-ic i,.fz-head .fz-ic span,.fz-head .fz-ic [class*="fa-"],
-.fz-head .fz-ic::before,.fz-head .fz-ic i::before,.fz-head .fz-ic span::before{
-	color:var(--fz-menu-icon-normal) !important;opacity:1}
-.fz-group.fz-active > .fz-head,.fz-group.fz-active > .fz-head .fz-label{color:var(--fz-nav-active-fg) !important}
-.fz-group.fz-active > .fz-head .fz-ic,
-.fz-group.fz-active > .fz-head .fz-ic i,
-.fz-group.fz-active > .fz-head .fz-ic span,
-.fz-group.fz-active > .fz-head .fz-ic [class*="fa-"],
-.fz-group.fz-active > .fz-head .fz-ic::before,
-.fz-group.fz-active > .fz-head .fz-ic i::before,
-.fz-group.fz-active > .fz-head .fz-ic span::before{color:var(--fz-menu-icon-active) !important}
-.fz-head:hover,.fz-head:hover .fz-label{color:var(--fz-nav-hover-fg) !important}
-.fz-head:hover .fz-ic,
-.fz-head:hover .fz-ic i,
-.fz-head:hover .fz-ic span,
-.fz-head:hover .fz-ic [class*="fa-"],
-.fz-head:hover .fz-ic::before,
-.fz-head:hover .fz-ic i::before,
-.fz-head:hover .fz-ic span::before{color:var(--fz-menu-icon-hover) !important}
-<?php } ?>
+<?php
+// With THEME_MENU_COLORLOGO the native module icons keep their own colours, so the
+// foreground colour only reaches the synthetic (Font Awesome) icons.
+$fz_ic = getDolGlobalString('THEME_MENU_COLORLOGO') ? '.fz-ic:not(.fz-ic-native)' : '.fz-ic';
+$fz_ic_rules = array(
+	'.fz-head' => 'color:var(--fz-menu-icon-normal) !important;opacity:1',
+	'.fz-group.fz-active > .fz-head' => 'color:var(--fz-menu-icon-active) !important',
+	'.fz-head:hover' => 'color:var(--fz-menu-icon-hover) !important',
+);
+foreach ($fz_ic_rules as $fz_scope => $fz_decl) {
+	$fz_sel = array();
+	foreach (array('', ' i', ' span', ' [class*="fa-"]', '::before', ' i::before', ' span::before') as $fz_part) {
+		$fz_sel[] = $fz_scope.' '.$fz_ic.$fz_part;
+	}
+	echo implode(",\n", $fz_sel)."{".$fz_decl."}\n";
+}
+?>
 .fz-group.fz-active > .fz-head .fz-chev{color:var(--fz-nav-active-fg) !important}
 .fz-head:hover .fz-chev{color:var(--fz-nav-hover-fg) !important}
 
@@ -1150,7 +1069,6 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 .fz-mode-btn .fz-mode-lbl{font-size:12px}
 
 /* ---- User dropdown : make it open UPWARD and inside the sidebar ------- */
-#fz-user{position:relative}
 #fz-user #topmenu-login-dropdown{position:static !important;width:100%;padding:0}
 #fz-user #topmenu-login-dropdown > a{
 	display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--fz-radius);width:100%;box-sizing:border-box;min-width:0;overflow:hidden;
@@ -1178,7 +1096,6 @@ html.fz-collapsed #fz-tools .dropdown-menu{left:calc(100% + 6px) !important;righ
 	border:1px solid var(--fz-border);border-radius:var(--fz-radius);box-shadow:0 12px 34px rgba(0,0,0,.45);
 	padding:10px;z-index:1500;font-size:13px}
 #fz-user #topmenu-login-dropdown.open .dropdown-menu{display:block !important}
-#fz-user .dropdown-menu a,#fz-user .dropdown-menu .button-top-menu-dropdown{color:var(--fz-text) !important}
 /* eldy hard-codes light #f9f9f9 / #f4f4f4 backgrounds + black text on these blocks,
    which breaks the themed (esp. dark) panel — re-skin them with theme variables. */
 #fz-user .dropdown-menu .user-header{text-align:center;border-bottom:1px solid var(--fz-border);padding-bottom:8px;margin-bottom:8px;
@@ -1376,12 +1293,12 @@ html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>td{
 
 /* ====================================================================== *
  *  DASHBOARD GRID (fusion-dashboard.js)                                   *
- *  Dolibarr's two hard-coded widget columns become rows of freely sized   *
- *  widgets: the board is 192 fine tracks wide and each widget carries its *
- *  width (--fz-cw tracks) and height (--fz-ch). Widgets flow and wrap, so *
- *  one sitting above another is just what the widths produce. Everything  *
- *  here only exists once the script has moved the widgets, so nothing     *
- *  below can affect a page where the grid did not take over.              *
+ *  Dolibarr's two hard-coded widget columns become ONE board: 192 fluid   *
+ *  tracks across, 8px units down. Each widget is explicitly placed by     *
+ *  four custom properties (--fz-cx/--fz-cy position, --fz-cw/--fz-cu      *
+ *  span). Everything here only exists once the script has moved the      *
+ *  widgets, so nothing below can affect a page where the grid did not     *
+ *  take over.                                                             *
  * ====================================================================== */
 
 /* Hide the native columns while the grid is being built. fusion.js drops this
@@ -1439,7 +1356,9 @@ html.fusion #fz-dash .fz-dash-cell.fz-at-right-edge{margin-right:0}
 html.fusion #fz-dash .fz-dash-cell.fz-dash-moving{z-index:7}
 html.fusion #fz-dash.fz-dash-dragging{user-select:none}
 html.fusion #fz-dash.fz-dash-dragging .fz-dash-cell{transition:none !important}
-html.fusion #fz-dash.fz-dash-edit .fz-dash-grip{cursor:move}
+/* .fz-dash-celltools: the toolbar's `button{cursor:pointer}` carries one type selector
+   more, so a bare .fz-dash-grip rule lost to it and the grip showed a hand */
+html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools .fz-dash-grip{cursor:move}
 html.fusion #fz-dash .fz-dash-cellinner{min-width:0}
 /* A pinned height resizes THE WIDGET, not the slot holding it. The height has to be
    carried all the way down to `table.boxtable`: div.box has no background of its own,
@@ -1716,8 +1635,9 @@ html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools button{
 	border-radius:var(--fz-radius);background:var(--fz-surface);color:var(--fz-text-dim);
 	font-size:11px;cursor:pointer}
 html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools button:hover{color:var(--fz-text);border-color:var(--fz-text-dim)}
-html.fusion #fz-dash.fz-dash-edit .fz-dash-grip{cursor:move}
-html.fusion #fz-dash.fz-dash-edit .fz-dash-del:hover{
+/* scoped like the toolbar's button:hover rule above, or that rule's extra type
+   selector wins and the text and border stay grey on the red background */
+html.fusion #fz-dash.fz-dash-edit .fz-dash-celltools .fz-dash-del:hover{
 	color:#fff;background:var(--butactiondeletebg,#b0413e);border-color:transparent}
 /* Only the widget being worked on is outlined, and the outline hugs it: at rest,
    edit mode is quiet. */
