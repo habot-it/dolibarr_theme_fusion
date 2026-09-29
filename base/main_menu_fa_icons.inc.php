@@ -18,7 +18,7 @@
  */
 
 /**
- *		\file       htdocs/theme/fusion/main_menu_fa_icons.inc.php
+ *		\file       htdocs/theme/fusion/base/main_menu_fa_icons.inc.php
  *		\brief      Bundled main-menu icon styles for Fusion
  */
 if (!defined('ISLOADEDBYSTEELSHEET')) {

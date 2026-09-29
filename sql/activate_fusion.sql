@@ -1,5 +1,5 @@
 -- Activate the "fusion" unified responsive theme.
--- Apply with:  mysql dolibarr < theme/fusion/activate_fusion.sql
+-- Apply with:  mysql dolibarr < theme/fusion/sql/activate_fusion.sql
 -- Revert: in Home > Setup > Display, pick the "eldy" skin again (or set MAIN_THEME back to 'eldy').
 
 SET @e := 1;  -- default company entity

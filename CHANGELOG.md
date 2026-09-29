@@ -14,11 +14,41 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
   portrait, where the board collapses to a single column.
 
 ### Fixed
+- In dashboard edit mode, the move button now shows the move cursor and the remove button turns fully
+  red on hover (white icon, no grey border). Both rules had always lost to the toolbar's generic
+  button rule, which carries one type selector more.
+- The *Bookmarks* heading of the sidebar was written in French for every user; it is now translated
+  in the seven languages the theme carries.
+- The tooltip and accessible name of the four resize corners were English in every language; they now
+  follow the user's language like the other dashboard controls.
 - The Remote Clocking dashboard widget now keeps the same 44px header height and typography as the
   other widgets, truncates its title on one line in narrow cells, and centers its clock, status and
   actions inside the height selected by the user.
 
+### Changed
+- Files are grouped by role. Only what Dolibarr looks for by name stays at the root (`style.css.php`,
+  `fusion.js`, `theme_vars.inc.php`, `manifest.json.php`, `thumb.png`, `img/`, `ckeditor/`); the
+  component stylesheet moves to `base/`, the dashboard script and its endpoint to `dashboard/`, the
+  activation script to `sql/` — run it as `mysql dolibarr < theme/fusion/sql/activate_fusion.sql`.
+  The component stylesheet is now Fusion's own code rather than a copy kept identical to Eldy: its
+  parts are included by file path from `base/`, and nothing is loaded from another theme. The
+  generated stylesheet is byte-for-byte the same.
+- Internal clean-up, with no change in behaviour beyond the fixes above: the theme's labels come from
+  one per-language table and are exported by a single loop; the menu icon colours, written out twice
+  for the two values of `THEME_MENU_COLORLOGO`, are generated from one rule set; the TimeMoto rules,
+  duplicated for its two pages, use `:is()`; duplicate and dead rules are gone; the dashboard's move
+  and resize share one pointer-gesture helper; the sidebar's group fold reuses the generic panel
+  animation; translated labels are inserted as text rather than markup. The generated stylesheet was
+  compared rule by rule before and after.
+- README and in-code documentation describe the current dashboard board (explicit placement, corner
+  resizing) instead of the earlier row model.
+
 ### Performance
+- Folding or unfolding the sidebar no longer stutters on the dashboard. The content area used to
+  animate its width along with the rail, which relaid the whole page on every frame and made every
+  widget that watches its own size (each ClearView chart, Chart.js) re-measure and redraw a dozen
+  times per fold. Only the rail animates now; the content takes its final width in a single step,
+  so the widgets resize once.
 - Main-menu chevrons no longer require downloading and parsing every module home page on startup.
   Only the section actually opened by the user is fetched; deeper contextual levels are discovered
   during browser idle time with at most two background requests at once.

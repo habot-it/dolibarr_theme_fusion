@@ -172,7 +172,7 @@
 				node.setAttribute("aria-label", label);
 			}
 			node.removeAttribute("title");
-			node.classList.remove("classfortooltip", "fz-tooltip-right");
+			node.classList.remove("classfortooltip");
 			if (window.jQuery && window.jQuery.fn && window.jQuery.fn.tooltip) {
 				try { window.jQuery(node).tooltip("destroy"); } catch (e) {}
 			}
@@ -185,8 +185,7 @@
 	}
 	function restoreNavScroll(nav) {
 		if (!nav) return;
-		var y = null;
-		y = parseInt(storageGet("sessionStorage", NAV_SCROLL_KEY) || "", 10);
+		var y = parseInt(storageGet("sessionStorage", NAV_SCROLL_KEY) || "", 10);
 		if (!isFinite(y) || y < 0) return;
 		function apply() {
 			var max = Math.max(0, nav.scrollHeight - nav.clientHeight);
@@ -526,7 +525,6 @@
 			group.setAttribute("data-code", code);
 
 			var head = el("a", "fz-head");
-			head.setAttribute("data-fzlabel", label);
 			if (href) head.setAttribute("href", href);
 			var target = linkA ? linkA.getAttribute("target") : null;
 			if (target) head.setAttribute("target", target);
@@ -573,7 +571,7 @@
 		// ---- 4. Favorites / bookmark section ----------------------------------
 		if (bookmarksBlock) {
 			var favWrap = el("div"); favWrap.id = "fz-fav";
-			favWrap.appendChild(el("div", "fz-sec-label", "Favoris"));
+			favWrap.appendChild(el("div", "fz-sec-label")).textContent = tr("bookmarks", "Bookmarks");
 			favWrap.appendChild(bookmarksBlock);
 			nav.appendChild(favWrap);
 		}
@@ -932,39 +930,16 @@
 		});
 	}
 
-	// Fold/unfold a group's submenu with a height animation. CSS can't animate to
-	// max-height:auto, so we drive the pixel height from scrollHeight and hand back
-	// to "none" once open (lets long menus grow freely). `animate=false` is used for
-	// the initial active section so it doesn't flash on page load.
+	// Fold/unfold a group's submenu. `animate=false` is used for the initial active
+	// section so it doesn't flash on page load.
 	function setGroupOpen(group, open, animate) {
-		var sub = group.querySelector(".fz-sub");
-		if (!sub) { group.classList.toggle("fz-open", open); return; }
-		// drop any pending end-handler from a previous, still-running animation
-		if (sub._fzEnd) { sub.removeEventListener("transitionend", sub._fzEnd); sub._fzEnd = null; }
-		if (!animate || REDUCE) {
-			group.classList.toggle("fz-open", open);
-			sub.style.maxHeight = open ? "none" : "0px";
-			return;
-		}
-		if (open) {
-			group.classList.add("fz-open");
-			sub.style.maxHeight = sub.scrollHeight + "px";
-			sub._fzEnd = function (e) {
-				if (e.target !== sub || e.propertyName !== "max-height") return;
-				sub.style.maxHeight = "none"; // release the cap so the menu can grow
-				sub.removeEventListener("transitionend", sub._fzEnd); sub._fzEnd = null;
-			};
-			sub.addEventListener("transitionend", sub._fzEnd);
-		} else {
-			// from "none" -> fixed px (reflow) -> 0 so the collapse has a start height
-			sub.style.maxHeight = sub.scrollHeight + "px";
-			void sub.offsetHeight;
-			group.classList.remove("fz-open");
-			sub.style.maxHeight = "0px";
-		}
+		group.classList.toggle("fz-open", open);
+		animatePanel(group.querySelector(".fz-sub"), open, animate);
 	}
 
-	// Generic max-height fold/unfold for any panel (used by the sub-sub accordion).
+	// Fold/unfold a panel (group submenu or sub-sub accordion). CSS can't animate to
+	// max-height:auto, so drive the pixel height from scrollHeight and hand back to
+	// "none" once open (lets long menus grow freely).
 	function animatePanel(panel, open, animate) {
 		if (!panel) return;
 		if (panel._fzEnd) { panel.removeEventListener("transitionend", panel._fzEnd); panel._fzEnd = null; }
@@ -1216,8 +1191,8 @@
 		];
 		var current = ROOT.getAttribute("data-fz-mode") || "auto";
 		modes.forEach(function (m) {
-			var b = el("button", "fz-mode-btn" + (m.k === current ? " is-active" : ""),
-				'<i class="fas ' + m.i + '"></i><span class="fz-mode-lbl">' + m.t + '</span>');
+			var b = el("button", "fz-mode-btn" + (m.k === current ? " is-active" : ""), '<i class="fas ' + m.i + '"></i>');
+			b.appendChild(el("span", "fz-mode-lbl")).textContent = m.t;
 			b.type = "button"; b.setAttribute("data-mode", m.k);
 			b.setAttribute("aria-label", m.t);
 			b.addEventListener("click", function () {
@@ -1250,8 +1225,8 @@
 		var fallback = setTimeout(function () { ROOT.classList.remove("fz-dash-boot"); }, 3000);
 
 		var script = document.createElement("script");
-		var dashboardSrc = SELF.src.replace(/fusion\.js/, "fusion-dashboard.js");
-		script.src = dashboardSrc + (dashboardSrc.indexOf("?") === -1 ? "?" : "&") + "fzv=20260819-1";
+		var dashboardSrc = SELF.src.replace(/fusion\.js/, "dashboard/fusion-dashboard.js");
+		script.src = dashboardSrc + (dashboardSrc.indexOf("?") === -1 ? "?" : "&") + "fzv=20260929-2";
 		var nonce = SELF.nonce || SELF.getAttribute("nonce");
 		if (nonce) script.setAttribute("nonce", nonce);
 		script.onerror = function () {

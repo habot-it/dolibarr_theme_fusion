@@ -19,7 +19,7 @@
  */
 
 /**
- *		\file       htdocs/theme/fusion/global.inc.php
+ *		\file       htdocs/theme/fusion/base/global.inc.php
  *		\brief      Bundled component styles for Fusion
  */
 if (!defined('ISLOADEDBYSTEELSHEET')) {
@@ -1365,8 +1365,8 @@ span.fa.fa-plus-circle.paddingleft {
 
 /* Themes for badges */
 
-<?php include dol_buildpath($path.'/theme/'.$theme.'/badges.inc.php', 0); ?>
-<?php include dol_buildpath($path.'/theme/'.$theme.'/flags-sprite.inc.php', 0); ?>
+<?php include __DIR__.'/badges.inc.php'; ?>
+<?php include __DIR__.'/flags-sprite.inc.php'; ?>
 
 .borderrightlight
 {
@@ -3264,7 +3264,7 @@ li.tmenu:hover .tmenuimage:not(.menuhider), li.tmenu:hover .tmenuimage:not(.menu
 /* Do not load menu img for other if hidden to save bandwidth */
 
 <?php if (empty($dol_hide_topmenu)) { ?>
-	<?php include dol_buildpath($path.'/theme/'.$theme.'/main_menu_fa_icons.inc.php', 0); ?>
+	<?php include __DIR__.'/main_menu_fa_icons.inc.php'; ?>
 
 	<?php
 	// Add here more div for other menu entries. moduletomainmenu=array('module name'=>'name of class for div')
@@ -4194,7 +4194,7 @@ span.tabspan {
 /* ============================================================================== */
 /* Buttons for actions                                                            */
 /* ============================================================================== */
-<?php include dol_buildpath($path.'/theme/'.$theme.'/btn.inc.php', 0); ?>
+<?php include __DIR__.'/btn.inc.php'; ?>
 
 
 /* ============================================================================== */
@@ -9189,12 +9189,12 @@ if (getDolUserString('MAIN_OPTIMIZEFORTEXTBROWSER')) {
 }
 
 
-include dol_buildpath($path.'/theme/'.$theme.'/dropdown.inc.php', 0);
-include dol_buildpath($path.'/theme/'.$theme.'/emaillayout.inc.php', 0);
-include dol_buildpath($path.'/theme/'.$theme.'/info-box.inc.php', 0);
-include dol_buildpath($path.'/theme/'.$theme.'/progress.inc.php', 0);
-include dol_buildpath($path.'/theme/'.$theme.'/timeline.inc.php', 0);
-include dol_buildpath($path.'/theme/'.$theme.'/search-input.inc.css', 0);
+include __DIR__.'/dropdown.inc.php';
+include __DIR__.'/emaillayout.inc.php';
+include __DIR__.'/info-box.inc.php';
+include __DIR__.'/progress.inc.php';
+include __DIR__.'/timeline.inc.php';
+include __DIR__.'/search-input.inc.css';
 
 
 // Add custom CSS if defined

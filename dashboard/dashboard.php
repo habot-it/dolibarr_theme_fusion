@@ -4,24 +4,25 @@
  * Theme "fusion" — storage endpoint for the configurable dashboard grid.
  *
  * fusion-dashboard.js rebuilds the widget area (Dolibarr's two hard-coded box
- * columns) into a grid of independent rows, so it needs to persist a layout that
- * llx_boxes cannot express: llx_boxes.box_order only knows about column "A" and
+ * columns) into one board on which every widget is explicitly placed, so it needs
+ * to persist a layout that llx_boxes cannot express: llx_boxes.box_order only knows about column "A" and
  * column "B" (A01, B02, …). The layout therefore lives beside it, in the user's
  * own parameters (llx_user_param, one row per zone), which keeps it per user and
  * available from any browser — Dolibarr core is left untouched.
  *
  * The theme stylesheet cannot serve that value the way it serves every other
- * server-side value (theme/fusion/base.css.php defines NOLOGIN, because the CSS is
+ * server-side value (theme/fusion/base/base.css.php defines NOLOGIN, because the CSS is
  * also served to the login page, so $user is not authenticated there). Hence this
  * small endpoint: GET action=load returns the layout, POST action=save stores it.
  *
- *   GET  theme/fusion/dashboard.php?action=load&zone=0
- *        -> {"layout":{"v":1,"rows":[…]}}   (layout is null when nothing is stored)
- *   POST theme/fusion/dashboard.php?action=save&zone=0&token=<anti-csrf-newtoken>
+ *   GET  theme/fusion/dashboard/dashboard.php?action=load&zone=0
+ *        -> {"layout":{"v":5,"items":[{"id","x","y","w","h"}…]},"token":"…"}
+ *           (layout is null when nothing is stored)
+ *   POST theme/fusion/dashboard/dashboard.php?action=save&zone=0&token=<anti-csrf-newtoken>
  *        body = the layout as JSON
  *        -> {"ok":true}
  *
- * The layout is never stored as received: sanitizeLayout() rebuilds it from
+ * The layout is never stored as received: fz_fusion_dashboard_sanitize() rebuilds it from
  * whitelisted keys and integers only, so nothing a client sends can ever come back
  * out as markup.
  */
@@ -42,7 +43,7 @@ if (!defined('NOREQUIRESOC')) {
 	define('NOREQUIRESOC', '1');
 }
 
-require __DIR__.'/../../main.inc.php';
+require __DIR__.'/../../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 
 /**
@@ -201,24 +202,15 @@ if ($action == 'load') {
 	// The payload is read raw: GETPOST's sanitizers would mangle the JSON. It is
 	// parsed and rebuilt below, so nothing unchecked reaches the database.
 	$body = file_get_contents('php://input');
-	if (strlen($body) > 65000) {
-		http_response_code(413);
-		print json_encode(array('ok' => false, 'error' => 'Payload too large'));
-		$db->close();
-		exit;
-	}
-
-	$layout = fz_fusion_dashboard_sanitize(json_decode($body, true));
+	$toolarge = (strlen($body) > 65000);
+	$layout = $toolarge ? null : fz_fusion_dashboard_sanitize(json_decode($body, true));
 	if ($layout === null) {
-		http_response_code(400);
-		print json_encode(array('ok' => false, 'error' => 'Invalid layout'));
-		$db->close();
-		exit;
+		http_response_code($toolarge ? 413 : 400);
+		print json_encode(array('ok' => false, 'error' => ($toolarge ? 'Payload too large' : 'Invalid layout')));
+	} else {
+		$result = dol_set_user_param($db, $conf, $user, array($param => json_encode($layout)));
+		print json_encode(array('ok' => ($result >= 0)));
 	}
-
-	$result = dol_set_user_param($db, $conf, $user, array($param => json_encode($layout)));
-
-	print json_encode(array('ok' => ($result >= 0)));
 }
 
 $db->close();

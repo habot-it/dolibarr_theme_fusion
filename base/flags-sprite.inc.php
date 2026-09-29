@@ -18,7 +18,7 @@
  */
 
 /**
- *		\file       htdocs/theme/fusion/flags-sprite.inc.php
+ *		\file       htdocs/theme/fusion/base/flags-sprite.inc.php
  *		\brief      Bundled flag sprite styles for Fusion
  */
 if (!defined('ISLOADEDBYSTEELSHEET')) {
