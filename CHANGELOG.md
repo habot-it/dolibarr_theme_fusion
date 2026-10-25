@@ -4,6 +4,32 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
+## [1.3.2] — 2026-10-25
+
+### Fixed
+- Menu performance: submenu levels were discovered by fetching the target page of every submenu row in
+  the background, recursively — up to about 60 full Dolibarr pages per minute and per user, reports and
+  create forms included. Cached levels are still built at once; an uncached level is now fetched only on
+  intent (the pointer resting 150ms on its row, or keyboard focus), and links that act (`action=`,
+  logout) or open reports are never prefetched.
+- Contrast (WCAG 2.2 AA): dimmed text is the ink at 68% (was 62%), `opacitymedium` secondary text no
+  longer drops to 40% opacity, placeholders are readable (were #ccc, 1.6:1), and the empty history line
+  lost its extra opacity. The detector's findings on a list page went from 7 to 2 (the instance's own
+  title color, and the inherited Dolibarr font).
+- Keyboard focus is visible on the rail (search field, sections, sub-item rows, collapse tab, mode
+  switch) and on navigation history links.
+- Tablet (1024px): the title bar's tools no longer spill past the screen; the title row wraps, tools kept
+  to the right. Phone: title-bar combos no longer widen the page.
+- *Fusion theme* tab on phones: rows stack (label, field, preview) instead of overflowing.
+- The rail's translucent tints (hover, fields, scrollbars) are mixed from the rail's text color instead
+  of fixed white, so a light menu color stays readable.
+
+### Changed
+- Reduced motion: movement (rail fold, drawer, sections) becomes instant; color and opacity changes keep
+  a short fade; the loading pulse becomes a steady dimmed chevron.
+- The collapse tab's hit area is 24px or more wide (WCAG 2.5.8), with no visual change.
+- The initial-letter badge (no logo) uses the rail's colors instead of a blue-to-violet gradient.
+
 ## [1.3.1] — 2026-10-25
 
 ### Fixed

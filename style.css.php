@@ -146,7 +146,7 @@ html.fusion{
 	--fz-surface: var(--colorbacktabcard1, var(--colorbacklinepair1, #ffffff));
 	--fz-border: var(--inputbordercolor, var(--colorboxstatsborder, #e6e9f0));
 	--fz-text: var(--colortext, #1f2733);
-	--fz-text-dim: color-mix(in srgb, var(--fz-text) 62%, transparent);
+	--fz-text-dim: color-mix(in srgb, var(--fz-text) 68%, transparent);   /* ≥4.5:1 on the page, title band and history tints, even with a dark-grey text color */
 	--fz-row-hover: <?php echo $fz_row_hover; ?>;
 	--fz-row-checked: <?php echo $fz_row_checked; ?>;
 	--fz-topbar-bg: var(--colorbackhmenu1, var(--fz-surface));
@@ -564,7 +564,8 @@ html.fusion #fz-sidebar #fz-user .atoploginusername{
 #fz-brand .fz-logo{
 	width:32px;height:32px;border-radius:var(--fz-radius);flex:0 0 auto;
 	display:flex;align-items:center;justify-content:center;overflow:hidden;
-	background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:800;
+	/* the initial letter, shown when the instance has no logo: in the rail's own colors */
+	background:color-mix(in srgb,var(--fz-nav-fg) 16%,transparent);color:var(--fz-nav-fg);font-weight:800;
 }
 #fz-brand .fz-logo img{display:block;width:100%;height:100%;object-fit:contain}
 /* A real logo (wide wordmark when expanded, square icon when collapsed): show it
@@ -631,21 +632,21 @@ html.fz-collapsed #fz-brand .fz-logo{margin:0}
 #fz-tools #blockvmenusearch .select2-container,#fz-tools .vmenusearchselectcombo{width:100% !important;box-sizing:border-box}
 #fz-tools .select2-container--default .select2-selection--single{
 	height:36px !important;display:flex !important;align-items:center;border-radius:var(--fz-radius) !important;
-	background:rgba(255,255,255,.10) !important;border:1px solid rgba(255,255,255,.10) !important}
+	background:color-mix(in srgb,var(--fz-nav-fg) 10%,transparent) !important;border:1px solid color-mix(in srgb,var(--fz-nav-fg) 10%,transparent) !important}
 #fz-tools .select2-container--default .select2-selection--single .select2-selection__rendered{
 	color:var(--fz-nav-fg) !important;line-height:normal !important;padding-left:32px !important;padding-right:24px !important}
 #fz-tools .select2-container--default .select2-selection--single .select2-selection__placeholder{color:var(--fz-nav-fg-dim) !important}
 #fz-tools .select2-container--default .select2-selection--single .select2-selection__arrow{height:34px !important;right:6px}
 /* old-search-form fallback (plain input) */
 #fz-tools #blockvmenusearch input[type="text"]{width:100% !important;box-sizing:border-box;height:36px;
-	border-radius:var(--fz-radius);padding:6px 10px 6px 32px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.10);color:var(--fz-nav-fg)}
+	border-radius:var(--fz-radius);padding:6px 10px 6px 32px;background:color-mix(in srgb,var(--fz-nav-fg) 10%,transparent);border:1px solid color-mix(in srgb,var(--fz-nav-fg) 10%,transparent);color:var(--fz-nav-fg)}
 /* icon row sits BELOW the search field */
 #fz-tools .fz-tools-extra{display:flex;flex-direction:row;gap:6px;align-items:center;justify-content:space-evenly}
 #fz-tools .fz-tools-extra a,
 #fz-tools .fz-tools-extra .login_block_elem{color:var(--fz-nav-fg) !important}
 /* loupe button : only shown when the sidebar is collapsed */
 #fz-search-toggle{display:none;flex:0 0 auto;width:40px;height:40px;border:0;border-radius:var(--fz-radius);
-	background:rgba(255,255,255,.10);color:var(--fz-nav-fg);cursor:pointer;align-items:center;justify-content:center;font-size:15px}
+	background:color-mix(in srgb,var(--fz-nav-fg) 10%,transparent);color:var(--fz-nav-fg);cursor:pointer;align-items:center;justify-content:center;font-size:15px}
 #fz-search-toggle:hover{background:var(--fz-nav-hover);color:var(--fz-nav-hover-fg)}
 
 /* Scrollable nav */
@@ -989,7 +990,7 @@ foreach ($fz_ic_rules as $fz_scope => $fz_decl) {
 .fz-head:hover .fz-chev{color:var(--fz-nav-hover-fg) !important}
 
 /* Color-mode segmented control */
-.fz-modes{display:flex;gap:4px;margin:6px;padding:3px;border-radius:var(--fz-radius);background:rgba(255,255,255,.06)}
+.fz-modes{display:flex;gap:4px;margin:6px;padding:3px;border-radius:var(--fz-radius);background:color-mix(in srgb,var(--fz-nav-fg) 6%,transparent)}
 @media only screen and (min-width: 921px){
 	html.fz-collapsed .fz-modes{
 		display:block;position:relative;width:40px;height:40px;margin:4px auto 8px;padding:0;
@@ -997,7 +998,7 @@ foreach ($fz_ic_rules as $fz_scope => $fz_decl) {
 	html.fz-collapsed .fz-modes::before{
 		content:"\f042";font-family:"Font Awesome 5 Free";font-weight:900;
 		position:absolute;inset:0;display:grid;place-items:center;
-		width:40px;height:40px;border-radius:var(--fz-radius);background:rgba(255,255,255,.10);
+		width:40px;height:40px;border-radius:var(--fz-radius);background:color-mix(in srgb,var(--fz-nav-fg) 10%,transparent);
 		color:var(--fz-nav-fg-dim);font-size:16px;line-height:1;box-sizing:border-box}
 	html.fz-collapsed[data-fz-mode="light"] .fz-modes::before{content:"\f185"}
 	html.fz-collapsed[data-fz-mode="dark"] .fz-modes::before{content:"\f186"}
@@ -1050,7 +1051,7 @@ foreach ($fz_ic_rules as $fz_scope => $fz_decl) {
    in the same 34px round slot, on a faint disc so it reads like an avatar */
 #fz-user span.photouserphoto{display:inline-flex !important;align-items:center;justify-content:center;
 	flex:0 0 34px;margin:0 !important;padding:0 !important;font-size:16px;line-height:1 !important;vertical-align:middle;
-	background:rgba(255,255,255,.16)}
+	background:color-mix(in srgb,var(--fz-nav-fg) 16%,transparent)}
 #fz-user .atoploginusername{
 	text-align:left;padding-left:0 !important;color:var(--fz-nav-fg) !important;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto}
 /* the panel itself */
@@ -1111,7 +1112,7 @@ html.fz-collapsed #fz-user .dropdown-menu{
 #fz-tools .search-dropdown-header::before{content:"\f002";font-family:"Font Awesome 5 Free";font-weight:900;
 	position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--fz-nav-fg-dim);font-size:13px;pointer-events:none}
 #fz-tools #top-global-search-input{
-	width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.06);
+	width:100%;box-sizing:border-box;background:color-mix(in srgb,var(--fz-nav-fg) 7%,transparent);border:1px solid color-mix(in srgb,var(--fz-nav-fg) 6%,transparent);
 	border-radius:var(--fz-radius);padding:8px 10px 8px 32px;color:var(--fz-nav-fg);font-size:13px;outline:none}
 #fz-tools #top-global-search-input::placeholder{color:var(--fz-nav-fg-dim)}
 /* force every inner wrapper of the native search to span its full slot width
@@ -1125,7 +1126,7 @@ html.fz-collapsed #fz-user .dropdown-menu{
 #fz-tools .search-dropdown-header{margin:0 !important;padding:0 !important;display:block !important}
 @media only screen and (max-width: 920px){
 	html.fusion.fz-collapsed #fz-tools #top-global-search-input{
-		background:rgba(255,255,255,.07);color:var(--fz-nav-fg);border-color:rgba(255,255,255,.06)}
+		background:color-mix(in srgb,var(--fz-nav-fg) 7%,transparent);color:var(--fz-nav-fg);border-color:color-mix(in srgb,var(--fz-nav-fg) 6%,transparent)}
 	html.fusion.fz-collapsed #fz-tools #top-global-search-input::placeholder{color:var(--fz-nav-fg-dim)}
 }
 /* the per-type scope list appears only while the field is focused.
@@ -1228,12 +1229,12 @@ html.fz-collapsed #fz-user .dropdown-menu{
  * ====================================================================== */
 /* Sidebar : light thumb on the dark navy */
 #fz-nav,#fz-tools .dropdown-menu,#fz-tools .search-dropdown-body,#fz-user .dropdown-menu{
-	scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.22) transparent}
+	scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--fz-nav-fg) 22%,transparent) transparent}
 #fz-nav::-webkit-scrollbar,#fz-tools .dropdown-menu::-webkit-scrollbar,
 #fz-tools .search-dropdown-body::-webkit-scrollbar,#fz-user .dropdown-menu::-webkit-scrollbar{width:8px;height:8px}
 #fz-nav::-webkit-scrollbar-track{background:transparent}
-#fz-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:var(--fz-radius);border:2px solid transparent;background-clip:padding-box}
-#fz-nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.34);background-clip:padding-box;border:2px solid transparent}
+#fz-nav::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fz-nav-fg) 18%,transparent);border-radius:var(--fz-radius);border:2px solid transparent;background-clip:padding-box}
+#fz-nav::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--fz-nav-fg) 34%,transparent);background-clip:padding-box;border:2px solid transparent}
 
 /* Whole application content : themed thin scrollbars */
 html.fusion #id-right,html.fusion #id-container,html.fusion body#mainbody,
@@ -1248,7 +1249,7 @@ html.fusion ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fz-text
 	border-radius:var(--fz-radius);border:3px solid transparent;background-clip:padding-box}
 html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);background-clip:padding-box;border:3px solid transparent}
 /* keep the navy sidebar's own scrollbars on the light-thumb rule above */
-#fz-sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);background-clip:padding-box;border:2px solid transparent}
+#fz-sidebar ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fz-nav-fg) 20%,transparent);background-clip:padding-box;border:2px solid transparent}
 /* Chrome 121+ ignores every ::-webkit-scrollbar rule on an element that has
    scrollbar-width or scrollbar-color, and falls back to its native bar: an overlay bar on
    macOS, shown only while scrolling, so the horizontal scrollbar of lists and of the content
@@ -1260,6 +1261,58 @@ html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);backgr
 	html.fusion .div-table-responsive,html.fusion .div-table-responsive-no-min{
 		scrollbar-width:auto;scrollbar-color:auto}
 }
+
+/* ====================================================================== *
+ *  Accessibility floor (WCAG 2.2 AA)                                      *
+ * ====================================================================== */
+/* Secondary text of the component base: the theme's dimmed level instead of a 40%
+   opacity, which left it at 3.9:1 on white */
+html.fusion .opacitymedium,html.fusion .optiongrey{opacity:.68}
+/* Placeholders were #ccc (1.6:1): readable now, and still told apart from a typed value
+   by their dimmed color. On the rail they keep the rail's own dimmed text. */
+html.fusion ::placeholder{color:var(--fz-text-dim);opacity:1}
+html.fusion .placeholder,html.fusion select.placeholder,
+html.fusion .select2-container--default .select2-selection__placeholder{color:var(--fz-text-dim)}
+html.fusion #fz-sidebar ::placeholder{color:var(--fz-nav-fg-dim)}
+
+/* Keyboard focus, visible everywhere the theme draws its own controls (2.4.7). The rail
+   rings in its text color, so it shows on any menu color a company picks. */
+html.fusion #fz-sidebar :is(a,button,[tabindex]):focus-visible{outline:2px solid var(--fz-nav-fg);outline-offset:-2px}
+html.fusion #fz-tools input:focus,html.fusion #fz-tools #top-global-search-input:focus{
+	outline:2px solid var(--fz-nav-fg) !important;outline-offset:1px;
+	border-color:color-mix(in srgb,var(--fz-nav-fg) 40%,transparent) !important}
+/* sub-items are inline links stretched over their row: ring the row, not the link */
+html.fusion .fz-sub a:focus-visible{outline:none}
+html.fusion .fz-sub :is(.menu_titre,.menu_contenu):has(a:focus-visible){outline:2px solid var(--fz-sub-fg);outline-offset:-2px}
+html.fusion #fz-brand .fz-collapse:focus-visible{outline:2px solid var(--fz-nav-fg);outline-offset:2px}
+html.fusion #fz-history a:focus-visible{outline:2px solid var(--colortextlink,var(--fz-text));outline-offset:2px;border-radius:3px}
+
+/* The collapse tab is 18px wide: an invisible margin makes its hit area 24px or more
+   (2.5.8) without changing how it looks */
+#fz-brand .fz-collapse::after{content:"";position:absolute;top:-4px;bottom:-4px;left:0;right:-8px}
+
+/* Reduced motion: what moves becomes instant (the rail fold, the drawer, sections
+   opening), while color and opacity changes keep a short fade, so every state change
+   still reads; the loading pulse becomes a steady dimmed chevron. */
+@media (prefers-reduced-motion: reduce){
+	html.fusion *,html.fusion *::before,html.fusion *::after{
+		transition-property:color,background-color,border-color,opacity,box-shadow,outline-color !important;
+		transition-duration:.12s !important;scroll-behavior:auto !important}
+	.fz-group.fz-loading > .fz-head .fz-chev{animation:none;opacity:.45}
+}
+
+/* Title bar (page title, center tools, page size, view switch, "+"): a row that wraps
+   instead of a table that cannot, so on a narrower screen (a 1024px tablet) the tools
+   move to a second line, kept to the right, rather than spilling past the screen. */
+html.fusion table.table-fiche-title,html.fusion table.table-fiche-title > tbody{display:block;width:100%}
+html.fusion table.table-fiche-title tr.toptitle{display:flex;flex-wrap:wrap;align-items:center;row-gap:6px;min-height:60px;height:auto}
+html.fusion table.table-fiche-title tr.toptitle > td{display:block}
+html.fusion table.table-fiche-title tr.toptitle > td.col-picto{flex:0 0 29px;width:29px !important}
+html.fusion table.table-fiche-title tr.toptitle > td.col-title{flex:0 1 auto;min-width:0}
+html.fusion table.table-fiche-title tr.toptitle > td.col-center{flex:1 1 auto;min-width:0;max-width:100%;box-sizing:border-box;padding:0 12px}
+html.fusion table.table-fiche-title tr.toptitle > td.col-right{flex:0 1 auto;margin-left:auto;max-width:100%}
+/* core sizes some title-bar combos (mass actions) in pixels: never wider than the row */
+html.fusion table.table-fiche-title .select2-container{max-width:100%}
 
 /* ====================================================================== *
  *  Full-page lists : the table scrolls inside its own frame, capped to    *
@@ -1281,7 +1334,7 @@ html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);backgr
 #fz-history a{display:inline-flex;align-items:center;gap:6px;max-width:240px;color:var(--fz-text-dim);text-decoration:none}
 #fz-history a:hover{color:var(--colortextlink)}
 #fz-history li.is-current a{color:var(--fz-text);font-weight:600}
-#fz-history li.fz-history-empty{color:var(--fz-text-dim);opacity:.8;font-style:italic}
+#fz-history li.fz-history-empty{color:var(--fz-text-dim);font-style:italic}
 #fz-history .fz-history-ref{overflow:hidden;text-overflow:ellipsis}
 #fz-history .fz-history-picto{flex:0 0 auto;margin:0;padding:0;font-size:13px;width:auto;opacity:.9}
 #fz-history img.fz-history-picto{width:16px;height:16px;object-fit:contain}

@@ -368,11 +368,24 @@ html body div.fiche table.fz-branding-table > tbody > tr > td{vertical-align:mid
 .fz-branding-preview.is-square .fz-branding-mark img{width:48px;max-width:48px}
 .fz-branding-name{color:var(--fz-nav-fg,#fff);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .fz-branding-name:empty{display:none}
-.fz-branding-letter{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-	background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:800;font-size:22px}
+.fz-branding-letter{width:48px;height:48px;border-radius:var(--fz-radius,6px);display:flex;align-items:center;justify-content:center;
+	background:color-mix(in srgb,var(--fz-nav-fg,#dbe3ef) 16%,transparent);color:var(--fz-nav-fg,#dbe3ef);font-weight:800;font-size:22px}
 /* The Preview column shows every image: no second thumbnail in the upload blocks */
 .fz-branding-table .fz-branding-upload img[id]{display:none}
 .fz-branding-custom{margin-top:8px}
+/* Phone: each row stacks (label, field, preview) instead of three columns that do not fit */
+@media only screen and (max-width: 720px){
+	.fz-branding-table,.fz-branding-table tbody,.fz-branding-table tr,.fz-branding-table td{display:block;width:auto !important;height:auto !important;box-sizing:border-box}
+	.fz-branding-table tr.liste_titre td:not(:first-child){display:none}
+	.fz-branding-table tr.oddeven{border-bottom:1px solid var(--colortopbordertitle1,#d7d7d7)}
+	.fz-branding-table tr.oddeven td{padding:4px 12px;border:0 !important}
+	.fz-branding-table tr.oddeven td:empty{display:none}
+	.fz-branding-table tr.oddeven td:first-child{padding-top:12px;font-weight:600}
+	.fz-branding-table tr.oddeven td:last-child{padding-bottom:12px}
+	.fz-branding-table td.fz-branding-previewcell{text-align:left}
+	.fz-branding-table input[type=text],.fz-branding-table select{min-width:0 !important;width:100%;max-width:100%}
+	.fz-branding-preview.is-wide{width:100%;max-width:240px}
+}
 </style>';
 
 print '<form enctype="multipart/form-data" method="POST" action="'.$_SERVER['PHP_SELF'].'">';

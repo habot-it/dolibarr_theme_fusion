@@ -1134,9 +1134,12 @@
 		return [];
 	}
 
-	// Background fetch queue (limited concurrency) + per-session cache, so recursive
-	// submenu discovery stays light on both the browser and the server.
+	// Background fetch queue (limited concurrency) + per-session cache, so submenu
+	// discovery stays light on both the browser and the server.
 	var FZ_MAX = 2, fzActive = 0, fzQueue = [];
+	// Links never fetched in the background: a GET that acts (action=…, logout) or a
+	// heavy report page is not worth loading only to read its left menu.
+	var FZ_NO_PREFETCH = /[?&]action=|logout|\/rapport|report|export|stats\//i;
 	function fzCacheGet(k) { return storageGet("sessionStorage", "fzpm:" + k); }
 	function fzCacheSet(k, v) { storageSet("sessionStorage", "fzpm:" + k, v); }
 	function fzPump() {
@@ -1149,9 +1152,11 @@
 		}
 	}
 
-	// Discover deeper contextual levels while the browser is idle. The visible menu is
-	// usable immediately; cached/fetched children still appear before they are needed,
-	// without competing with the page's first layout and paint.
+	// Discover deeper contextual levels. Levels already in the session cache are built
+	// while the browser is idle, with no request. A level not cached yet is fetched only
+	// on intent — the pointer resting on its row (150ms) or keyboard focus reaching it —
+	// one row at a time: fetching every row's page up front cost the server dozens of
+	// full Dolibarr pages per minute and per user, reports and create forms included.
 	function preloadAll(container) {
 		if (!container || container._fzPreloadQueued) return;
 		container._fzPreloadQueued = true;
@@ -1178,13 +1183,27 @@
 					}
 					return;
 				}
-				fzQueue.push({ href: href, done: function (htmlText) {
-					var doc = new DOMParser().parseFromString(htmlText, "text/html");
-					var kids = childrenFromDoc(doc, title, lvl);
-					fzCacheSet(key, kids.map(function (k) { return k.outerHTML; }).join(""));
-					build(kids);
-				} });
-				fzPump();
+				if (FZ_NO_PREFETCH.test(href)) return;
+				var timer = 0, queued = false;
+				function fetchLevel() {
+					if (queued) return;
+					queued = true;
+					row.removeEventListener("pointerenter", onEnter);
+					row.removeEventListener("pointerleave", onLeave);
+					row.removeEventListener("focusin", fetchLevel);
+					fzQueue.push({ href: href, done: function (htmlText) {
+						var doc = new DOMParser().parseFromString(htmlText, "text/html");
+						var kids = childrenFromDoc(doc, title, lvl);
+						fzCacheSet(key, kids.map(function (k) { return k.outerHTML; }).join(""));
+						build(kids);
+					} });
+					fzPump();
+				}
+				function onEnter() { timer = setTimeout(fetchLevel, 150); }
+				function onLeave() { clearTimeout(timer); }
+				row.addEventListener("pointerenter", onEnter);
+				row.addEventListener("pointerleave", onLeave);
+				row.addEventListener("focusin", fetchLevel);
 			});
 		}
 		if (window.requestIdleCallback) window.requestIdleCallback(discover, { timeout: 1200 });
