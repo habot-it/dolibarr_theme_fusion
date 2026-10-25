@@ -253,14 +253,12 @@ $form = new Form($db);
 $formfile = new FormFile($db);
 
 // What each source shows, per place, for the live preview ('' = initial letter)
-$appname = preg_replace('/^[\s\x{00A0}]+|[\s\x{00A0}]+$/u', '', html_entity_decode(strip_tags(getDolGlobalString('MAIN_APPLICATION_TITLE')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-$brandlabel = $appname !== '' ? $appname : (getDolGlobalString('MAIN_INFO_SOCIETE_NOM') ?: 'Dolibarr');
 $dolibarrIcon = DOL_URL_ROOT.'/theme/dolibarr_256x256_color.png';
 $previews = array();
 foreach ($places as $place => $const) {
 	$custom = fz_fusion_custom_path($place);
 	$previews[$place] = array(
-		'' => ($place === 'favicon') ? (fz_fusion_logo_url('squarred', '_mini') ?: $dolibarrIcon) : fz_fusion_logo_url($place === 'expanded' && $appname === '' ? 'wide' : 'square'),
+		'' => ($place === 'favicon') ? (fz_fusion_logo_url('squarred', '_mini') ?: $dolibarrIcon) : fz_fusion_logo_url('square'),
 		'logo' => fz_fusion_logo_url('logo'),
 		'squarred' => fz_fusion_logo_url('squarred'),
 		'custom' => ($custom === '') ? '' : DOL_URL_ROOT.'/viewimage.php?cache=1&modulepart=mycompany&file='.urlencode($custom),
@@ -269,23 +267,53 @@ foreach ($places as $place => $const) {
 	);
 }
 
+// Automatic, menu expanded: the wide logo when there is no application name
+$autoNonameUrl = fz_fusion_logo_url('wide');
+
 /**
  * Source <select> of a place; each option carries the image it would show.
  *
- * @param	string					$name		Constant name, also the field name
- * @param	array<string,string>	$choices	value => label
- * @param	array<string,string>	$preview	value => image URL
+ * @param	string					$name			Constant name, also the field name
+ * @param	array<string,string>	$choices		value => label
+ * @param	array<string,string>	$preview		value => image URL
+ * @param	string					$autoNoname		Image of the automatic choice when the application name is empty ('' = same)
  * @return	string
  */
-function fz_fusion_branding_select($name, $choices, $preview)
+function fz_fusion_branding_select($name, $choices, $preview, $autoNoname = '')
 {
 	$current = getDolGlobalString($name);
 	$out = '<select class="flat minwidth250 fz-branding-source" name="'.$name.'" id="'.$name.'">';
 	foreach ($choices as $value => $label) {
-		$out .= '<option value="'.dol_escape_htmltag($value).'" data-preview="'.dol_escape_htmltag($preview[$value]).'"'.($value === $current ? ' selected' : '').'>'.dol_escape_htmltag($label).'</option>';
+		$out .= '<option value="'.dol_escape_htmltag($value).'" data-preview="'.dol_escape_htmltag($preview[$value]).'"';
+		if ($value === '' && $autoNoname !== '') {
+			$out .= ' data-preview-noname="'.dol_escape_htmltag($autoNoname).'"';
+		}
+		$out .= ($value === $current ? ' selected' : '').'>'.dol_escape_htmltag($label).'</option>';
 	}
 	$out .= '</select>';
 	return $out;
+}
+
+/**
+ * Preview box of the right column.
+ *
+ * @param	string	$shape		wide|square
+ * @param	string	$look		menu (sidebar background) | checker (transparency checkerboard)
+ * @param	string	$src		Image URL for a static preview ('' = filled by the script / empty)
+ * @param	bool	$withName	Add the application name, as next to the expanded sidebar logo
+ * @return	string
+ */
+function fz_fusion_branding_preview($shape, $look, $src = '', $withName = false)
+{
+	$out = '<span class="fz-branding-preview is-'.$shape.' is-'.$look.'"><span class="fz-branding-mark">';
+	if ($src !== '') {
+		$out .= '<img src="'.dol_escape_htmltag($src).'" alt="">';
+	}
+	$out .= '</span>';
+	if ($withName) {
+		$out .= '<span class="fz-branding-name"></span>';
+	}
+	return $out.'</span>';
 }
 
 llxHeader('', $words['title'], '', '', 0, 0, '', '', '', 'mod-admin page-fusion-branding');
@@ -298,16 +326,30 @@ $head[] = array($_SERVER['PHP_SELF'], $words['tab'], 'fusionbranding');
 print dol_get_fiche_head($head, 'fusionbranding', '', -1, '');
 
 print '<style>
-.fz-branding-preview{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
-	background:var(--fz-nav-bg,#1e293b);border-radius:var(--fz-radius,8px);padding:6px 10px;min-height:68px}
-.fz-branding-preview.is-expanded{min-width:240px}
-.fz-branding-preview.is-collapsed{width:66px;padding:6px}
-.fz-branding-preview.is-favicon{background:var(--fz-surface,#f1f5f9);width:68px;padding:6px}
-.fz-branding-preview img{display:block;max-height:55px;max-width:220px}
-.fz-branding-preview.is-collapsed img{max-width:54px}
-.fz-branding-preview.is-favicon img{width:32px;height:32px;object-fit:contain}
-.fz-branding-letter{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-	background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:800}
+/* One preview system for the whole page, in the right column: two shapes of the same
+   height (wide: logo, menu expanded; square: squarred logo, menu collapsed, favicon)
+   and one image height, so every logo is shown at the same scale. */
+.fz-branding-table td.fz-branding-previewcell{width:260px;text-align:right;vertical-align:middle}
+.fz-branding-preview{display:inline-flex;align-items:center;justify-content:center;gap:10px;box-sizing:border-box;
+	height:72px;padding:0 12px;border-radius:var(--fz-radius,8px);vertical-align:middle;overflow:hidden}
+.fz-branding-preview.is-wide{width:240px}
+.fz-branding-preview.is-square{width:72px;padding:0}
+.fz-branding-preview.is-menu{background:var(--fz-nav-bg,#1e293b)}
+.fz-branding-preview.is-menu.is-wide{justify-content:flex-start}
+/* Transparent images (a white logo on nothing, say) stay visible on a checkerboard */
+.fz-branding-preview.is-checker{
+	background-color:#fff;
+	background-image:conic-gradient(#d7dce3 25%,transparent 0 50%,#d7dce3 0 75%,transparent 0);
+	background-size:16px 16px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.fz-branding-mark{display:flex;align-items:center;justify-content:center;min-width:0}
+.fz-branding-mark img{display:block;height:48px;width:auto;max-width:216px;object-fit:contain}
+.fz-branding-preview.is-square .fz-branding-mark img{width:48px;max-width:48px}
+.fz-branding-name{color:var(--fz-nav-fg,#fff);font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.fz-branding-name:empty{display:none}
+.fz-branding-letter{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+	background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:800;font-size:22px}
+/* The Preview column shows every image: no second thumbnail in the upload blocks */
+.fz-branding-table .fz-branding-upload img[id]{display:none}
 .fz-branding-custom{margin-top:8px}
 </style>';
 
@@ -322,22 +364,22 @@ $tooltiplogo = $langs->trans('AvailableFormats').' : png, jpg, jpeg';
 $tooltiplogo .= ($maxmin > 0) ? '<br>'.$langs->trans('MaxSize').' : '.$maxmin.' '.$langs->trans('Kb') : '';
 
 // ---- Identity ---------------------------------------------------------------
-print '<div class="div-table-responsive-no-min"><table class="noborder centpercent">';
-print '<tr class="liste_titre"><td class="titlefieldcreate">'.dol_escape_htmltag($words['identity']).'</td><td></td></tr>';
+print '<div class="div-table-responsive-no-min"><table class="noborder centpercent fz-branding-table">';
+print '<tr class="liste_titre"><td class="titlefieldcreate">'.dol_escape_htmltag($words['identity']).'</td><td></td><td class="right">'.dol_escape_htmltag($words['preview']).'</td></tr>';
 
 print '<tr class="oddeven"><td><label for="MAIN_APPLICATION_TITLE">'.$form->textwithpicto(dol_escape_htmltag($words['appname']), dol_escape_htmltag($words['appnote']).'<br><br>'.$langs->trans('MAIN_APPLICATION_TITLE')).'</label></td><td>';
 print '<input type="text" class="flat minwidth300" name="MAIN_APPLICATION_TITLE" id="MAIN_APPLICATION_TITLE" value="'.dol_escape_htmltag(getDolGlobalString('MAIN_APPLICATION_TITLE')).'">';
-print '</td></tr>';
+print '</td><td></td></tr>';
 
 foreach ($companyLogos as $htmlname => $const) {
-	print '<tr class="oddeven"><td><label for="'.$htmlname.'">'.$form->textwithpicto($langs->trans($htmlname === 'logo' ? 'Logo' : 'LogoSquarred'), $tooltiplogo).'</label></td><td>';
+	print '<tr class="oddeven"><td><label for="'.$htmlname.'">'.$form->textwithpicto($langs->trans($htmlname === 'logo' ? 'Logo' : 'LogoSquarred'), $tooltiplogo).'</label></td><td class="fz-branding-upload">';
 	print $formfile->showImageToEdit($htmlname, 'mycompany', $conf->mycompany->dir_output, 'logos/', getDolGlobalString($const));
-	print '</td></tr>';
+	print '</td><td class="fz-branding-previewcell">'.fz_fusion_branding_preview($htmlname === 'logo' ? 'wide' : 'square', 'checker', fz_fusion_logo_url($htmlname === 'logo' ? 'logo' : 'squarred')).'</td></tr>';
 }
 print '</table></div>';
 
 // ---- Usage ------------------------------------------------------------------
-print '<div class="div-table-responsive-no-min"><table class="noborder centpercent">';
+print '<div class="div-table-responsive-no-min"><table class="noborder centpercent fz-branding-table">';
 print '<tr class="liste_titre"><td class="titlefieldcreate">'.dol_escape_htmltag($words['usage']).'</td><td>'.dol_escape_htmltag($words['source']).'</td><td class="right">'.dol_escape_htmltag($words['preview']).'</td></tr>';
 
 foreach ($places as $place => $const) {
@@ -347,8 +389,8 @@ foreach ($places as $place => $const) {
 	}
 	$current = getDolGlobalString($const);
 	print '<tr class="oddeven fz-branding-row"><td class="tdtop"><label for="'.$const.'">'.$label.'</label></td><td class="tdtop">';
-	print fz_fusion_branding_select($const, $choicesByPlace[$place], $previews[$place]);
-	print '<div class="fz-branding-custom"'.($current === 'custom' ? '' : ' style="display:none"').'>';
+	print fz_fusion_branding_select($const, $choicesByPlace[$place], $previews[$place], $place === 'expanded' ? $autoNonameUrl : '');
+	print '<div class="fz-branding-custom fz-branding-upload"'.($current === 'custom' ? '' : ' style="display:none"').'>';
 	print $formfile->showImageToEdit('fusion_'.$place, 'mycompany', $conf->mycompany->dir_output, 'logos/fusion/', getDolGlobalString($const.'_FILE'));
 	print '</div>';
 	if ($place === 'favicon') {
@@ -357,7 +399,9 @@ foreach ($places as $place => $const) {
 			print '<div class="warning small margintoponly">'.dol_escape_htmltag(sprintf($words['favother'], $currentFavicon)).'</div>';
 		}
 	}
-	print '</td><td class="right tdtop"><span class="fz-branding-preview is-'.$place.'"></span></td></tr>';
+	print '</td><td class="fz-branding-previewcell">';
+	print fz_fusion_branding_preview($place === 'expanded' ? 'wide' : 'square', $place === 'favicon' ? 'checker' : 'menu', '', $place === 'expanded');
+	print '</td></tr>';
 }
 print '</table></div>';
 
@@ -369,31 +413,66 @@ print dol_get_fiche_end();
 // Live preview, and the upload of an own image shown only when that source is picked
 print '<script>
 (function () {
-	var letter = '.json_encode(mb_strtoupper(mb_substr($brandlabel, 0, 1))).';
-	document.querySelectorAll(".fz-branding-row").forEach(function (row) {
+	var nameInput = document.getElementById("MAIN_APPLICATION_TITLE");
+	var fallbackLabel = '.json_encode((string) (getDolGlobalString('MAIN_INFO_SOCIETE_NOM') ?: 'Dolibarr')).';
+	// The name as the sidebar shows it: entities decoded (&nbsp; hides it), trimmed
+	function appName() {
+		var box = document.createElement("textarea");
+		box.innerHTML = nameInput ? nameInput.value : "";
+		return box.value.replace(/<[^>]*>/g, "").replace(/[\s\u00a0]+/g, " ").trim();
+	}
+	var rows = document.querySelectorAll(".fz-branding-row");
+	function sync(row) {
 		var select = row.querySelector(".fz-branding-source");
 		var custom = row.querySelector(".fz-branding-custom");
-		var preview = row.querySelector(".fz-branding-preview");
-		function sync() {
-			var option = select.options[select.selectedIndex];
-			var src = option ? option.getAttribute("data-preview") : "";
-			custom.style.display = select.value === "custom" ? "" : "none";
-			preview.textContent = "";
-			if (src) {
+		var mark = row.querySelector(".fz-branding-mark");
+		var nameEl = row.querySelector(".fz-branding-name");
+		var name = appName();
+		var option = select.options[select.selectedIndex];
+		var src = option ? option.getAttribute("data-preview") : "";
+		if (option && !name && option.hasAttribute("data-preview-noname")) src = option.getAttribute("data-preview-noname");
+		custom.style.display = select.value === "custom" ? "" : "none";
+		mark.textContent = "";
+		if (src) {
+			var img = new Image();
+			img.alt = "";
+			img.src = src;
+			mark.appendChild(img);
+		} else {
+			var badge = document.createElement("span");
+			badge.className = "fz-branding-letter";
+			badge.textContent = (name || fallbackLabel).charAt(0).toUpperCase();
+			mark.appendChild(badge);
+		}
+		if (nameEl) nameEl.textContent = name;
+	}
+	rows.forEach(function (row) {
+		row.querySelector(".fz-branding-source").addEventListener("change", function () { sync(row); });
+		sync(row);
+	});
+	// A file just picked shows in the preview before saving: in its own row for the
+	// company logos, as the "own image" source of its place for the others.
+	document.querySelectorAll(".fz-branding-upload input[type=file]").forEach(function (input) {
+		input.addEventListener("change", function () {
+			var file = input.files && input.files[0];
+			if (!file || !window.URL || !URL.createObjectURL) return;
+			var url = URL.createObjectURL(file);
+			var row = input.closest("tr");
+			if (row.classList.contains("fz-branding-row")) {
+				var option = row.querySelector(".fz-branding-source option[value=custom]");
+				option.setAttribute("data-preview", url);
+				sync(row);
+			} else {
+				var mark = row.querySelector(".fz-branding-mark");
+				mark.textContent = "";
 				var img = new Image();
 				img.alt = "";
-				img.src = src;
-				preview.appendChild(img);
-			} else {
-				var badge = document.createElement("span");
-				badge.className = "fz-branding-letter";
-				badge.textContent = letter;
-				preview.appendChild(badge);
+				img.src = url;
+				mark.appendChild(img);
 			}
-		}
-		select.addEventListener("change", sync);
-		sync();
+		});
 	});
+	if (nameInput) nameInput.addEventListener("input", function () { rows.forEach(sync); });
 })();
 </script>';
 

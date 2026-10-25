@@ -1249,13 +1249,93 @@ html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);backgr
  *  the viewport height, so its horizontal scrollbar sits at the bottom of *
  *  the screen instead of below the last of the (up to 100+) rows.        *
  * ====================================================================== */
-html.fusion div.fiche>form>div.div-table-responsive{
+/* Title bar tools (page size, list/kanban switch, "+" button…): inline-blocks of
+   different heights sat on the text baseline, so each one landed at its own height.
+   Centre them on the row instead. */
+html.fusion table.table-fiche-title tr.toptitle>td{vertical-align:middle}
+html.fusion table.table-fiche-title div.pagination{display:flex;align-items:center}
+html.fusion table.table-fiche-title div.pagination ul{display:inline-flex;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+html.fusion table.table-fiche-title div.pagination li{display:inline-flex;align-items:center}
+
+html.fusion div.fiche>form>div.div-table-responsive,
+html.fusion div.fiche>div.tabBar>form>div.div-table-responsive{
 	max-height:calc(100vh - 145px);overflow:auto}  /* fallback: fusion.js sets the exact height per frame */
 /* The column titles stay visible while scrolling vertically inside the frame.
    Opaque: core dims these cells (opacity .8), which let the scrolled rows show through. */
 html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>th,
-html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>td{
+html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>td,
+html.fusion div.fiche>div.tabBar>form>div.div-table-responsive tr.liste_titre>th,
+html.fusion div.fiche>div.tabBar>form>div.div-table-responsive tr.liste_titre>td{
 	position:sticky;top:0;z-index:2;background:var(--colorbacktitle1);opacity:1 !important}
+/* The border belongs to the frame, not to the table: the table's own right and bottom
+   edges only show once scrolled to its far end, so the frame looked open on two sides.
+   The frame draws the full rectangle at any scroll position; the table inside drops its
+   outer borders and bottom margin so no line is doubled. */
+html.fusion div.fiche>form>div.div-table-responsive,
+html.fusion div.fiche>div.tabBar>form>div.div-table-responsive{
+	border:1px solid var(--colortopbordertitle1);border-radius:var(--fz-radius);
+	background:var(--colorbacktabcard1);margin-bottom:20px}
+html.fusion div.fiche>form>div.div-table-responsive>table,
+html.fusion div.fiche>div.tabBar>form>div.div-table-responsive>table{
+	border-left:0;border-right:0;border-top:0;margin-bottom:0;border-radius:0}
+html.fusion div.fiche>form>div.div-table-responsive>table>tbody>tr:last-of-type>td,
+html.fusion div.fiche>div.tabBar>form>div.div-table-responsive>table>tbody>tr:last-of-type>td{
+	border-bottom:0}
+
+/* ====================================================================== *
+ *  Content frame (landscape) : #id-right is the ONE scrolling area, sized *
+ *  to the screen right of the sidebar, so its scrollbars always sit on    *
+ *  the screen's right and bottom edges — on every page, modules included. *
+ *  Set by fusion.js (html.fz-frame), which also carries Dolibarr's        *
+ *  "page_y" scroll restore over to this frame. Portrait and print keep    *
+ *  the ordinary page scroll.                                              *
+ * ====================================================================== */
+@media screen and (min-width: 921px){
+	html.fusion.fz-frame,
+	html.fusion.fz-frame body#mainbody{height:100%;overflow:hidden}
+	html.fusion.fz-frame body#mainbody{display:flex;flex-direction:column;height:100vh;height:100dvh}
+	html.fusion.fz-frame body#mainbody > *{flex:0 0 auto}
+	html.fusion.fz-frame body#mainbody > #id-container{
+		flex:1 1 auto;min-height:0;display:flex !important;flex-direction:column}
+	html.fusion.fz-frame body#mainbody #id-right,
+	html.fusion.fz-frame body#mainbody.bodyforlist #id-right{
+		flex:1 1 auto;min-height:0 !important;overflow:auto;overscroll-behavior:contain}
+	/* One even gutter on the four sides of the content. Core stacks several: #id-right's
+	   own top/bottom padding (14px / 4 to 20px), and div.fiche's side margins, which
+	   change with the screen width (44/38px, 13/14px, 9/10px). */
+	html.fusion.fz-frame body#mainbody #id-right,
+	html.fusion.fz-frame body#mainbody.bodyforlist #id-right{
+		padding:var(--fz-gutter,20px) !important}
+	html.fusion.fz-frame body#mainbody #id-right div.fiche{margin:0 !important}
+	/* The page title lines up with the sidebar's collapse button (fixed at top:10px,
+	   34px tall: centre at 27px). The title row centres its text, so no top gutter and
+	   a 54px row put the title on that same line; core's extra 7px on narrower screens
+	   goes too. */
+	html.fusion.fz-frame body#mainbody #id-right,
+	html.fusion.fz-frame body#mainbody.bodyforlist #id-right{padding-top:0 !important}
+	html.fusion.fz-frame #id-right div.fiche>table.table-fiche-title:first-child,
+	html.fusion.fz-frame #id-right div.fiche>form:first-child>table.table-fiche-title:first-of-type{margin-top:0 !important}
+	html.fusion.fz-frame #id-right div.fiche>table.table-fiche-title:first-child tr.toptitle,
+	html.fusion.fz-frame #id-right div.fiche>form:first-child>table.table-fiche-title:first-of-type tr.toptitle{height:54px}
+	/* the collapse button juts 18px into the content: give the title room beside it */
+	html.fusion.fz-frame #id-right div.fiche>table.table-fiche-title:first-child tr.toptitle>td:first-child,
+	html.fusion.fz-frame #id-right div.fiche>form:first-child>table.table-fiche-title:first-of-type tr.toptitle>td:first-child{padding-left:14px}
+	/* the gutter closes the page: a list frame's bottom margin would only collapse out
+	   of the card and make the frame overflow by that much */
+	html.fusion.fz-frame div.fiche>form>div.div-table-responsive,
+	html.fusion.fz-frame div.fiche>div.tabBar>form>div.div-table-responsive{margin-bottom:0}
+	html.fusion.fz-frame #id-right::-webkit-scrollbar-corner{background:transparent}
+	/* the bar is above the frame now, it no longer needs to stick */
+	html.fusion.fz-frame body#mainbody > .breadCrumbHolder{position:relative}
+	/* A wide table outside the list frames (a card, a module page…) no longer scrolls
+	   in its own box, whose scrollbar sits under its last row, possibly far below the
+	   screen: it overflows into the frame, whose scrollbar is always on screen. Narrow
+	   columns, widget boxes and dialogs keep their own scroll, as in core. */
+	html.fusion.fz-frame #id-right :is(.div-table-responsive,.div-table-responsive-no-min):not(div.fiche>form>div,div.fiche>div.tabBar>form>div){
+		overflow-x:visible}
+	html.fusion.fz-frame #id-right :is(.fichehalfleft,.fichehalfright,.fichethirdleft,.fichetwothirdright,.box,#fz-dash) :is(.div-table-responsive,.div-table-responsive-no-min){
+		overflow-x:auto}
+}
 
 /* ====================================================================== *
  *  DASHBOARD GRID (fusion-dashboard.js)                                   *

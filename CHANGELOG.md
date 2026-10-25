@@ -7,6 +7,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 ## [Unreleased]
 
 ### Added
+- Content frame (landscape): the content area right of the sidebar is now the one scrolling area,
+  sized to the screen, so its scrollbars always sit on the screen's right and bottom edges, on every
+  page, modules included. A wide table outside the list frames overflows into that frame instead of
+  scrolling in its own box, whose scrollbar sat under its last row, often far below the screen.
+  Dolibarr's scroll restore after an action (`page_y`, `.reposition`) is carried over to the frame.
+  Portrait and print keep the ordinary page scroll.
+- Content frame: one even 20px gutter on the four sides of the content (core stacked a top and bottom
+  padding with side margins that change with the screen width), and list frames are trimmed by
+  whatever the content still overflows, so the page no longer shifts up when scrolled to the end.
+- List frames draw their own border (with the theme's corner radius) instead of relying on the
+  table's: the table's right and bottom edges only showed once scrolled to its far end, so the frame
+  looked open on two sides. The table inside drops its outer borders, so no line is doubled.
+- Lists inside a tab (`div.fiche > div.tabBar > form`) get the same screen-fitted frame and sticky
+  column titles as the full-page lists.
+- *Logos & favicon* tab: every preview now sits in a right-hand *Preview* column, at one scale (two
+  shapes of the same height, one image height), and a file picked for upload shows there at once.
 - A *Logos & favicon* tab in *Setup > Display* (`branding/setup.php`) gathers the brand settings.
   *Identity*: the application name (`MAIN_APPLICATION_TITLE`) and the two company logos, edited with
   the same constants and thumbnails as *Setup > Security* and *Setup > Company*. *Where the logos are

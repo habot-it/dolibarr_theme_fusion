@@ -307,28 +307,91 @@
 		window.addEventListener("resize", scheduleDialogSizing);
 		scheduleDialogSizing();
 	}
-	// Full-page lists scroll inside a frame capped to the viewport (style.css.php) so
+	// Landscape: #id-right is the one scrolling area, sized to the screen (style.css.php,
+	// html.fz-frame), so its scrollbars are always on screen. Portrait and print keep
+	// the page scroll: contentFrame() is null there and the window scrolls as usual.
+	var FRAME_MEDIA = window.matchMedia ? window.matchMedia("screen and (min-width: 921px)") : null;
+	function contentFrame() {
+		if (!ROOT.classList.contains("fz-frame") || !FRAME_MEDIA || !FRAME_MEDIA.matches) return null;
+		return $("#id-right");
+	}
+	function initContentFrame() {
+		if (!$("#id-right")) return;
+		ROOT.classList.add("fz-frame");
+		// Dolibarr's "reposition" (lib_foot.js.php) reads and restores the WINDOW scroll,
+		// which no longer moves: carry its page_y over to the frame. Captured, so it runs
+		// before core's handler, which then finds a window scroll of 0 and does nothing.
+		document.addEventListener("click", function (e) {
+			var frame = contentFrame();
+			var target = frame && e.target.closest ? e.target.closest(".reposition") : null;
+			var y = target ? Math.round(frame.scrollTop) : 0;
+			if (!(y > 0)) return;
+			if (target.href) {
+				try {
+					var url = new URL(target.href, window.location.origin);
+					url.searchParams.set("page_y", y);
+					target.href = url.toString();
+				} catch (ignore) {}
+			} else {
+				$all("input[type=hidden][name=page_y]").forEach(function (input) { input.value = y; });
+			}
+		}, true);
+		function restorePageY() {
+			var frame = contentFrame();
+			if (!frame) return;
+			var y = parseInt(queryParam(window.location.search, "page_y") || "", 10);
+			if (!(y > 0)) {
+				var posted = document.getElementById("page_y");	// filled by core after a POST
+				y = posted ? parseInt(posted.textContent, 10) : 0;
+			}
+			if (y > 0) frame.scrollTop = y;
+		}
+		// after the list frames got their height, or the frame is not tall enough yet
+		if (document.readyState === "complete") restorePageY();
+		else window.addEventListener("load", restorePageY);
+	}
+
+	// Full-page lists scroll inside a frame capped to the visible area (style.css.php) so
 	// their horizontal scrollbar stays on screen. Whatever sits above the frame (title,
 	// filter rows, the Breadcrumb module's bar inserted after load…) varies per page,
 	// so measure the frame's real top instead of guessing it in CSS.
-	var LIST_FRAMES = "div.fiche>form>div.div-table-responsive";
+	var LIST_FRAMES = "div.fiche>form>div.div-table-responsive, div.fiche>div.tabBar>form>div.div-table-responsive";
 	var fzListFrame = 0;
 	function syncListHeights() {
 		fzListFrame = 0;
-		// clientHeight, not 100vh: vh also counts the area under a page scrollbar
-		var visible = document.documentElement.clientHeight;
+		// The visible area is the content frame when there is one, else the window
+		// (clientHeight, not 100vh: vh also counts the area under a page scrollbar).
+		// Tops are measured from the top of the scrolled content in both cases.
+		var content = contentFrame();
+		var visible = content ? content.clientHeight : document.documentElement.clientHeight;
+		var origin = content ? content.getBoundingClientRect().top - content.scrollTop : -window.pageYOffset;
 		var right = $("#id-right");
 		var rightPad = right ? parseFloat(getComputedStyle(right).paddingBottom) || 0 : 0;
 		$all(LIST_FRAMES).forEach(function (frame) {
 			var rect = frame.getBoundingClientRect();
-			var top = rect.top + window.pageYOffset;
+			var top = rect.top - origin;
 			// what follows the frame inside the card (end of form…) must fit too, or the
 			// page still scrolls a little. Measured against .fiche, never the page height:
 			// that one depends on the frame's own height and would shrink it pass after pass.
 			var fiche = frame.closest(".fiche");
 			var below = (fiche ? Math.max(0, fiche.getBoundingClientRect().bottom - rect.bottom) : 0) + rightPad;
-			frame.style.maxHeight = Math.floor(visible - top - below - 4) + "px";
+			// floor: a list low in a tab still gets a usable frame (the page scrolls to it)
+			frame.style.maxHeight = Math.max(240, Math.floor(visible - top - below - 4)) + "px";
 		});
+		// Whatever the estimate missed (a margin collapsing out of the card, a pager or a
+		// module block below the list…) shows as the content still overflowing by a few
+		// pixels, and the whole page shifts up when scrolled to the end: take exactly
+		// that off the last frame. Only a small miss: a page really longer than the
+		// screen (a card with more content under its list) keeps scrolling as it is.
+		var frames = $all(LIST_FRAMES);
+		var last = frames[frames.length - 1];
+		if (!last) return;
+		var scroller = content || document.documentElement;
+		var overflow = scroller.scrollHeight - scroller.clientHeight;
+		if (overflow > 0 && overflow < 120) {
+			var current = parseFloat(last.style.maxHeight) || last.getBoundingClientRect().height;
+			last.style.maxHeight = Math.max(240, Math.floor(current - overflow)) + "px";
+		}
 	}
 	function scheduleListHeights() {
 		if (fzListFrame) return;
@@ -676,6 +739,7 @@
 		watchNavScroll(nav);
 		restoreNavScroll(nav);
 		initDialogSizing();
+		initContentFrame();
 		initListHeights();
 
 		// ---- 7. Wire interactions ---------------------------------------------
