@@ -1,0 +1,401 @@
+<?php
+/* Copyright (C) 2026  Fusion theme
+ *
+ * Theme "fusion" — settings page for the brand: application name, the two company
+ * logos, and which image the sidebar (expanded / collapsed) and the favicon use.
+ *
+ *   theme/fusion/branding/setup.php        (admins only; tab added to Setup > Display)
+ *
+ * Two blocks:
+ *   - Identity: MAIN_APPLICATION_TITLE and the company logos, edited exactly like
+ *     Setup > Security > Miscellaneous and Setup > Company do (same constants,
+ *     same thumbnails), so both pages stay in sync;
+ *   - Usage: one source per place (see branding.lib.php), with a live preview and,
+ *     for "own image", an upload of its own.
+ *
+ * The favicon goes through Dolibarr's own MAIN_FAVICON_URL constant, pointed at
+ * branding/favicon.php, so it is applied on every page, login included, with no
+ * core change.
+ */
+
+require __DIR__.'/../../../main.inc.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/images.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
+require_once __DIR__.'/branding.lib.php';
+
+/**
+ * @var Conf $conf
+ * @var DoliDB $db
+ * @var Translate $langs
+ * @var User $user
+ */
+
+if (empty($user->admin)) {
+	accessforbidden();
+}
+
+$langs->loadLangs(array('admin', 'companies', 'errors'));
+$words = fz_fusion_branding_words();
+
+$sidebarChoices = array('' => $words['auto'], 'logo' => $langs->trans('Logo'), 'squarred' => $langs->trans('LogoSquarred'), 'custom' => $words['custom'], 'none' => $words['none']);
+$faviconChoices = array('' => $words['default'], 'logo' => $langs->trans('Logo'), 'squarred' => $langs->trans('LogoSquarred'), 'custom' => $words['custom'], 'dolibarr' => $words['dolibarr']);
+$choicesByPlace = array('expanded' => $sidebarChoices, 'collapsed' => $sidebarChoices, 'favicon' => $faviconChoices);
+$places = fz_fusion_branding_places();
+$companyLogos = array('logo' => 'MAIN_INFO_SOCIETE_LOGO', 'logo_squarred' => 'MAIN_INFO_SOCIETE_LOGO_SQUARRED');
+$faviconUrl = fz_fusion_favicon_url();
+$dirforlogos = $conf->mycompany->dir_output.'/logos/';
+$dirforimage = $dirforlogos.'fusion/';
+
+$action = GETPOST('action', 'aZ09');
+
+/**
+ * Thumbnail file name of an image (Dolibarr's naming: name_small.ext).
+ *
+ * @param	string	$file		Image file name
+ * @param	string	$suffix		'_small' or '_mini'
+ * @return	string
+ */
+function fz_fusion_branding_thumbname($file, $suffix)
+{
+	$dot = strrpos($file, '.');
+	return ($dot !== false) ? substr($file, 0, $dot).$suffix.substr($file, $dot) : $file.$suffix;
+}
+
+/**
+ * Move an uploaded image into a directory and build its _small / _mini thumbnails.
+ *
+ * @param	string		$htmlname	Name of the file field
+ * @param	string		$dir		Target directory, with a trailing slash
+ * @param	string		$prefix		Prefix of the stored file name
+ * @return	string|null				Stored file name, '' when nothing was uploaded, null on error
+ */
+function fz_fusion_branding_upload($htmlname, $dir, $prefix = '')
+{
+	global $langs;
+
+	if (empty($_FILES[$htmlname]['name'])) {
+		return '';
+	}
+	$reg = array();
+	if (!preg_match('/([^\\/:]+)$/i', $_FILES[$htmlname]['name'], $reg) || image_format_supported($reg[1]) < 0) {
+		$supportedextensions = preg_replace('/\\\./', '', getListOfPossibleImageExt());
+		setEventMessages($langs->trans('ErrorBadImageFormat').' - '.$langs->trans('ErrorSupportedFormatAre', implode(', ', explode('|', $supportedextensions))), null, 'errors');
+		return null;
+	}
+	$file = $prefix.dol_sanitizeFileName($reg[1]);
+	if (!is_dir($dir)) {
+		dol_mkdir($dir);
+	}
+	$result = dol_move_uploaded_file($_FILES[$htmlname]['tmp_name'], $dir.$file, 1, 0, $_FILES[$htmlname]['error']);
+	if (!is_numeric($result) || $result <= 0) {
+		setEventMessages($langs->trans('ErrorFailedToSaveFile'), null, 'errors');
+		return null;
+	}
+	if (image_format_supported($file) > 0) {
+		$sizes = getDefaultImageSizes();
+		vignette($dir.$file, $sizes['maxwidthsmall'], $sizes['maxheightsmall'], '_small', $sizes['quality']);
+		vignette($dir.$file, $sizes['maxwidthmini'], $sizes['maxheightmini'], '_mini', $sizes['quality']);
+	}
+	return $file;
+}
+
+/**
+ * Delete a company logo like admin/company.php does: its files only when the
+ * other logo does not use the same ones, then its three constants.
+ *
+ * @param	string	$const		MAIN_INFO_SOCIETE_LOGO or MAIN_INFO_SOCIETE_LOGO_SQUARRED
+ * @return	void
+ */
+function fz_fusion_branding_remove_company_logo($const)
+{
+	global $db, $conf, $dirforlogos;
+
+	$other = ($const === 'MAIN_INFO_SOCIETE_LOGO') ? 'MAIN_INFO_SOCIETE_LOGO_SQUARRED' : 'MAIN_INFO_SOCIETE_LOGO';
+	foreach (array('' => '', '_SMALL' => 'thumbs/', '_MINI' => 'thumbs/') as $suffix => $subdir) {
+		$file = getDolGlobalString($const.$suffix);
+		if ($file !== '' && $file !== getDolGlobalString($other.$suffix)) {
+			dol_delete_file($dirforlogos.$subdir.$file);
+		}
+		dolibarr_del_const($db, $const.$suffix, $conf->entity);
+	}
+}
+
+/**
+ * Delete an own image file of the theme, with its thumbnails.
+ *
+ * @param	string	$file		File name in logos/fusion/
+ * @return	void
+ */
+function fz_fusion_branding_delete_custom_files($file)
+{
+	global $dirforimage;
+
+	if ($file === '') {
+		return;
+	}
+	foreach (array($file, 'thumbs/'.fz_fusion_branding_thumbname($file, '_small'), 'thumbs/'.fz_fusion_branding_thumbname($file, '_mini')) as $path) {
+		if (file_exists($dirforimage.$path)) {
+			dol_delete_file($dirforimage.$path);
+		}
+	}
+}
+
+/**
+ * After a change: point MAIN_FAVICON_URL at our endpoint when the favicon is ours,
+ * give it back when it was ours and no longer is (a value set by someone else is
+ * only replaced on an explicit choice), and bump the stylesheet revision, which
+ * carries the sidebar logo URLs.
+ *
+ * @return	int		<0 on error
+ */
+function fz_fusion_branding_saved()
+{
+	global $db, $conf, $faviconUrl;
+
+	if (getDolGlobalString('FUSION_FAVICON') !== '') {
+		$res = dolibarr_set_const($db, 'MAIN_FAVICON_URL', $faviconUrl, 'chaine', 0, 'Fusion theme: branding/favicon.php', $conf->entity);
+	} elseif (getDolGlobalString('MAIN_FAVICON_URL') === $faviconUrl) {
+		$res = dolibarr_del_const($db, 'MAIN_FAVICON_URL', $conf->entity);
+	} else {
+		$res = 1;
+	}
+	dolibarr_set_const($db, 'MAIN_IHM_PARAMS_REV', getDolGlobalInt('MAIN_IHM_PARAMS_REV') + 1, 'chaine', 0, '', $conf->entity);
+	return $res;
+}
+
+if ($action == 'update') {
+	$error = 0;
+
+	// Application name: same constant and filter as Setup > Security > Miscellaneous
+	if (GETPOSTISSET('MAIN_APPLICATION_TITLE')) {
+		if (dolibarr_set_const($db, 'MAIN_APPLICATION_TITLE', GETPOST('MAIN_APPLICATION_TITLE', 'alphanohtml'), 'chaine', 0, '', $conf->entity) < 0) {
+			$error++;
+		}
+	}
+
+	// Company logos: same files and constants as Setup > Company
+	foreach ($companyLogos as $htmlname => $const) {
+		$file = fz_fusion_branding_upload($htmlname, $dirforlogos);
+		if ($file === null) {
+			$error++;
+		} elseif ($file !== '') {
+			dolibarr_set_const($db, $const, $file, 'chaine', 0, '', $conf->entity);
+			foreach (array('_SMALL' => '_small', '_MINI' => '_mini') as $constsuffix => $suffix) {
+				$thumb = fz_fusion_branding_thumbname($file, $suffix);
+				if (file_exists($dirforlogos.'thumbs/'.$thumb)) {
+					dolibarr_set_const($db, $const.$constsuffix, $thumb, 'chaine', 0, '', $conf->entity);
+				}
+			}
+		}
+	}
+
+	// Source of each place, and its own image
+	foreach ($places as $place => $const) {
+		$value = GETPOST($const, 'aZ09');
+		if (!array_key_exists($value, $choicesByPlace[$place])) {
+			$value = '';
+		}
+		// Prefixed with the place, so two places sharing a file name never delete each other's
+		$previous = getDolGlobalString($const.'_FILE');
+		$file = fz_fusion_branding_upload('fusion_'.$place, $dirforimage, $place.'-');
+		if ($file === null) {
+			$error++;
+		} elseif ($file !== '') {
+			if ($previous !== $file) {
+				fz_fusion_branding_delete_custom_files($previous);
+			}
+			dolibarr_set_const($db, $const.'_FILE', $file, 'chaine', 0, 'Fusion theme', $conf->entity);
+			$value = 'custom';	// an image was just given for this place: use it
+		}
+		$res = ($value === '') ? dolibarr_del_const($db, $const, $conf->entity) : dolibarr_set_const($db, $const, $value, 'chaine', 0, 'Fusion theme', $conf->entity);
+		if ($res < 0) {
+			$error++;
+		}
+	}
+
+	if (fz_fusion_branding_saved() < 0) {
+		$error++;
+	}
+	if (!$error) {
+		setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
+	}
+	header('Location: '.$_SERVER['PHP_SELF']);
+	exit;
+}
+
+// Trash icons of showImageToEdit(): action=remove<htmlname>
+foreach ($companyLogos as $htmlname => $const) {
+	if ($action == 'remove'.$htmlname) {
+		fz_fusion_branding_remove_company_logo($const);
+		fz_fusion_branding_saved();
+		header('Location: '.$_SERVER['PHP_SELF']);
+		exit;
+	}
+}
+foreach ($places as $place => $const) {
+	if ($action == 'removefusion_'.$place) {
+		fz_fusion_branding_delete_custom_files(getDolGlobalString($const.'_FILE'));
+		dolibarr_del_const($db, $const.'_FILE', $conf->entity);
+		fz_fusion_branding_saved();
+		header('Location: '.$_SERVER['PHP_SELF']);
+		exit;
+	}
+}
+
+
+/*
+ * View
+ */
+
+$form = new Form($db);
+$formfile = new FormFile($db);
+
+// What each source shows, per place, for the live preview ('' = initial letter)
+$appname = preg_replace('/^[\s\x{00A0}]+|[\s\x{00A0}]+$/u', '', html_entity_decode(strip_tags(getDolGlobalString('MAIN_APPLICATION_TITLE')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+$brandlabel = $appname !== '' ? $appname : (getDolGlobalString('MAIN_INFO_SOCIETE_NOM') ?: 'Dolibarr');
+$dolibarrIcon = DOL_URL_ROOT.'/theme/dolibarr_256x256_color.png';
+$previews = array();
+foreach ($places as $place => $const) {
+	$custom = fz_fusion_custom_path($place);
+	$previews[$place] = array(
+		'' => ($place === 'favicon') ? (fz_fusion_logo_url('squarred', '_mini') ?: $dolibarrIcon) : fz_fusion_logo_url($place === 'expanded' && $appname === '' ? 'wide' : 'square'),
+		'logo' => fz_fusion_logo_url('logo'),
+		'squarred' => fz_fusion_logo_url('squarred'),
+		'custom' => ($custom === '') ? '' : DOL_URL_ROOT.'/viewimage.php?cache=1&modulepart=mycompany&file='.urlencode($custom),
+		'none' => '',
+		'dolibarr' => $dolibarrIcon,
+	);
+}
+
+/**
+ * Source <select> of a place; each option carries the image it would show.
+ *
+ * @param	string					$name		Constant name, also the field name
+ * @param	array<string,string>	$choices	value => label
+ * @param	array<string,string>	$preview	value => image URL
+ * @return	string
+ */
+function fz_fusion_branding_select($name, $choices, $preview)
+{
+	$current = getDolGlobalString($name);
+	$out = '<select class="flat minwidth250 fz-branding-source" name="'.$name.'" id="'.$name.'">';
+	foreach ($choices as $value => $label) {
+		$out .= '<option value="'.dol_escape_htmltag($value).'" data-preview="'.dol_escape_htmltag($preview[$value]).'"'.($value === $current ? ' selected' : '').'>'.dol_escape_htmltag($label).'</option>';
+	}
+	$out .= '</select>';
+	return $out;
+}
+
+llxHeader('', $words['title'], '', '', 0, 0, '', '', '', 'mod-admin page-fusion-branding');
+
+// Same frame as Setup > Display, with our own tab active (fusion.js adds that tab
+// to the Display pages, which a theme cannot extend server-side).
+print load_fiche_titre($langs->trans('GUISetup'), '', 'title_setup');
+$head = ihm_prepare_head();
+$head[] = array($_SERVER['PHP_SELF'], $words['tab'], 'fusionbranding');
+print dol_get_fiche_head($head, 'fusionbranding', '', -1, '');
+
+print '<style>
+.fz-branding-preview{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+	background:var(--fz-nav-bg,#1e293b);border-radius:var(--fz-radius,8px);padding:6px 10px;min-height:68px}
+.fz-branding-preview.is-expanded{min-width:240px}
+.fz-branding-preview.is-collapsed{width:66px;padding:6px}
+.fz-branding-preview.is-favicon{background:var(--fz-surface,#f1f5f9);width:68px;padding:6px}
+.fz-branding-preview img{display:block;max-height:55px;max-width:220px}
+.fz-branding-preview.is-collapsed img{max-width:54px}
+.fz-branding-preview.is-favicon img{width:32px;height:32px;object-fit:contain}
+.fz-branding-letter{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+	background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-weight:800}
+.fz-branding-custom{margin-top:8px}
+</style>';
+
+print '<form enctype="multipart/form-data" method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.newToken().'">';
+print '<input type="hidden" name="action" value="update">';
+
+// Same tooltip as the company logos
+$maxfilesizearray = getMaxFileSizeArray();
+$maxmin = $maxfilesizearray['maxmin'];
+$tooltiplogo = $langs->trans('AvailableFormats').' : png, jpg, jpeg';
+$tooltiplogo .= ($maxmin > 0) ? '<br>'.$langs->trans('MaxSize').' : '.$maxmin.' '.$langs->trans('Kb') : '';
+
+// ---- Identity ---------------------------------------------------------------
+print '<div class="div-table-responsive-no-min"><table class="noborder centpercent">';
+print '<tr class="liste_titre"><td class="titlefieldcreate">'.dol_escape_htmltag($words['identity']).'</td><td></td></tr>';
+
+print '<tr class="oddeven"><td><label for="MAIN_APPLICATION_TITLE">'.$form->textwithpicto(dol_escape_htmltag($words['appname']), dol_escape_htmltag($words['appnote']).'<br><br>'.$langs->trans('MAIN_APPLICATION_TITLE')).'</label></td><td>';
+print '<input type="text" class="flat minwidth300" name="MAIN_APPLICATION_TITLE" id="MAIN_APPLICATION_TITLE" value="'.dol_escape_htmltag(getDolGlobalString('MAIN_APPLICATION_TITLE')).'">';
+print '</td></tr>';
+
+foreach ($companyLogos as $htmlname => $const) {
+	print '<tr class="oddeven"><td><label for="'.$htmlname.'">'.$form->textwithpicto($langs->trans($htmlname === 'logo' ? 'Logo' : 'LogoSquarred'), $tooltiplogo).'</label></td><td>';
+	print $formfile->showImageToEdit($htmlname, 'mycompany', $conf->mycompany->dir_output, 'logos/', getDolGlobalString($const));
+	print '</td></tr>';
+}
+print '</table></div>';
+
+// ---- Usage ------------------------------------------------------------------
+print '<div class="div-table-responsive-no-min"><table class="noborder centpercent">';
+print '<tr class="liste_titre"><td class="titlefieldcreate">'.dol_escape_htmltag($words['usage']).'</td><td>'.dol_escape_htmltag($words['source']).'</td><td class="right">'.dol_escape_htmltag($words['preview']).'</td></tr>';
+
+foreach ($places as $place => $const) {
+	$label = dol_escape_htmltag($words[$place]);
+	if ($place === 'favicon') {
+		$label = $form->textwithpicto($label, dol_escape_htmltag($words['favnote']));
+	}
+	$current = getDolGlobalString($const);
+	print '<tr class="oddeven fz-branding-row"><td class="tdtop"><label for="'.$const.'">'.$label.'</label></td><td class="tdtop">';
+	print fz_fusion_branding_select($const, $choicesByPlace[$place], $previews[$place]);
+	print '<div class="fz-branding-custom"'.($current === 'custom' ? '' : ' style="display:none"').'>';
+	print $formfile->showImageToEdit('fusion_'.$place, 'mycompany', $conf->mycompany->dir_output, 'logos/fusion/', getDolGlobalString($const.'_FILE'));
+	print '</div>';
+	if ($place === 'favicon') {
+		$currentFavicon = getDolGlobalString('MAIN_FAVICON_URL');
+		if ($currentFavicon !== '' && $currentFavicon !== $faviconUrl) {
+			print '<div class="warning small margintoponly">'.dol_escape_htmltag(sprintf($words['favother'], $currentFavicon)).'</div>';
+		}
+	}
+	print '</td><td class="right tdtop"><span class="fz-branding-preview is-'.$place.'"></span></td></tr>';
+}
+print '</table></div>';
+
+print '<div class="center"><input type="submit" class="button button-save" value="'.dol_escape_htmltag($langs->trans('Save')).'"></div>';
+print '</form>';
+
+print dol_get_fiche_end();
+
+// Live preview, and the upload of an own image shown only when that source is picked
+print '<script>
+(function () {
+	var letter = '.json_encode(mb_strtoupper(mb_substr($brandlabel, 0, 1))).';
+	document.querySelectorAll(".fz-branding-row").forEach(function (row) {
+		var select = row.querySelector(".fz-branding-source");
+		var custom = row.querySelector(".fz-branding-custom");
+		var preview = row.querySelector(".fz-branding-preview");
+		function sync() {
+			var option = select.options[select.selectedIndex];
+			var src = option ? option.getAttribute("data-preview") : "";
+			custom.style.display = select.value === "custom" ? "" : "none";
+			preview.textContent = "";
+			if (src) {
+				var img = new Image();
+				img.alt = "";
+				img.src = src;
+				preview.appendChild(img);
+			} else {
+				var badge = document.createElement("span");
+				badge.className = "fz-branding-letter";
+				badge.textContent = letter;
+				preview.appendChild(badge);
+			}
+		}
+		select.addEventListener("change", sync);
+		sync();
+	});
+})();
+</script>';
+
+llxFooter();
+$db->close();

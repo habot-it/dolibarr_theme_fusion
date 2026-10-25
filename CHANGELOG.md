@@ -7,6 +7,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 ## [Unreleased]
 
 ### Added
+- A *Logos & favicon* tab in *Setup > Display* (`branding/setup.php`) gathers the brand settings.
+  *Identity*: the application name (`MAIN_APPLICATION_TITLE`) and the two company logos, edited with
+  the same constants and thumbnails as *Setup > Security* and *Setup > Company*. *Where the logos are
+  used*: one source per place — menu expanded, menu collapsed, favicon — among the two logos, an own
+  uploaded image, the initial letter or Dolibarr's icon, with a live preview. The favicon goes through
+  Dolibarr's `MAIN_FAVICON_URL`, pointed at `branding/favicon.php`, so it applies on every page,
+  login included, with no core change.
 - Edit mode now draws a ruler over the board: the fine 192-column / 8-pixel grid the layout is
   actually stored in, plus dashed lines at the useful equal-width fractions — 1/5, 1/4, 1/3, 2/5,
   1/2, 3/5, 2/3, 3/4 and 4/5 — each labelled in the gap above the board. The overlay is inert, so
@@ -26,6 +33,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
   actions inside the height selected by the user.
 
 ### Changed
+- The sidebar logos no longer depend on the application name alone: the automatic choice is kept
+  as the default, but `--fz-logo-square-url` / `--fz-logo-wide` are replaced by
+  `--fz-logo-url` (expanded) and `--fz-logo-collapsed-url` (collapsed).
 - Files are grouped by role. Only what Dolibarr looks for by name stays at the root (`style.css.php`,
   `fusion.js`, `theme_vars.inc.php`, `manifest.json.php`, `thumb.png`, `img/`, `ckeditor/`); the
   component stylesheet moves to `base/`, the dashboard script and its endpoint to `dashboard/`, the

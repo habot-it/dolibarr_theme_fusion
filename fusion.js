@@ -398,55 +398,57 @@
 		// Application name and logo are passed from the theme via CSS custom properties.
 		var appName = cleanLabel(cssTextVar("--fz-appname", ""));
 		var brandLabel = cleanLabel(cssTextVar("--fz-brand-label", "")) || appName || "Dolibarr";
+		// One logo per sidebar state, chosen in the theme settings (branding/setup.php):
+		// usually the wide wordmark expanded and the square icon collapsed. An empty URL
+		// means "initial letter" for that state.
 		var brandLogoUrl = cssTextVar("--fz-logo-url", "");
-		var brandLogoSquareUrl = cssTextVar("--fz-logo-square-url", brandLogoUrl);
-		var brandLogoWide = cssTextVar("--fz-logo-wide", "0") === "1";
-		// Wide wordmark when expanded; the dedicated square icon (Dolibarr's "squared
-		// logo") when the rail is collapsed, so we show a purpose-made icon instead of
-		// trying to crop the wordmark down to its glyph.
+		var brandLogoCollapsedUrl = cssTextVar("--fz-logo-collapsed-url", "");
 		function currentBrandLogoUrl() {
-			if (brandLogoWide && ROOT.classList.contains("fz-collapsed") && brandLogoSquareUrl) {
-				return brandLogoSquareUrl;
-			}
-			return brandLogoUrl || brandLogoSquareUrl;
+			return ROOT.classList.contains("fz-collapsed") ? brandLogoCollapsedUrl : brandLogoUrl;
 		}
 
-		// Brand bar: app name present = square logo + text; empty app name = wide logo.
 		var brand = el("div"); brand.id = "fz-brand";
 		var logoImg = $(".menulogocontainer img.mycompany");
 		// logo is a link to the home page (real "Home" menu URL when available)
 		var homeA = $("#mainmenutd_home a[href]");
-		var logo = el("a", "fz-logo" + ((currentBrandLogoUrl() || logoImg) ? " has-logo" : ""));
+		var logo = el("a", "fz-logo");
 		logo.setAttribute("href", homeA ? homeA.getAttribute("href") : "/index.php?mainmenu=home");
 		logo.setAttribute("aria-label", brandLabel);
 		var brandImg = null;
-		if (currentBrandLogoUrl()) {
+		if (brandLogoUrl || brandLogoCollapsedUrl) {
 			brandImg = new Image();
 			brandImg.decoding = "async";
-			brandImg.src = currentBrandLogoUrl();
 			brandImg.alt = "";
-			logo.appendChild(brandImg);
-			// Folding the rail swaps the wide wordmark for the square icon. Both are small
-			// thumbnails, so preload the one not shown yet: the swap then comes straight from
-			// cache instead of firing a request in the middle of the fold animation.
-			if (brandLogoWide && brandLogoSquareUrl && brandLogoSquareUrl !== brandLogoUrl) {
+			// Folding the rail swaps the two logos. Both are small thumbnails, so preload
+			// the one not shown yet: the swap then comes straight from cache instead of
+			// firing a request in the middle of the fold animation.
+			var otherUrl = ROOT.classList.contains("fz-collapsed") ? brandLogoUrl : brandLogoCollapsedUrl;
+			if (otherUrl && otherUrl !== currentBrandLogoUrl()) {
 				var altLogo = new Image();
 				altLogo.decoding = "async";
-				altLogo.src = ROOT.classList.contains("fz-collapsed") ? brandLogoUrl : brandLogoSquareUrl;
+				altLogo.src = otherUrl;
 			}
 		} else if (logoImg) {
 			var img = logoImg.cloneNode(false);
 			img.removeAttribute("id");
 			img.setAttribute("alt", "");
+			logo.classList.add("has-logo");
 			logo.appendChild(img);
 		} else {
 			logo.textContent = brandLabel.charAt(0).toUpperCase();
 		}
-		// Show the wide wordmark when expanded, the square icon when collapsed.
+		// Show the logo of the current state, or the initial letter when it has none.
 		function syncBrandLogoState() {
 			if (!brandImg) return;
 			var src = currentBrandLogoUrl();
-			if (src && brandImg.getAttribute("src") !== src) brandImg.src = src;
+			if (src) {
+				if (brandImg.getAttribute("src") !== src) brandImg.src = src;
+				if (brandImg.parentNode !== logo) { logo.textContent = ""; logo.appendChild(brandImg); }
+				logo.classList.add("has-logo");
+			} else if (!logo.textContent) {
+				logo.textContent = brandLabel.charAt(0).toUpperCase();
+				logo.classList.remove("has-logo");
+			}
 		}
 		syncBrandLogoState();
 		brand.appendChild(logo);
@@ -1236,9 +1238,33 @@
 		document.body.appendChild(script);
 	}
 
+	// Setup > Display (admin/ihm.php) gets one more tab, for the theme's own settings
+	// page (logos of the sidebar and favicon): a theme cannot extend those tabs
+	// server-side. The tab is a copy of an inactive one, so it keeps the native look.
+	function addBrandingTab() {
+		if (!/\/admin\/ihm\.php$/.test(location.pathname)) return;
+		var url = cssTextVar("--fz-branding-url", "");
+		var tabs = $("div.tabs");
+		if (!url || !tabs || $("#fusionbranding")) return;
+		var model = $all(".tabsElem", tabs).filter(function (t) {
+			return !t.classList.contains("tabsElemActive") && !t.classList.contains("floatright") && !t.id && t.querySelector("a.tab");
+		}).pop();
+		if (!model) return;
+		var label = tr("branding", "Logos & favicon");
+		var tab = model.cloneNode(true);
+		var a = tab.querySelector("a.tab");
+		a.id = "fusionbranding";
+		a.href = url;
+		a.title = label;
+		a.textContent = label;
+		var more = $("[id^='moretabs']", tabs);
+		tabs.insertBefore(tab, more || model.nextSibling);
+	}
+
 	function init() {
 		try {
 			build();
+			addBrandingTab();
 		} catch (e) {
 			ROOT.classList.remove("fusion", "fz-collapsed", "fz-drawer", "fz-search-open");
 			if (window.console && console.error) console.error("Fusion theme failed to initialize", e);

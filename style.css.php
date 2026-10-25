@@ -37,41 +37,7 @@ if (!function_exists('fz_fusion_clean_label')) {
 		return trim($value);
 	}
 }
-if (!function_exists('fz_fusion_mycompany_logo_url')) {
-	function fz_fusion_mycompany_logo_url($shape = 'square')
-	{
-		global $conf;
-
-		// Main logo constant per shape (square icon vs wide wordmark), with a
-		// fallback to the other shape if the preferred one isn't configured.
-		$order = ($shape === 'wide')
-			? array('MAIN_INFO_SOCIETE_LOGO', 'MAIN_INFO_SOCIETE_LOGO_SQUARRED')
-			: array('MAIN_INFO_SOCIETE_LOGO_SQUARRED', 'MAIN_INFO_SOCIETE_LOGO');
-
-		$dirout = empty($conf->mycompany->dir_output) ? '' : $conf->mycompany->dir_output;
-		if ($dirout === '') {
-			return '';
-		}
-
-		foreach ($order as $const) {
-			$file = getDolGlobalString($const);
-			if ($file === '') {
-				continue;
-			}
-			// Prefer Dolibarr's lighter "_small" thumbnail for the sidebar, and fall
-			// back to the full-resolution file when no thumbnail exists.
-			$dot = strrpos($file, '.');
-			$small = ($dot !== false) ? substr($file, 0, $dot).'_small'.substr($file, $dot) : $file.'_small';
-			foreach (array('logos/thumbs/'.$small, 'logos/'.$file) as $relativePath) {
-				if (is_readable($dirout.'/'.$relativePath)) {
-					return DOL_URL_ROOT.'/viewimage.php?cache=1&modulepart=mycompany&file='.urlencode($relativePath);
-				}
-			}
-		}
-
-		return '';
-	}
-}
+require_once __DIR__.'/branding/branding.lib.php';
 $fz_optioncss = function_exists('GETPOST') ? GETPOST('optioncss', 'aZ09') : (isset($_GET['optioncss']) ? preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $_GET['optioncss']) : '');
 $fz_is_print = ($fz_optioncss === 'print');
 if (isset($langs) && is_object($langs)) {
@@ -100,9 +66,8 @@ $fz_companyname = fz_fusion_clean_label(getDolGlobalString('MAIN_INFO_SOCIETE_NO
 $fz_appname = fz_fusion_clean_label(getDolGlobalString('MAIN_APPLICATION_TITLE'));
 $fz_is_empty_appname = ($fz_appname === '');
 $fz_brand_label = $fz_appname !== '' ? $fz_appname : ($fz_companyname !== '' ? $fz_companyname : (defined('DOL_APPLICATION_TITLE') ? constant('DOL_APPLICATION_TITLE') : 'Dolibarr'));
-$fz_logo_square_url = fz_fusion_mycompany_logo_url('square');
-$fz_logo_wide_url = fz_fusion_mycompany_logo_url('wide');
-$fz_logo_url = $fz_is_empty_appname ? $fz_logo_wide_url : $fz_logo_square_url;
+// Sidebar logos, expanded and collapsed (Fusion settings in branding/setup.php)
+$fz_logo_urls = fz_fusion_sidebar_logo_urls($fz_is_empty_appname);
 $fz_border_radius = getDolGlobalString('THEME_ELDY_USEBORDERONTABLE') ? getDolGlobalInt('THEME_ELDY_BORDER_RADIUS', 6) : 0;
 $fz_row_hover = (isset($colorbacklinepairhover) && $colorbacklinepairhover !== '') ? 'var(--colorbacklinepairhover)' : 'color-mix(in srgb, var(--fz-nav-fg) 14%, transparent)';
 $fz_row_checked = (isset($colorbacklinepairchecked) && $colorbacklinepairchecked !== '') ? 'var(--colorbacklinepairchecked)' : 'color-mix(in srgb, var(--fz-nav-fg) 22%, transparent)';
@@ -134,15 +99,16 @@ $fz_i18n = array_merge(
 		'search' => fz_fusion_trans('Search', 'Search'),
 		'menu' => fz_fusion_trans('Menu', 'Menu'),
 	),
-	isset($fz_words[$fz_langprefix]) ? $fz_words[$fz_langprefix] : $fz_words['en']
+	isset($fz_words[$fz_langprefix]) ? $fz_words[$fz_langprefix] : $fz_words['en'],
+	array('branding' => fz_fusion_branding_words()['tab'])	// tab added to Setup > Display
 );
 ?>
 html.fusion{
 	--fz-appname: <?php echo fz_fusion_css_string($fz_appname); ?>;   /* read by fusion.js */
 	--fz-brand-label: <?php echo fz_fusion_css_string($fz_brand_label); ?>;
-	--fz-logo-url: <?php echo fz_fusion_css_string($fz_logo_url); ?>;
-	--fz-logo-square-url: <?php echo fz_fusion_css_string($fz_logo_square_url); ?>;
-	--fz-logo-wide: <?php echo $fz_is_empty_appname ? '1' : '0'; ?>;
+	--fz-logo-url: <?php echo fz_fusion_css_string($fz_logo_urls['expanded']); ?>;
+	--fz-logo-collapsed-url: <?php echo fz_fusion_css_string($fz_logo_urls['collapsed']); ?>;
+	--fz-branding-url: <?php echo fz_fusion_css_string(DOL_URL_ROOT.'/theme/fusion/branding/setup.php'); ?>;
 <?php foreach ($fz_i18n as $fz_key => $fz_label) { ?>
 	--fz-t-<?php echo $fz_key; ?>: <?php echo fz_fusion_css_string($fz_label); ?>;
 <?php } ?>

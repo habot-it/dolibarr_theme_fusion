@@ -38,8 +38,35 @@ else is grouped by role.
 | `manifest.json.php`, `thumb.png`, `img/`, `ckeditor/` | Web app manifest, theme-list thumbnail, image resources, editor configuration. |
 | `base/` | Fusion's component stylesheet (tables, forms, buttons, badges, dropdowns…). |
 | `dashboard/` | The configurable dashboard: `fusion-dashboard.js` (loaded only on pages showing widgets) and `dashboard.php`, which stores each user's layout in `llx_user_param`. |
+| `branding/` | Logos of the sidebar and favicon: `setup.php` (settings page, admins only), `favicon.php` (favicon endpoint), `branding.lib.php` (shared helpers). |
 | `sql/activate_fusion.sql` | Enables the theme and the required constants. |
 | `CHANGELOG.md` | Release history. |
+
+## Logos and favicon
+
+Everything about the brand is in the **Logos & favicon** tab added to *Setup > Display*
+(`theme/fusion/branding/setup.php`, admins only), in two blocks:
+
+- **Identity** — the application name (`MAIN_APPLICATION_TITLE`) and the two company
+  logos, *Logo* and *Logo (squarred)*. Same constants, files and thumbnails as
+  *Setup > Security > Miscellaneous* and *Setup > Company*: both places stay in sync.
+- **Where the logos are used** — one source per place, with a live preview:
+
+| Place | Constant | Sources |
+| --- | --- | --- |
+| Menu expanded | `FUSION_LOGO_EXPANDED` | automatic, logo, squarred logo, own image, initial letter |
+| Menu collapsed | `FUSION_LOGO_COLLAPSED` | automatic, logo, squarred logo, own image, initial letter |
+| Favicon | `FUSION_FAVICON` | Dolibarr default (squarred logo), logo, squarred logo, own image, Dolibarr icon |
+
+*Automatic* keeps the former behaviour: the wide logo expanded when the application
+name is empty, the squarred logo otherwise; the squarred logo collapsed. *Own image*
+shows an upload field (browse, delete, preview, like *Setup > Company*); the file is
+stored in `<documents>/mycompany/logos/fusion/`, its name in `FUSION_*_FILE`.
+
+The favicon is printed by Dolibarr itself; to change it without touching the core, the
+settings page points Dolibarr's `MAIN_FAVICON_URL` constant at `branding/favicon.php`,
+which serves the chosen image. Set the favicon back to *Dolibarr default* before switching
+to another theme, or `MAIN_FAVICON_URL` keeps pointing into this folder.
 
 ## Requirements
 
