@@ -4,7 +4,33 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
-## [Unreleased]
+## [1.3.0] — 2026-10-25
+
+### Added
+- A *Fusion theme changelog* tab in *Setup > Display* renders this file, full width (Dolibarr's Markdown
+  parser, safe mode): Dolibarr has no versioning for themes, so this changelog is the theme's record of
+  its versions.
+- Navigation history: a breadcrumb-like bar above the page lists the last elements opened (third
+  parties, products, invoices…), latest on the right, with their picto and a tooltip. Elements are
+  read from Dolibarr's card banner, so module cards are included. Kept per user in `llx_user_param`
+  through `history/history.php` (every item rebuilt from checked values), so it follows the user
+  across browsers and logins. Settings in the theme tab: on/off, elements shown (10), elements kept (30).
+- Home page: the workboard tiles (*Global view*, agenda, projects, proposals…) are hidden by default.
+  `sql/activate_fusion.sql` sets Dolibarr's own `MAIN_DISABLE_GLOBAL_WORKBOARD` unless a value already
+  exists, so the home page no longer even computes them; a checkbox in the theme tab (synced with
+  *Setup > Display > Dashboard*) shows them again.
+- The *Logos & favicon* tab is renamed *Fusion theme*: it now also holds the history settings.
+
+### Fixed
+- Navigation history: saving the element of the current page failed (HTTP 500,
+  `dol_set_user_param()` undefined), so the bar stayed empty.
+
+### Changed
+- *Fusion theme* tab: the *Home* section comes first, every row is centred vertically, the first
+  column is wider so long labels stay on one line, and the workboard option is named after the block
+  itself (*Open Items*, Dolibarr's `DolibarrWorkBoard`) instead of the setup screen's "thumbs".
+
+## [1.2.2] — 2026-10-25
 
 ### Added
 - Content frame (landscape): the content area right of the sidebar is now the one scrolling area,
@@ -23,6 +49,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
   column titles as the full-page lists.
 - *Logos & favicon* tab: every preview now sits in a right-hand *Preview* column, at one scale (two
   shapes of the same height, one image height), and a file picked for upload shows there at once.
+
+### Changed
+- Page title: it sits on the same line as the sidebar's collapse button (no top gutter, a 54px title
+  row centred on the button's axis) and is moved 14px right so it no longer touches the button; the
+  title bar tools (page size, list/kanban switch, "+" button) are centred vertically on that row.
+
+## [1.2.1] — 2026-10-25
+
+### Added
 - A *Logos & favicon* tab in *Setup > Display* (`branding/setup.php`) gathers the brand settings.
   *Identity*: the application name (`MAIN_APPLICATION_TITLE`) and the two company logos, edited with
   the same constants and thumbnails as *Setup > Security* and *Setup > Company*. *Where the logos are
@@ -30,6 +65,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
   uploaded image, the initial letter or Dolibarr's icon, with a live preview. The favicon goes through
   Dolibarr's `MAIN_FAVICON_URL`, pointed at `branding/favicon.php`, so it applies on every page,
   login included, with no core change.
+
+### Changed
+- The sidebar logos no longer depend on the application name alone: the automatic choice is kept
+  as the default, but `--fz-logo-square-url` / `--fz-logo-wide` are replaced by
+  `--fz-logo-url` (expanded) and `--fz-logo-collapsed-url` (collapsed).
+
+## [1.2.0] — 2026-09-29
+
+### Added
 - Edit mode now draws a ruler over the board: the fine 192-column / 8-pixel grid the layout is
   actually stored in, plus dashed lines at the useful equal-width fractions — 1/5, 1/4, 1/3, 2/5,
   1/2, 3/5, 2/3, 3/4 and 4/5 — each labelled in the gap above the board. The overlay is inert, so
@@ -49,9 +93,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
   actions inside the height selected by the user.
 
 ### Changed
-- The sidebar logos no longer depend on the application name alone: the automatic choice is kept
-  as the default, but `--fz-logo-square-url` / `--fz-logo-wide` are replaced by
-  `--fz-logo-url` (expanded) and `--fz-logo-collapsed-url` (collapsed).
 - Files are grouped by role. Only what Dolibarr looks for by name stays at the root (`style.css.php`,
   `fusion.js`, `theme_vars.inc.php`, `manifest.json.php`, `thumb.png`, `img/`, `ckeditor/`); the
   component stylesheet moves to `base/`, the dashboard script and its endpoint to `dashboard/`, the

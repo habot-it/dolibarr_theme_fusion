@@ -175,6 +175,24 @@ if ($action == 'update') {
 		}
 	}
 
+	// Navigation history: on by default, 10 elements shown out of 30 kept
+	$res = GETPOST('FUSION_HISTORY_ENABLED', 'int') ? dolibarr_del_const($db, 'FUSION_HISTORY_DISABLED', $conf->entity) : dolibarr_set_const($db, 'FUSION_HISTORY_DISABLED', '1', 'chaine', 0, 'Fusion theme', $conf->entity);
+	$historysize = max(1, min(30, GETPOSTINT('FUSION_HISTORY_SIZE') ?: 10));
+	$historykeep = max($historysize, min(100, GETPOSTINT('FUSION_HISTORY_KEEP') ?: 30));
+	foreach (array('FUSION_HISTORY_SIZE' => array($historysize, 10), 'FUSION_HISTORY_KEEP' => array($historykeep, 30)) as $const => $values) {
+		$res = min($res, ($values[0] == $values[1]) ? dolibarr_del_const($db, $const, $conf->entity) : dolibarr_set_const($db, $const, (string) $values[0], 'chaine', 0, 'Fusion theme', $conf->entity));
+	}
+	if ($res < 0) {
+		$error++;
+	}
+
+	// Home page workboard (the "open elements" tiles): Dolibarr's own constant, the one
+	// of Setup > Display > Dashboard. Stored as '0' when shown, so that this explicit
+	// choice survives sql/activate_fusion.sql, which hides the tiles by default.
+	if (dolibarr_set_const($db, 'MAIN_DISABLE_GLOBAL_WORKBOARD', GETPOST('MAIN_DISABLE_GLOBAL_WORKBOARD', 'int') ? '1' : '0', 'chaine', 0, '', $conf->entity) < 0) {
+		$error++;
+	}
+
 	// Company logos: same files and constants as Setup > Company
 	foreach ($companyLogos as $htmlname => $const) {
 		$file = fz_fusion_branding_upload($htmlname, $dirforlogos);
@@ -321,14 +339,18 @@ llxHeader('', $words['title'], '', '', 0, 0, '', '', '', 'mod-admin page-fusion-
 // Same frame as Setup > Display, with our own tab active (fusion.js adds that tab
 // to the Display pages, which a theme cannot extend server-side).
 print load_fiche_titre($langs->trans('GUISetup'), '', 'title_setup');
-$head = ihm_prepare_head();
-$head[] = array($_SERVER['PHP_SELF'], $words['tab'], 'fusionbranding');
-print dol_get_fiche_head($head, 'fusionbranding', '', -1, '');
+print dol_get_fiche_head(fz_fusion_branding_head(), 'fusionbranding', '', -1, '');
 
 print '<style>
 /* One preview system for the whole page, in the right column: two shapes of the same
    height (wide: logo, menu expanded; square: squarred logo, menu collapsed, favicon)
    and one image height, so every logo is shown at the same scale. */
+/* first column a little wider than the core titlefieldcreate (20 to 30%), so the longer
+   labels (the workboard one) stay on one line; same width in every table, so they align */
+.fz-branding-table td.titlefieldcreate{width:36% !important}
+/* every row centred vertically, whatever the height of its tallest cell; specific
+   enough to beat the core alignment rules (div .tdtop:not(.tagtdnote)…) */
+html body div.fiche table.fz-branding-table > tbody > tr > td{vertical-align:middle !important}
 .fz-branding-table td.fz-branding-previewcell{width:260px;text-align:right;vertical-align:middle}
 .fz-branding-preview{display:inline-flex;align-items:center;justify-content:center;gap:10px;box-sizing:border-box;
 	height:72px;padding:0 12px;border-radius:var(--fz-radius,8px);vertical-align:middle;overflow:hidden}
@@ -363,6 +385,17 @@ $maxmin = $maxfilesizearray['maxmin'];
 $tooltiplogo = $langs->trans('AvailableFormats').' : png, jpg, jpeg';
 $tooltiplogo .= ($maxmin > 0) ? '<br>'.$langs->trans('MaxSize').' : '.$maxmin.' '.$langs->trans('Kb') : '';
 
+// ---- Home page ------------------------------------------------------------------
+print '<div class="div-table-responsive-no-min"><table class="noborder centpercent fz-branding-table">';
+print '<tr class="liste_titre"><td class="titlefieldcreate">'.$langs->trans('Home').'</td><td></td><td></td></tr>';
+// Named after the block itself ("Open Items", core's DolibarrWorkBoard); core's setup label
+// speaks of "thumbs", which says little. Its explanation stays in the tooltip.
+$workboardlabel = sprintf($words['hideworkboard'], $langs->transnoentitiesnoconv('DolibarrWorkBoard'));
+print '<tr class="oddeven"><td><label for="MAIN_DISABLE_GLOBAL_WORKBOARD">'.$form->textwithpicto(dol_escape_htmltag($workboardlabel), dol_escape_htmltag($langs->transnoentitiesnoconv('DashboardDisableBlocks').' : '.$langs->transnoentitiesnoconv('GlobalOpenedElemView').', '.$langs->transnoentitiesnoconv('Agenda').', '.$langs->transnoentitiesnoconv('Projects').'…')).'</label></td><td>';
+print '<input type="checkbox" name="MAIN_DISABLE_GLOBAL_WORKBOARD" id="MAIN_DISABLE_GLOBAL_WORKBOARD" value="1"'.(getDolGlobalString('MAIN_DISABLE_GLOBAL_WORKBOARD') ? ' checked' : '').'>';
+print '</td><td></td></tr>';
+print '</table></div>';
+
 // ---- Identity ---------------------------------------------------------------
 print '<div class="div-table-responsive-no-min"><table class="noborder centpercent fz-branding-table">';
 print '<tr class="liste_titre"><td class="titlefieldcreate">'.dol_escape_htmltag($words['identity']).'</td><td></td><td class="right">'.dol_escape_htmltag($words['preview']).'</td></tr>';
@@ -388,7 +421,7 @@ foreach ($places as $place => $const) {
 		$label = $form->textwithpicto($label, dol_escape_htmltag($words['favnote']));
 	}
 	$current = getDolGlobalString($const);
-	print '<tr class="oddeven fz-branding-row"><td class="tdtop"><label for="'.$const.'">'.$label.'</label></td><td class="tdtop">';
+	print '<tr class="oddeven fz-branding-row"><td><label for="'.$const.'">'.$label.'</label></td><td>';
 	print fz_fusion_branding_select($const, $choicesByPlace[$place], $previews[$place], $place === 'expanded' ? $autoNonameUrl : '');
 	print '<div class="fz-branding-custom fz-branding-upload"'.($current === 'custom' ? '' : ' style="display:none"').'>';
 	print $formfile->showImageToEdit('fusion_'.$place, 'mycompany', $conf->mycompany->dir_output, 'logos/fusion/', getDolGlobalString($const.'_FILE'));
@@ -403,6 +436,20 @@ foreach ($places as $place => $const) {
 	print fz_fusion_branding_preview($place === 'expanded' ? 'wide' : 'square', $place === 'favicon' ? 'checker' : 'menu', '', $place === 'expanded');
 	print '</td></tr>';
 }
+print '</table></div>';
+
+// ---- Navigation history -------------------------------------------------------
+print '<div class="div-table-responsive-no-min"><table class="noborder centpercent fz-branding-table">';
+print '<tr class="liste_titre"><td class="titlefieldcreate">'.$form->textwithpicto(dol_escape_htmltag($words['history']), dol_escape_htmltag($words['histnote'])).'</td><td></td><td></td></tr>';
+print '<tr class="oddeven"><td><label for="FUSION_HISTORY_ENABLED">'.dol_escape_htmltag($words['histenabled']).'</label></td><td>';
+print '<input type="checkbox" name="FUSION_HISTORY_ENABLED" id="FUSION_HISTORY_ENABLED" value="1"'.(getDolGlobalString('FUSION_HISTORY_DISABLED') ? '' : ' checked').'>';
+print '</td><td></td></tr>';
+print '<tr class="oddeven"><td><label for="FUSION_HISTORY_SIZE">'.dol_escape_htmltag($words['histsize']).'</label></td><td>';
+print '<input type="number" class="flat width75" min="1" max="30" name="FUSION_HISTORY_SIZE" id="FUSION_HISTORY_SIZE" value="'.max(1, min(30, getDolGlobalInt('FUSION_HISTORY_SIZE', 10))).'">';
+print '</td><td></td></tr>';
+print '<tr class="oddeven"><td><label for="FUSION_HISTORY_KEEP">'.dol_escape_htmltag($words['histkeep']).'</label></td><td>';
+print '<input type="number" class="flat width75" min="1" max="100" name="FUSION_HISTORY_KEEP" id="FUSION_HISTORY_KEEP" value="'.max(1, min(100, getDolGlobalInt('FUSION_HISTORY_KEEP', 30))).'">';
+print '</td><td></td></tr>';
 print '</table></div>';
 
 print '<div class="center"><input type="submit" class="button button-save" value="'.dol_escape_htmltag($langs->trans('Save')).'"></div>';

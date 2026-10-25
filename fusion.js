@@ -1307,22 +1307,172 @@
 	// server-side. The tab is a copy of an inactive one, so it keeps the native look.
 	function addBrandingTab() {
 		if (!/\/admin\/ihm\.php$/.test(location.pathname)) return;
-		var url = cssTextVar("--fz-branding-url", "");
 		var tabs = $("div.tabs");
-		if (!url || !tabs || $("#fusionbranding")) return;
+		if (!tabs || $("#fusionbranding")) return;
 		var model = $all(".tabsElem", tabs).filter(function (t) {
 			return !t.classList.contains("tabsElemActive") && !t.classList.contains("floatright") && !t.id && t.querySelector("a.tab");
 		}).pop();
 		if (!model) return;
-		var label = tr("branding", "Logos & favicon");
-		var tab = model.cloneNode(true);
-		var a = tab.querySelector("a.tab");
-		a.id = "fusionbranding";
-		a.href = url;
-		a.title = label;
-		a.textContent = label;
+		var after = model;
 		var more = $("[id^='moretabs']", tabs);
-		tabs.insertBefore(tab, more || model.nextSibling);
+		// the theme's settings, then its changelog
+		[["fusionbranding", "--fz-branding-url", "branding", "Fusion theme"],
+			["fusionchangelog", "--fz-changelog-url", "changelog", "Fusion theme changelog"]].forEach(function (def) {
+			var url = cssTextVar(def[1], "");
+			if (!url) return;
+			var label = tr(def[2], def[3]);
+			var tab = model.cloneNode(true);
+			var a = tab.querySelector("a.tab");
+			a.id = def[0];
+			a.href = url;
+			a.title = label;
+			a.textContent = label;
+			tabs.insertBefore(tab, more || after.nextSibling);
+			after = tab;
+		});
+	}
+
+	// ---- Navigation history -------------------------------------------------
+	// The last elements opened (third parties, products, invoices…), shown above the
+	// page like a breadcrumb. The list is kept per user on the server
+	// (history/history.php, llx_user_param): it follows the user from one browser to
+	// another and survives a new login. One request per page: the element of the
+	// current page is pushed (the reply is the updated list), else the list is loaded.
+	var HISTORY_DROP = ["action", "token", "mainmenu", "leftmenu", "idmenu", "backtopage", "backtopageforcancel",
+		"backtopagejsfields", "save_lastsearch_values", "contextpage", "page_y", "optioncss", "dol_openinpopup", "dol_resetcache"];
+	// A link as a path inside Dolibarr, without the parameters that only describe how
+	// the page was reached, so every visit of an element yields the same key.
+	function historyPath(href) {
+		try {
+			var url = new URL(href, window.location.href);
+			if (url.origin !== window.location.origin) return "";
+			HISTORY_DROP.forEach(function (key) { url.searchParams.delete(key); });
+			if (url.searchParams.sort) url.searchParams.sort();
+			return url.pathname + url.search;
+		} catch (e) { return ""; }
+	}
+	// The element shown by this page, read from Dolibarr's card banner: its ref, its
+	// main tab (the card itself, whichever tab is open) and the picto of its tabs.
+	function historyCurrent() {
+		var banner = $(".arearef, .arearefnobottom");
+		var tabs = $("div.tabs");
+		var refEl = banner ? $(".refid", banner) : null;
+		if (!refEl || !tabs) return null;
+		// the ref is what comes before the first line break or block (label, alias…)
+		var ref = "";
+		for (var node = refEl.firstChild; node; node = node.nextSibling) {
+			if (node.nodeType === 1 && /^(BR|DIV)$/.test(node.tagName)) break;
+			if (node.nodeType === 1 && node.classList.contains("classfortooltip")) continue;
+			if (node.nodeType === 1 || node.nodeType === 3) ref += node.textContent;
+		}
+		ref = ref.replace(/\s+/g, " ").trim();
+		var main = $all("a.tab[href]", tabs).filter(function (a) { return !a.classList.contains("moretab"); })[0];
+		var path = historyPath(main ? main.getAttribute("href") : window.location.href);
+		if (!ref || !path || path.indexOf("?") === -1) return null;	// a card always names its element
+		var item = { u: path, r: ref.slice(0, 60) };
+		var label = $(".banner-object-label, .banner-object-name-alias", banner);
+		var tooltip = (document.title || "").replace(/\s+/g, " ").trim();
+		if (label && label.textContent.trim() && tooltip.indexOf(label.textContent.trim()) === -1) tooltip += " — " + label.textContent.trim();
+		if (tooltip) item.t = tooltip.slice(0, 200);
+		var picto = $(".imgTabTitle", tabs);
+		if (picto && picto.tagName === "IMG") {
+			var src = historyPath(picto.getAttribute("src") || "");
+			if (src) item.i = src;
+		} else if (picto) {
+			var classes = picto.className.replace(/\b(imgTabTitle|paddingright|marginrightonlyshort|pictofixedwidth)\b/g, " ").replace(/\s+/g, " ").trim();
+			if (classes) item.c = classes;
+			if (picto.style && picto.style.color) item.k = picto.style.color;
+		}
+		return item;
+	}
+	function renderHistory(items, current) {
+		var right = $("#id-right");
+		var bar = $("#fz-history");
+		var size = parseInt(cssTextVar("--fz-history-size", "10"), 10) || 10;
+		items = (items || []).slice(-size);
+		if (!right || !items.length) {
+			if (bar) bar.parentNode.removeChild(bar);
+			ROOT.classList.remove("fz-has-history");
+			return;
+		}
+		if (!bar) {
+			bar = el("nav");
+			bar.id = "fz-history";
+			bar.setAttribute("aria-label", tr("history", "Navigation history"));
+			right.insertBefore(bar, right.firstChild);
+		}
+		bar.textContent = "";
+		var icon = el("span", "fas fa-history fz-history-icon");
+		icon.title = tr("history", "Navigation history");
+		bar.appendChild(icon);
+		// oldest first, the latest on the right, like a breadcrumb; only text and
+		// attributes are written, never markup
+		var list = el("ol", "fz-history-list");
+		items.forEach(function (item) {
+			var li = el("li");
+			var a = el("a");
+			a.href = item.u;
+			if (item.t) a.title = item.t;
+			if (current && item.u === current.u) {
+				li.className = "is-current";
+				a.setAttribute("aria-current", "page");
+			}
+			if (item.i) {
+				var img = new Image();
+				img.alt = "";
+				img.src = item.i;
+				img.className = "fz-history-picto";
+				a.appendChild(img);
+			} else if (item.c) {
+				var picto = el("span", item.c + " fz-history-picto");
+				if (item.k) picto.style.color = item.k;
+				a.appendChild(picto);
+			}
+			var ref = el("span", "fz-history-ref");
+			ref.textContent = item.r;
+			a.appendChild(ref);
+			li.appendChild(a);
+			list.appendChild(li);
+		});
+		bar.appendChild(list);
+		ROOT.classList.add("fz-has-history");
+		list.scrollLeft = list.scrollWidth;	// the latest visits stay in view
+		scheduleListHeights();
+	}
+	function initHistory() {
+		if (cssTextVar("--fz-history", "1") !== "1" || !window.fetch || !SELF || !SELF.src) return;
+		if (!ROOT.classList.contains("fusion") || !$("#id-right") || queryParam(window.location.search, "dol_openinpopup")) return;
+		var endpoint = SELF.src.replace(/fusion\.js.*$/, "history/history.php");
+		var current = historyCurrent();
+		// A copy per tab, drawn at once so the bar does not pop in after the request.
+		// Keyed by user and entity (read from the theme stylesheet's url): another login
+		// in the same tab never shows the previous user's list.
+		var sheet = $('link[rel="stylesheet"][href*="/theme/fusion/style.css.php"]');
+		var href = sheet ? sheet.getAttribute("href").replace(/&amp;/g, "&") : "";
+		var userid = queryParam(href.replace(/^[^?]*/, ""), "userid");
+		var cacheKey = userid ? "fz-history:" + (queryParam(href.replace(/^[^?]*/, ""), "entity") || "1") + ":" + userid : "";
+		if (cacheKey) {
+			var cached = null;
+			try { cached = JSON.parse(storageGet("sessionStorage", cacheKey) || "null"); } catch (e) {}
+			if (Array.isArray(cached)) {
+				if (current) cached = cached.filter(function (item) { return item.u !== current.u; }).concat([current]);
+				renderHistory(cached, current);
+			}
+		}
+		var meta = $('meta[name="anti-csrf-newtoken"]');
+		var request = current
+			? fetch(endpoint + "?action=push&token=" + encodeURIComponent(meta ? meta.getAttribute("content") : ""), {
+				method: "POST", credentials: "same-origin",
+				headers: { "Content-Type": "application/json" }, body: JSON.stringify(current)
+			})
+			: fetch(endpoint + "?action=load", { credentials: "same-origin" });
+		request.then(function (response) { return response.ok ? response.json() : null; })
+			.then(function (data) {
+				if (!data || !Array.isArray(data.items)) return;
+				if (cacheKey) storageSet("sessionStorage", cacheKey, JSON.stringify(data.items));
+				renderHistory(data.items, current);
+			})
+			.catch(function () {});
 	}
 
 	function init() {
@@ -1332,6 +1482,11 @@
 		} catch (e) {
 			ROOT.classList.remove("fusion", "fz-collapsed", "fz-drawer", "fz-search-open");
 			if (window.console && console.error) console.error("Fusion theme failed to initialize", e);
+		}
+		try {
+			initHistory();
+		} catch (e) {
+			if (window.console && console.error) console.error("Fusion history failed to load", e);
 		}
 		try {
 			loadDashboard();

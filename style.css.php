@@ -84,13 +84,13 @@ $fz_langprefix = substr(strtolower(str_replace('_', '-', $fz_langcode)), 0, 2);
 // Labels Dolibarr has no translation key for (color modes, dashboard grid, the
 // bookmarks heading), one table per language. English is the fallback.
 $fz_words = array(
-	'en' => array('mode-display' => 'Display mode', 'mode-light' => 'Light', 'mode-auto' => 'Auto', 'mode-dark' => 'Dark', 'bookmarks' => 'Bookmarks', 'dash-customize' => 'Customize', 'dash-done' => 'Done', 'dash-move' => 'Move this widget', 'dash-resize' => 'Resize this widget', 'dash-expand' => 'Open in a window', 'dash-delwidget' => 'Remove this widget', 'dash-reset' => 'Reset', 'dash-resetask' => 'Reset the dashboard layout?'),
-	'fr' => array('mode-display' => 'Mode d\'affichage', 'mode-light' => 'Clair', 'mode-auto' => 'Auto', 'mode-dark' => 'Sombre', 'bookmarks' => 'Favoris', 'dash-customize' => 'Personnaliser', 'dash-done' => 'Terminer', 'dash-move' => 'Déplacer ce widget', 'dash-resize' => 'Redimensionner ce widget', 'dash-expand' => 'Ouvrir dans une fenêtre', 'dash-delwidget' => 'Retirer ce widget', 'dash-reset' => 'Réinitialiser', 'dash-resetask' => 'Réinitialiser la disposition du tableau de bord ?'),
-	'es' => array('mode-display' => 'Modo de visualización', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Oscuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Terminar', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir en una ventana', 'dash-delwidget' => 'Quitar este widget', 'dash-reset' => 'Restablecer', 'dash-resetask' => '¿Restablecer la disposición del panel?'),
-	'de' => array('mode-display' => 'Anzeigemodus', 'mode-light' => 'Hell', 'mode-auto' => 'Auto', 'mode-dark' => 'Dunkel', 'bookmarks' => 'Lesezeichen', 'dash-customize' => 'Anpassen', 'dash-done' => 'Fertig', 'dash-move' => 'Dieses Widget verschieben', 'dash-resize' => 'Größe dieses Widgets ändern', 'dash-expand' => 'In einem Fenster öffnen', 'dash-delwidget' => 'Dieses Widget entfernen', 'dash-reset' => 'Zurücksetzen', 'dash-resetask' => 'Anordnung des Dashboards zurücksetzen?'),
-	'it' => array('mode-display' => 'Modalità di visualizzazione', 'mode-light' => 'Chiaro', 'mode-auto' => 'Auto', 'mode-dark' => 'Scuro', 'bookmarks' => 'Segnalibri', 'dash-customize' => 'Personalizza', 'dash-done' => 'Fine', 'dash-move' => 'Sposta questo widget', 'dash-resize' => 'Ridimensiona questo widget', 'dash-expand' => 'Apri in una finestra', 'dash-delwidget' => 'Rimuovi questo widget', 'dash-reset' => 'Ripristina', 'dash-resetask' => 'Ripristinare la disposizione della dashboard?'),
-	'pt' => array('mode-display' => 'Modo de visualização', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Escuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Concluir', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir numa janela', 'dash-delwidget' => 'Remover este widget', 'dash-reset' => 'Repor', 'dash-resetask' => 'Repor a disposição do painel?'),
-	'nl' => array('mode-display' => 'Weergavemodus', 'mode-light' => 'Licht', 'mode-auto' => 'Auto', 'mode-dark' => 'Donker', 'bookmarks' => 'Bladwijzers', 'dash-customize' => 'Aanpassen', 'dash-done' => 'Klaar', 'dash-move' => 'Deze widget verplaatsen', 'dash-resize' => 'Formaat van deze widget wijzigen', 'dash-expand' => 'In een venster openen', 'dash-delwidget' => 'Deze widget verwijderen', 'dash-reset' => 'Herstellen', 'dash-resetask' => 'De indeling van het dashboard herstellen?'),
+	'en' => array('history' => 'Navigation history', 'mode-display' => 'Display mode', 'mode-light' => 'Light', 'mode-auto' => 'Auto', 'mode-dark' => 'Dark', 'bookmarks' => 'Bookmarks', 'dash-customize' => 'Customize', 'dash-done' => 'Done', 'dash-move' => 'Move this widget', 'dash-resize' => 'Resize this widget', 'dash-expand' => 'Open in a window', 'dash-delwidget' => 'Remove this widget', 'dash-reset' => 'Reset', 'dash-resetask' => 'Reset the dashboard layout?'),
+	'fr' => array('history' => 'Historique de navigation', 'mode-display' => 'Mode d\'affichage', 'mode-light' => 'Clair', 'mode-auto' => 'Auto', 'mode-dark' => 'Sombre', 'bookmarks' => 'Favoris', 'dash-customize' => 'Personnaliser', 'dash-done' => 'Terminer', 'dash-move' => 'Déplacer ce widget', 'dash-resize' => 'Redimensionner ce widget', 'dash-expand' => 'Ouvrir dans une fenêtre', 'dash-delwidget' => 'Retirer ce widget', 'dash-reset' => 'Réinitialiser', 'dash-resetask' => 'Réinitialiser la disposition du tableau de bord ?'),
+	'es' => array('history' => 'Historial de navegación', 'mode-display' => 'Modo de visualización', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Oscuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Terminar', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir en una ventana', 'dash-delwidget' => 'Quitar este widget', 'dash-reset' => 'Restablecer', 'dash-resetask' => '¿Restablecer la disposición del panel?'),
+	'de' => array('history' => 'Navigationsverlauf', 'mode-display' => 'Anzeigemodus', 'mode-light' => 'Hell', 'mode-auto' => 'Auto', 'mode-dark' => 'Dunkel', 'bookmarks' => 'Lesezeichen', 'dash-customize' => 'Anpassen', 'dash-done' => 'Fertig', 'dash-move' => 'Dieses Widget verschieben', 'dash-resize' => 'Größe dieses Widgets ändern', 'dash-expand' => 'In einem Fenster öffnen', 'dash-delwidget' => 'Dieses Widget entfernen', 'dash-reset' => 'Zurücksetzen', 'dash-resetask' => 'Anordnung des Dashboards zurücksetzen?'),
+	'it' => array('history' => 'Cronologia di navigazione', 'mode-display' => 'Modalità di visualizzazione', 'mode-light' => 'Chiaro', 'mode-auto' => 'Auto', 'mode-dark' => 'Scuro', 'bookmarks' => 'Segnalibri', 'dash-customize' => 'Personalizza', 'dash-done' => 'Fine', 'dash-move' => 'Sposta questo widget', 'dash-resize' => 'Ridimensiona questo widget', 'dash-expand' => 'Apri in una finestra', 'dash-delwidget' => 'Rimuovi questo widget', 'dash-reset' => 'Ripristina', 'dash-resetask' => 'Ripristinare la disposizione della dashboard?'),
+	'pt' => array('history' => 'Histórico de navegação', 'mode-display' => 'Modo de visualização', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Escuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Concluir', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir numa janela', 'dash-delwidget' => 'Remover este widget', 'dash-reset' => 'Repor', 'dash-resetask' => 'Repor a disposição do painel?'),
+	'nl' => array('history' => 'Navigatiegeschiedenis', 'mode-display' => 'Weergavemodus', 'mode-light' => 'Licht', 'mode-auto' => 'Auto', 'mode-dark' => 'Donker', 'bookmarks' => 'Bladwijzers', 'dash-customize' => 'Aanpassen', 'dash-done' => 'Klaar', 'dash-move' => 'Deze widget verplaatsen', 'dash-resize' => 'Formaat van deze widget wijzigen', 'dash-expand' => 'In een venster openen', 'dash-delwidget' => 'Deze widget verwijderen', 'dash-reset' => 'Herstellen', 'dash-resetask' => 'De indeling van het dashboard herstellen?'),
 );
 // Every label fusion.js / fusion-dashboard.js reads with tr('<key>'), exported below
 // as --fz-t-<key>. Search and Menu have a Dolibarr key; the rest comes from the table.
@@ -100,7 +100,7 @@ $fz_i18n = array_merge(
 		'menu' => fz_fusion_trans('Menu', 'Menu'),
 	),
 	isset($fz_words[$fz_langprefix]) ? $fz_words[$fz_langprefix] : $fz_words['en'],
-	array('branding' => fz_fusion_branding_words()['tab'])	// tab added to Setup > Display
+	array('branding' => fz_fusion_branding_words()['tab'], 'changelog' => fz_fusion_branding_words()['changelog'])	// tabs added to Setup > Display
 );
 ?>
 html.fusion{
@@ -109,6 +109,9 @@ html.fusion{
 	--fz-logo-url: <?php echo fz_fusion_css_string($fz_logo_urls['expanded']); ?>;
 	--fz-logo-collapsed-url: <?php echo fz_fusion_css_string($fz_logo_urls['collapsed']); ?>;
 	--fz-branding-url: <?php echo fz_fusion_css_string(DOL_URL_ROOT.'/theme/fusion/branding/setup.php'); ?>;
+	--fz-changelog-url: <?php echo fz_fusion_css_string(DOL_URL_ROOT.'/theme/fusion/branding/changelog.php'); ?>;
+	--fz-history: <?php echo getDolGlobalString('FUSION_HISTORY_DISABLED') ? '0' : '1'; ?>;   /* navigation history bar (fusion.js) */
+	--fz-history-size: <?php echo max(1, min(30, getDolGlobalInt('FUSION_HISTORY_SIZE', 10))); ?>;
 <?php foreach ($fz_i18n as $fz_key => $fz_label) { ?>
 	--fz-t-<?php echo $fz_key; ?>: <?php echo fz_fusion_css_string($fz_label); ?>;
 <?php } ?>
@@ -1249,6 +1252,26 @@ html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);backgr
  *  the viewport height, so its horizontal scrollbar sits at the bottom of *
  *  the screen instead of below the last of the (up to 100+) rows.        *
  * ====================================================================== */
+/* Navigation history (fusion.js, history/history.php): the last elements opened, as
+   a breadcrumb above the page. Same height and top as the sidebar's collapse button
+   (top:10px, 34px tall), so both sit on one line; the latest visit is on the right. */
+#fz-history{display:flex;align-items:center;gap:10px;box-sizing:border-box;height:34px;margin:10px 0 6px;
+	padding:0 12px;min-width:0;border-radius:var(--fz-radius);font-size:.92em;
+	background:color-mix(in srgb,var(--fz-text-dim) 9%,transparent)}
+#fz-history .fz-history-icon{flex:0 0 auto;color:var(--fz-text-dim)}
+#fz-history .fz-history-list{display:flex;align-items:center;min-width:0;margin:0;padding:0;list-style:none;
+	white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+#fz-history .fz-history-list::-webkit-scrollbar{display:none}
+#fz-history li{display:flex;align-items:center;flex:0 0 auto}
+#fz-history li+li::before{content:"/";margin:0 8px;color:var(--fz-text-dim);opacity:.55}
+#fz-history a{display:inline-flex;align-items:center;gap:6px;max-width:240px;color:var(--fz-text-dim);text-decoration:none}
+#fz-history a:hover{color:var(--colortextlink)}
+#fz-history li.is-current a{color:var(--fz-text);font-weight:600}
+#fz-history .fz-history-ref{overflow:hidden;text-overflow:ellipsis}
+#fz-history .fz-history-picto{flex:0 0 auto;margin:0;padding:0;font-size:13px;width:auto;opacity:.9}
+#fz-history img.fz-history-picto{width:16px;height:16px;object-fit:contain}
+@media print{#fz-history{display:none}}
+
 /* Title bar tools (page size, list/kanban switch, "+" button…): inline-blocks of
    different heights sat on the text baseline, so each one landed at its own height.
    Centre them on the row instead. */

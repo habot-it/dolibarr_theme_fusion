@@ -38,13 +38,14 @@ else is grouped by role.
 | `manifest.json.php`, `thumb.png`, `img/`, `ckeditor/` | Web app manifest, theme-list thumbnail, image resources, editor configuration. |
 | `base/` | Fusion's component stylesheet (tables, forms, buttons, badges, dropdowns…). |
 | `dashboard/` | The configurable dashboard: `fusion-dashboard.js` (loaded only on pages showing widgets) and `dashboard.php`, which stores each user's layout in `llx_user_param`. |
-| `branding/` | Logos of the sidebar and favicon: `setup.php` (settings page, admins only), `favicon.php` (favicon endpoint), `branding.lib.php` (shared helpers). |
+| `history/` | Navigation history: `history.php` stores each user's last opened elements in `llx_user_param`. |
+| `branding/` | Theme settings and changelog tabs: `setup.php` (settings page, admins only), `changelog.php` (renders `CHANGELOG.md`), `favicon.php` (favicon endpoint), `branding.lib.php` (shared helpers). |
 | `sql/activate_fusion.sql` | Enables the theme and the required constants. |
 | `CHANGELOG.md` | Release history. |
 
 ## Logos and favicon
 
-Everything about the brand is in the **Logos & favicon** tab added to *Setup > Display*
+Everything about the brand is in the **Fusion theme** tab added to *Setup > Display*
 (`theme/fusion/branding/setup.php`, admins only), in two blocks:
 
 - **Identity** — the application name (`MAIN_APPLICATION_TITLE`) and the two company
@@ -67,6 +68,33 @@ The favicon is printed by Dolibarr itself; to change it without touching the cor
 settings page points Dolibarr's `MAIN_FAVICON_URL` constant at `branding/favicon.php`,
 which serves the chosen image. Set the favicon back to *Dolibarr default* before switching
 to another theme, or `MAIN_FAVICON_URL` keeps pointing into this folder.
+
+## Navigation history
+
+Above the page, a breadcrumb-like bar lists the last elements opened (third parties,
+products, invoices, warehouses…), the latest on the right, each with its picto and a
+tooltip. An element is recognised from Dolibarr's own card banner, so modules' cards are
+picked up too. The list is kept per user in `llx_user_param` (`FUSION_HISTORY`) through
+`history/history.php`: it follows the user from one browser to another and survives a
+new login.
+
+Settings, in the **Fusion theme** tab: show the history or not (`FUSION_HISTORY_DISABLED`),
+elements shown (`FUSION_HISTORY_SIZE`, 10 by default) and elements kept
+(`FUSION_HISTORY_KEEP`, 30 by default).
+
+## Home page
+
+The workboard tiles of the home page (*Global view*, agenda, projects, proposals…) are
+hidden by default: `sql/activate_fusion.sql` sets Dolibarr's own
+`MAIN_DISABLE_GLOBAL_WORKBOARD` when it has no value yet. The **Fusion theme** tab (or
+*Setup > Display > Dashboard*) shows them again.
+
+## Version
+
+Dolibarr has no versioning for themes: `CHANGELOG.md` is the theme's record of its releases,
+shown in the **Fusion theme changelog** tab next to the settings tab in *Setup > Display*. To
+release, add the new version's heading (`## [X.Y.Z] — date`) on top of the changelog, in the
+same `vX.Y.Z` commit.
 
 ## Requirements
 
