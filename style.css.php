@@ -84,13 +84,13 @@ $fz_langprefix = substr(strtolower(str_replace('_', '-', $fz_langcode)), 0, 2);
 // Labels Dolibarr has no translation key for (color modes, dashboard grid, the
 // bookmarks heading), one table per language. English is the fallback.
 $fz_words = array(
-	'en' => array('history' => 'Navigation history', 'mode-display' => 'Display mode', 'mode-light' => 'Light', 'mode-auto' => 'Auto', 'mode-dark' => 'Dark', 'bookmarks' => 'Bookmarks', 'dash-customize' => 'Customize', 'dash-done' => 'Done', 'dash-move' => 'Move this widget', 'dash-resize' => 'Resize this widget', 'dash-expand' => 'Open in a window', 'dash-delwidget' => 'Remove this widget', 'dash-reset' => 'Reset', 'dash-resetask' => 'Reset the dashboard layout?'),
-	'fr' => array('history' => 'Historique de navigation', 'mode-display' => 'Mode d\'affichage', 'mode-light' => 'Clair', 'mode-auto' => 'Auto', 'mode-dark' => 'Sombre', 'bookmarks' => 'Favoris', 'dash-customize' => 'Personnaliser', 'dash-done' => 'Terminer', 'dash-move' => 'Déplacer ce widget', 'dash-resize' => 'Redimensionner ce widget', 'dash-expand' => 'Ouvrir dans une fenêtre', 'dash-delwidget' => 'Retirer ce widget', 'dash-reset' => 'Réinitialiser', 'dash-resetask' => 'Réinitialiser la disposition du tableau de bord ?'),
-	'es' => array('history' => 'Historial de navegación', 'mode-display' => 'Modo de visualización', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Oscuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Terminar', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir en una ventana', 'dash-delwidget' => 'Quitar este widget', 'dash-reset' => 'Restablecer', 'dash-resetask' => '¿Restablecer la disposición del panel?'),
-	'de' => array('history' => 'Navigationsverlauf', 'mode-display' => 'Anzeigemodus', 'mode-light' => 'Hell', 'mode-auto' => 'Auto', 'mode-dark' => 'Dunkel', 'bookmarks' => 'Lesezeichen', 'dash-customize' => 'Anpassen', 'dash-done' => 'Fertig', 'dash-move' => 'Dieses Widget verschieben', 'dash-resize' => 'Größe dieses Widgets ändern', 'dash-expand' => 'In einem Fenster öffnen', 'dash-delwidget' => 'Dieses Widget entfernen', 'dash-reset' => 'Zurücksetzen', 'dash-resetask' => 'Anordnung des Dashboards zurücksetzen?'),
-	'it' => array('history' => 'Cronologia di navigazione', 'mode-display' => 'Modalità di visualizzazione', 'mode-light' => 'Chiaro', 'mode-auto' => 'Auto', 'mode-dark' => 'Scuro', 'bookmarks' => 'Segnalibri', 'dash-customize' => 'Personalizza', 'dash-done' => 'Fine', 'dash-move' => 'Sposta questo widget', 'dash-resize' => 'Ridimensiona questo widget', 'dash-expand' => 'Apri in una finestra', 'dash-delwidget' => 'Rimuovi questo widget', 'dash-reset' => 'Ripristina', 'dash-resetask' => 'Ripristinare la disposizione della dashboard?'),
-	'pt' => array('history' => 'Histórico de navegação', 'mode-display' => 'Modo de visualização', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Escuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Concluir', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir numa janela', 'dash-delwidget' => 'Remover este widget', 'dash-reset' => 'Repor', 'dash-resetask' => 'Repor a disposição do painel?'),
-	'nl' => array('history' => 'Navigatiegeschiedenis', 'mode-display' => 'Weergavemodus', 'mode-light' => 'Licht', 'mode-auto' => 'Auto', 'mode-dark' => 'Donker', 'bookmarks' => 'Bladwijzers', 'dash-customize' => 'Aanpassen', 'dash-done' => 'Klaar', 'dash-move' => 'Deze widget verplaatsen', 'dash-resize' => 'Formaat van deze widget wijzigen', 'dash-expand' => 'In een venster openen', 'dash-delwidget' => 'Deze widget verwijderen', 'dash-reset' => 'Herstellen', 'dash-resetask' => 'De indeling van het dashboard herstellen?'),
+	'en' => array('history-empty' => 'No recent element', 'history' => 'Navigation history', 'mode-display' => 'Display mode', 'mode-light' => 'Light', 'mode-auto' => 'Auto', 'mode-dark' => 'Dark', 'bookmarks' => 'Bookmarks', 'dash-customize' => 'Customize', 'dash-done' => 'Done', 'dash-move' => 'Move this widget', 'dash-resize' => 'Resize this widget', 'dash-expand' => 'Open in a window', 'dash-delwidget' => 'Remove this widget', 'dash-reset' => 'Reset', 'dash-resetask' => 'Reset the dashboard layout?'),
+	'fr' => array('history-empty' => 'Aucun élément récent', 'history' => 'Historique de navigation', 'mode-display' => 'Mode d\'affichage', 'mode-light' => 'Clair', 'mode-auto' => 'Auto', 'mode-dark' => 'Sombre', 'bookmarks' => 'Favoris', 'dash-customize' => 'Personnaliser', 'dash-done' => 'Terminer', 'dash-move' => 'Déplacer ce widget', 'dash-resize' => 'Redimensionner ce widget', 'dash-expand' => 'Ouvrir dans une fenêtre', 'dash-delwidget' => 'Retirer ce widget', 'dash-reset' => 'Réinitialiser', 'dash-resetask' => 'Réinitialiser la disposition du tableau de bord ?'),
+	'es' => array('history-empty' => 'Ningún elemento reciente', 'history' => 'Historial de navegación', 'mode-display' => 'Modo de visualización', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Oscuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Terminar', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir en una ventana', 'dash-delwidget' => 'Quitar este widget', 'dash-reset' => 'Restablecer', 'dash-resetask' => '¿Restablecer la disposición del panel?'),
+	'de' => array('history-empty' => 'Keine kürzlich geöffneten Elemente', 'history' => 'Navigationsverlauf', 'mode-display' => 'Anzeigemodus', 'mode-light' => 'Hell', 'mode-auto' => 'Auto', 'mode-dark' => 'Dunkel', 'bookmarks' => 'Lesezeichen', 'dash-customize' => 'Anpassen', 'dash-done' => 'Fertig', 'dash-move' => 'Dieses Widget verschieben', 'dash-resize' => 'Größe dieses Widgets ändern', 'dash-expand' => 'In einem Fenster öffnen', 'dash-delwidget' => 'Dieses Widget entfernen', 'dash-reset' => 'Zurücksetzen', 'dash-resetask' => 'Anordnung des Dashboards zurücksetzen?'),
+	'it' => array('history-empty' => 'Nessun elemento recente', 'history' => 'Cronologia di navigazione', 'mode-display' => 'Modalità di visualizzazione', 'mode-light' => 'Chiaro', 'mode-auto' => 'Auto', 'mode-dark' => 'Scuro', 'bookmarks' => 'Segnalibri', 'dash-customize' => 'Personalizza', 'dash-done' => 'Fine', 'dash-move' => 'Sposta questo widget', 'dash-resize' => 'Ridimensiona questo widget', 'dash-expand' => 'Apri in una finestra', 'dash-delwidget' => 'Rimuovi questo widget', 'dash-reset' => 'Ripristina', 'dash-resetask' => 'Ripristinare la disposizione della dashboard?'),
+	'pt' => array('history-empty' => 'Nenhum elemento recente', 'history' => 'Histórico de navegação', 'mode-display' => 'Modo de visualização', 'mode-light' => 'Claro', 'mode-auto' => 'Auto', 'mode-dark' => 'Escuro', 'bookmarks' => 'Marcadores', 'dash-customize' => 'Personalizar', 'dash-done' => 'Concluir', 'dash-move' => 'Mover este widget', 'dash-resize' => 'Redimensionar este widget', 'dash-expand' => 'Abrir numa janela', 'dash-delwidget' => 'Remover este widget', 'dash-reset' => 'Repor', 'dash-resetask' => 'Repor a disposição do painel?'),
+	'nl' => array('history-empty' => 'Geen recente elementen', 'history' => 'Navigatiegeschiedenis', 'mode-display' => 'Weergavemodus', 'mode-light' => 'Licht', 'mode-auto' => 'Auto', 'mode-dark' => 'Donker', 'bookmarks' => 'Bladwijzers', 'dash-customize' => 'Aanpassen', 'dash-done' => 'Klaar', 'dash-move' => 'Deze widget verplaatsen', 'dash-resize' => 'Formaat van deze widget wijzigen', 'dash-expand' => 'In een venster openen', 'dash-delwidget' => 'Deze widget verwijderen', 'dash-reset' => 'Herstellen', 'dash-resetask' => 'De indeling van het dashboard herstellen?'),
 );
 // Every label fusion.js / fusion-dashboard.js reads with tr('<key>'), exported below
 // as --fz-t-<key>. Search and Menu have a Dolibarr key; the rest comes from the table.
@@ -1241,11 +1241,25 @@ html.fusion .div-table-responsive,html.fusion .div-table-responsive-no-min{
 	scrollbar-width:thin;scrollbar-color:var(--fz-text-dim) transparent}
 html.fusion ::-webkit-scrollbar{width:11px;height:11px}
 html.fusion ::-webkit-scrollbar-track{background:transparent}
+/* the square where both bars meet: opaque by default in Chrome, it filled the bottom-right
+   corner of rounded frames (lists, cards) and broke their rounding; Firefox has none */
+html.fusion ::-webkit-scrollbar-corner{background:transparent}
 html.fusion ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--fz-text-dim) 55%,transparent);
 	border-radius:var(--fz-radius);border:3px solid transparent;background-clip:padding-box}
 html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);background-clip:padding-box;border:3px solid transparent}
 /* keep the navy sidebar's own scrollbars on the light-thumb rule above */
 #fz-sidebar ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);background-clip:padding-box;border:2px solid transparent}
+/* Chrome 121+ ignores every ::-webkit-scrollbar rule on an element that has
+   scrollbar-width or scrollbar-color, and falls back to its native bar: an overlay bar on
+   macOS, shown only while scrolling, so the horizontal scrollbar of lists and of the content
+   frame looked missing. Where ::-webkit-scrollbar is supported (Chrome, Edge, Safari), drop
+   the standard properties on the content so the always-visible bars above apply; Firefox,
+   which does not support it, keeps its thin standard bar. */
+@supports selector(::-webkit-scrollbar){
+	html.fusion #id-right,html.fusion #id-container,html.fusion body#mainbody,
+	html.fusion .div-table-responsive,html.fusion .div-table-responsive-no-min{
+		scrollbar-width:auto;scrollbar-color:auto}
+}
 
 /* ====================================================================== *
  *  Full-page lists : the table scrolls inside its own frame, capped to    *
@@ -1267,6 +1281,7 @@ html.fusion ::-webkit-scrollbar-thumb:hover{background:var(--fz-text-dim);backgr
 #fz-history a{display:inline-flex;align-items:center;gap:6px;max-width:240px;color:var(--fz-text-dim);text-decoration:none}
 #fz-history a:hover{color:var(--colortextlink)}
 #fz-history li.is-current a{color:var(--fz-text);font-weight:600}
+#fz-history li.fz-history-empty{color:var(--fz-text-dim);opacity:.8;font-style:italic}
 #fz-history .fz-history-ref{overflow:hidden;text-overflow:ellipsis}
 #fz-history .fz-history-picto{flex:0 0 auto;margin:0;padding:0;font-size:13px;width:auto;opacity:.9}
 #fz-history img.fz-history-picto{width:16px;height:16px;object-fit:contain}
@@ -1298,6 +1313,12 @@ html.fusion div.fiche>form>div.div-table-responsive,
 html.fusion div.fiche>div.tabBar>form>div.div-table-responsive{
 	border:1px solid var(--colortopbordertitle1);border-radius:var(--fz-radius);
 	background:var(--colorbacktabcard1);margin-bottom:20px}
+/* Under the filter block (tags, sales representatives…), which already rounds its own top
+   corners, the frame's top corners are square: both read as one card, without the notch
+   two stacked roundings made at the joint. */
+html.fusion div.fiche>form>div.liste_titre_bydiv~div.div-table-responsive,
+html.fusion div.fiche>div.tabBar>form>div.liste_titre_bydiv~div.div-table-responsive{
+	border-top-left-radius:0;border-top-right-radius:0}
 html.fusion div.fiche>form>div.div-table-responsive>table,
 html.fusion div.fiche>div.tabBar>form>div.div-table-responsive>table{
 	border-left:0;border-right:0;border-top:0;margin-bottom:0;border-radius:0}
@@ -1330,24 +1351,15 @@ html.fusion div.fiche>div.tabBar>form>div.div-table-responsive>table>tbody>tr:la
 	html.fusion.fz-frame body#mainbody.bodyforlist #id-right{
 		padding:var(--fz-gutter,20px) !important}
 	html.fusion.fz-frame body#mainbody #id-right div.fiche{margin:0 !important}
-	/* The page title lines up with the sidebar's collapse button (fixed at top:10px,
-	   34px tall: centre at 27px). The title row centres its text, so no top gutter and
-	   a 54px row put the title on that same line; core's extra 7px on narrower screens
-	   goes too. */
-	html.fusion.fz-frame body#mainbody #id-right,
-	html.fusion.fz-frame body#mainbody.bodyforlist #id-right{padding-top:0 !important}
-	html.fusion.fz-frame #id-right div.fiche>table.table-fiche-title:first-child,
-	html.fusion.fz-frame #id-right div.fiche>form:first-child>table.table-fiche-title:first-of-type{margin-top:0 !important}
-	html.fusion.fz-frame #id-right div.fiche>table.table-fiche-title:first-child tr.toptitle,
-	html.fusion.fz-frame #id-right div.fiche>form:first-child>table.table-fiche-title:first-of-type tr.toptitle{height:54px}
-	/* the collapse button juts 18px into the content: give the title room beside it */
-	html.fusion.fz-frame #id-right div.fiche>table.table-fiche-title:first-child tr.toptitle>td:first-child,
-	html.fusion.fz-frame #id-right div.fiche>form:first-child>table.table-fiche-title:first-of-type tr.toptitle>td:first-child{padding-left:14px}
+	/* The first line is the navigation history bar (fusion.js), always shown when enabled and
+	   aligned on the sidebar's collapse button by its own top margin: no top gutter then.
+	   Without the bar, the content keeps the even gutter on its four sides. */
+	html.fusion.fz-frame.fz-has-history body#mainbody #id-right,
+	html.fusion.fz-frame.fz-has-history body#mainbody.bodyforlist #id-right{padding-top:0 !important}
 	/* the gutter closes the page: a list frame's bottom margin would only collapse out
 	   of the card and make the frame overflow by that much */
 	html.fusion.fz-frame div.fiche>form>div.div-table-responsive,
 	html.fusion.fz-frame div.fiche>div.tabBar>form>div.div-table-responsive{margin-bottom:0}
-	html.fusion.fz-frame #id-right::-webkit-scrollbar-corner{background:transparent}
 	/* the bar is above the frame now, it no longer needs to stick */
 	html.fusion.fz-frame body#mainbody > .breadCrumbHolder{position:relative}
 	/* A wide table outside the list frames (a card, a module page…) no longer scrolls

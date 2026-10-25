@@ -4,6 +4,24 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
+## [1.3.1] — 2026-10-25
+
+### Fixed
+- Chrome: the bottom-right corner of rounded frames (lists, cards) was broken by the opaque square it
+  draws where the two scrollbars meet (`::-webkit-scrollbar-corner`); it is now transparent.
+- Chrome (121+) showed no horizontal scrollbar on lists and on the content frame: it ignores the
+  `::-webkit-scrollbar` styles of an element that also has `scrollbar-width` / `scrollbar-color`, and
+  its native bar is an overlay on macOS, shown only while scrolling. Browsers that support
+  `::-webkit-scrollbar` now get the theme's always-visible bars; Firefox keeps its thin standard bar.
+- A list frame under the filter block (tags, sales representatives…) has square top corners, so the
+  two read as one card instead of showing a notch where two roundings met.
+
+### Changed
+- The navigation history bar is always shown when enabled, empty or not (*No recent element*): it is
+  the first line of every page, aligned on the sidebar's collapse button, so the page no longer moves
+  when it fills up. The page title is back to its original layout below it (the 54px row and the 14px
+  shift that aligned it on the button are gone); without the bar, the content keeps its even gutter.
+
 ## [1.3.0] — 2026-10-25
 
 ### Added

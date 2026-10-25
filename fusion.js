@@ -1390,11 +1390,9 @@
 		var bar = $("#fz-history");
 		var size = parseInt(cssTextVar("--fz-history-size", "10"), 10) || 10;
 		items = (items || []).slice(-size);
-		if (!right || !items.length) {
-			if (bar) bar.parentNode.removeChild(bar);
-			ROOT.classList.remove("fz-has-history");
-			return;
-		}
+		if (!right) return;
+		// Always shown, empty or not: it is the first line of every page, aligned on the
+		// sidebar's collapse button, so the page below never moves when it fills up.
 		if (!bar) {
 			bar = el("nav");
 			bar.id = "fz-history";
@@ -1434,6 +1432,11 @@
 			li.appendChild(a);
 			list.appendChild(li);
 		});
+		if (!items.length) {
+			var empty = el("li", "fz-history-empty");
+			empty.textContent = tr("history-empty", "No recent element");
+			list.appendChild(empty);
+		}
 		bar.appendChild(list);
 		ROOT.classList.add("fz-has-history");
 		list.scrollLeft = list.scrollWidth;	// the latest visits stay in view
@@ -1451,14 +1454,15 @@
 		var href = sheet ? sheet.getAttribute("href").replace(/&amp;/g, "&") : "";
 		var userid = queryParam(href.replace(/^[^?]*/, ""), "userid");
 		var cacheKey = userid ? "fz-history:" + (queryParam(href.replace(/^[^?]*/, ""), "entity") || "1") + ":" + userid : "";
+		var cached = null;
 		if (cacheKey) {
-			var cached = null;
 			try { cached = JSON.parse(storageGet("sessionStorage", cacheKey) || "null"); } catch (e) {}
-			if (Array.isArray(cached)) {
-				if (current) cached = cached.filter(function (item) { return item.u !== current.u; }).concat([current]);
-				renderHistory(cached, current);
-			}
 		}
+		// drawn at once — from the cached copy, or empty — so the bar is there from the
+		// first frame; the server's reply then fills it in
+		var initial = Array.isArray(cached) ? cached : [];
+		if (current) initial = initial.filter(function (item) { return item.u !== current.u; }).concat([current]);
+		renderHistory(initial, current);
 		var meta = $('meta[name="anti-csrf-newtoken"]');
 		var request = current
 			? fetch(endpoint + "?action=push&token=" + encodeURIComponent(meta ? meta.getAttribute("content") : ""), {
