@@ -112,6 +112,7 @@ html.fusion{
 	--fz-changelog-url: <?php echo fz_fusion_css_string(DOL_URL_ROOT.'/theme/fusion/branding/changelog.php'); ?>;
 	--fz-history: <?php echo getDolGlobalString('FUSION_HISTORY_DISABLED') ? '0' : '1'; ?>;   /* navigation history bar (fusion.js) */
 	--fz-history-size: <?php echo max(1, min(30, getDolGlobalInt('FUSION_HISTORY_SIZE', 10))); ?>;
+	--fz-search: <?php echo getDolGlobalString('FUSION_SEARCH_DISABLED') ? '0' : '1'; ?>;   /* the global search searches every type (fusion.js) */
 <?php foreach ($fz_i18n as $fz_key => $fz_label) { ?>
 	--fz-t-<?php echo $fz_key; ?>: <?php echo fz_fusion_css_string($fz_label); ?>;
 <?php } ?>
@@ -1110,7 +1111,8 @@ html.fz-collapsed #fz-user .dropdown-menu{
 	box-shadow:none !important;padding:0 !important;margin:0 !important;width:auto !important;min-width:0 !important}
 #fz-tools .search-dropdown-header{position:relative;padding:0}
 #fz-tools .search-dropdown-header::before{content:"\f002";font-family:"Font Awesome 5 Free";font-weight:900;
-	position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--fz-nav-fg-dim);font-size:13px;pointer-events:none}
+	position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--fz-nav-fg-dim);font-size:13px;pointer-events:none;
+	z-index:1} /* the input is painted over it: an opaque (focused) field would hide it */
 #fz-tools #top-global-search-input{
 	width:100%;box-sizing:border-box;background:color-mix(in srgb,var(--fz-nav-fg) 7%,transparent);border:1px solid color-mix(in srgb,var(--fz-nav-fg) 6%,transparent);
 	border-radius:var(--fz-radius);padding:8px 10px 8px 32px;color:var(--fz-nav-fg);font-size:13px;outline:none}
@@ -1155,6 +1157,10 @@ html.fz-collapsed #fz-user .dropdown-menu{
 #fz-tools .global-search-item svg.pictofixedwidth{
 	height:20px !important;object-fit:contain}
 #fz-tools .global-search-item:hover,#fz-tools .global-search-item:focus{background:var(--fz-row-hover)}
+/* Fusion searches every type at once (fusion.js initGlobalSearch, search/search.php):
+   core's "Search into …" choice is hidden. Set by the script, so the list comes back
+   whenever it did not run. */
+#fz-tools .fz-gsearch-form .search-dropdown-body{display:none !important}
 
 /* ---- Tool icons (quick-add +, bookmark star, module builder, …) --------
    eldy gives these wrappers assorted paddings (.atoplogin → 4px, .login_block_elem
@@ -1281,6 +1287,22 @@ html.fusion #fz-sidebar :is(a,button,[tabindex]):focus-visible{outline:2px solid
 html.fusion #fz-tools input:focus,html.fusion #fz-tools #top-global-search-input:focus{
 	outline:2px solid var(--fz-nav-fg) !important;outline-offset:1px;
 	border-color:color-mix(in srgb,var(--fz-nav-fg) 40%,transparent) !important}
+/* The global search on the rail shows its focus by turning into a light field, like the
+   collapsed flyout: a ring in the rail's text color is a white frame on most menu colors,
+   and read as a second box drawn around the field. Its border stays as it was. */
+html.fusion:not(.fz-collapsed) #fz-tools #top-global-search-input:focus{
+	outline:none !important;border-color:color-mix(in srgb,var(--fz-nav-fg) 6%,transparent) !important;
+	background:var(--fz-surface) !important;color:var(--fz-text) !important}
+html.fusion:not(.fz-collapsed) #fz-tools #top-global-search-input:focus::placeholder{color:var(--fz-text-dim) !important}
+html.fusion:not(.fz-collapsed) #fz-tools .search-dropdown-header:focus-within::before{color:var(--fz-text-dim) !important}
+@media only screen and (max-width: 920px){
+	/* the drawer ignores the icons-only mode: same field as the expanded rail */
+	html.fusion.fz-collapsed #fz-tools #top-global-search-input:focus{
+		outline:none !important;border-color:color-mix(in srgb,var(--fz-nav-fg) 6%,transparent) !important;
+		background:var(--fz-surface) !important;color:var(--fz-text) !important}
+	html.fusion.fz-collapsed #fz-tools #top-global-search-input:focus::placeholder{color:var(--fz-text-dim) !important}
+	html.fusion.fz-collapsed #fz-tools .search-dropdown-header:focus-within::before{color:var(--fz-text-dim) !important}
+}
 /* sub-items are inline links stretched over their row: ring the row, not the link */
 html.fusion .fz-sub a:focus-visible{outline:none}
 html.fusion .fz-sub :is(.menu_titre,.menu_contenu):has(a:focus-visible){outline:2px solid var(--fz-sub-fg);outline-offset:-2px}

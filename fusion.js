@@ -1498,6 +1498,29 @@
 			.catch(function () {});
 	}
 
+	// ---- Global search ---------------------------------------------------
+	// Core's search asks where to search ("Search into …" buttons) and opens that one
+	// list. Fusion drops the choice: the buttons are hidden (.fz-gsearch-form) and the
+	// search goes to search/search.php, which lists the matches of every type.
+	function initGlobalSearch() {
+		if (cssTextVar("--fz-search", "1") !== "1" || !SELF || !SELF.src) return;
+		var input = document.getElementById("top-global-search-input");
+		var form = input ? input.form : null;
+		if (!form || !input.closest("#fz-tools")) return;
+		var page = SELF.src.replace(/fusion\.js.*$/, "search/search.php");
+		form.setAttribute("action", page);	// a plain submit lands there too (search_all)
+		form.classList.add("fz-gsearch-form");
+		// Capture phase on the form: runs before core's keydown handler on the input,
+		// which would click its first (hidden) button.
+		form.addEventListener("keydown", function (e) {
+			if (e.keyCode !== 13 || e.target !== input) return;
+			e.preventDefault();
+			e.stopPropagation();
+			var q = input.value.trim();
+			if (q) window.location.href = page + "?q=" + encodeURIComponent(q);
+		}, true);
+	}
+
 	function init() {
 		try {
 			build();
@@ -1505,6 +1528,11 @@
 		} catch (e) {
 			ROOT.classList.remove("fusion", "fz-collapsed", "fz-drawer", "fz-search-open");
 			if (window.console && console.error) console.error("Fusion theme failed to initialize", e);
+		}
+		try {
+			if (ROOT.classList.contains("fusion")) initGlobalSearch();
+		} catch (e) {
+			if (window.console && console.error) console.error("Fusion search failed to load", e);
 		}
 		try {
 			initHistory();

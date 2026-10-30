@@ -39,6 +39,7 @@ else is grouped by role.
 | `base/` | Fusion's component stylesheet (tables, forms, buttons, badges, dropdowns…). |
 | `dashboard/` | The configurable dashboard: `fusion-dashboard.js` (loaded only on pages showing widgets) and `dashboard.php`, which stores each user's layout in `llx_user_param`. |
 | `history/` | Navigation history: `history.php` stores each user's last opened elements in `llx_user_param`. |
+| `search/` | Global search: `search.php` is the results page listing the matches of every type. |
 | `branding/` | Theme settings and changelog tabs: `setup.php` (settings page, admins only), `changelog.php` (renders `CHANGELOG.md`), `favicon.php` (favicon endpoint), `branding.lib.php` (shared helpers). |
 | `sql/activate_fusion.sql` | Enables the theme and the required constants. |
 | `CHANGELOG.md` | Release history. |
@@ -81,6 +82,27 @@ new login.
 Settings, in the **Fusion theme** tab: show the history or not (`FUSION_HISTORY_DISABLED`),
 elements shown (`FUSION_HISTORY_SIZE`, 10 by default) and elements kept
 (`FUSION_HISTORY_KEEP`, 30 by default).
+
+## Global search
+
+The search field no longer asks where to search: Dolibarr's *Search into …* list is
+hidden, and Enter opens a results page listing the matches of **every** type at once —
+third parties, contacts, members, users, products, lots/serials, manufacturing orders,
+projects, tasks, proposals, orders, shipments, receptions, invoices, template invoices,
+payments, contracts, interventions, tickets, knowledge base, expense reports, leaves,
+resources — grouped by type, each group with a *See all* link to its filtered list.
+A type added to the search by a module is listed too, with its own link. When an element
+matched on a field that is not shown (a leave's description, a contact's email…), that
+field is shown under it, with the searched words in bold.
+
+The types searched are exactly those Dolibarr's search box offers to the user (enabled
+modules, read permissions, `MAIN_SEARCHFORM_*_DISABLED`), and every query applies the
+restrictions of the matching list (entity, external users, sales representatives,
+private contacts, authorized projects, subordinates for expense reports and leaves).
+`search/search.php` only reads.
+
+Constants: `FUSION_SEARCH_DISABLED` brings back Dolibarr's own behavior,
+`FUSION_SEARCH_LIMIT` sets the matches shown per type (10 by default, 50 at most).
 
 ## Home page
 

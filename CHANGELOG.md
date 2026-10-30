@@ -4,6 +4,28 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
+## [1.4.0] — 2026-10-30
+
+### Added
+- Global search across all types: the search field no longer asks where to search. Dolibarr's
+  *Search into …* list is hidden and Enter opens a results page (`search/search.php`) listing the
+  matches of every type at once — third parties, contacts, members, users, products, lots, MOs,
+  projects, tasks, proposals, orders, shipments, receptions, invoices, template invoices, payments,
+  contracts, interventions, tickets, knowledge base, expense reports, leaves, resources — grouped
+  by type with a *See all* link to the filtered list; types added by modules are listed with their
+  link. A match on a field that is not shown (a leave's description, a contact's email…) is
+  explained under the row, with the searched words in bold. Only the types Dolibarr's search box
+  offers to the user are searched, with the restrictions of each list (entity, external users,
+  sales representatives, private contacts, authorized projects, subordinates).
+  `FUSION_SEARCH_DISABLED` restores Dolibarr's behavior, `FUSION_SEARCH_LIMIT` sets the matches
+  per type (10).
+
+### Changed
+- Global search on the rail: when focused, the field now turns light (card background, dark text,
+  placeholder and magnifier) and keeps its border, instead of drawing a white focus ring around it
+  that read as a second frame. The collapsed flyout is unchanged. The magnifier is now drawn above
+  the field, which an opaque background would otherwise cover.
+
 ## [1.3.2] — 2026-10-25
 
 ### Fixed
