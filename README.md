@@ -126,10 +126,14 @@ same `vX.Y.Z` commit.
 
 - Dolibarr 22.x. Fusion does not load anything from another theme: its component
   base started as a copy of Eldy (Dolibarr 22.0.5) and is maintained within Fusion.
-- Three Dolibarr constants, set by the installation below: `ALLOW_THEME_JS = 1` (Dolibarr
-  loads `fusion.js`), `MAIN_USE_TOP_MENU_SEARCH_DROPDOWN = 1` and
-  `MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN = 1` (Dolibarr renders the search and quick-add
-  that Fusion moves into its sidebar).
+- Two Dolibarr constants, set by the installation below: `ALLOW_THEME_JS = 1` (Dolibarr
+  loads `fusion.js`) and `MAIN_USE_TOP_MENU_SEARCH_DROPDOWN = 1` (Dolibarr renders the
+  search field Fusion moves into its sidebar; the all types search needs it). They are
+  listed, with a note, in *Setup > Other setup*, next to the theme's own `FUSION_*`
+  settings.
+- On by default, optional: the quick-add button (+), Dolibarr's
+  `MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN`, and the bookmarks (the star), Dolibarr's
+  *Bookmarks* module. Both are switched in the **Fusion theme** tab, *Sidebar tools*.
 
 ## Installation
 
@@ -142,7 +146,9 @@ same `vX.Y.Z` commit.
    mysql dolibarr < theme/fusion/sql/activate_fusion.sql
    ```
 
-   The script covers entity 1 only.
+   The script covers entity 1 only. It turns the quick-add button on, but cannot enable
+   the Bookmarks module (a module also needs its permissions and menus): tick *Show the
+   bookmarks* in the **Fusion theme** tab, or enable it in *Setup > Modules*.
 
    **Or via the UI**, as an administrator:
 
@@ -152,7 +158,8 @@ same `vX.Y.Z` commit.
    2. Open `https://<your-dolibarr>/theme/fusion/branding/setup.php` directly — the
       **Fusion theme** tab is added to *Setup > Display* by `fusion.js`, so it only shows
       once the constants are set. A warning lists the missing ones; click
-      *Apply the required settings*.
+      *Apply the required settings*. It also turns on the quick-add button and the
+      Bookmarks module.
 
    With several entities (multicompany), do it once per entity.
 
@@ -163,7 +170,8 @@ First set the favicon back to *Dolibarr default* in the **Fusion theme** tab, so
 select the "eldy" theme again (or set the `MAIN_THEME` constant back to `eldy`). Of the
 constants listed in *Requirements*, `ALLOW_THEME_JS` has no effect on Eldy (it has no
 script); the two `MAIN_USE_TOP_MENU_*` keep the search and quick-add dropdowns in Eldy's
-top bar — remove them in *Setup > Other setup* if you do not want them.
+top bar — remove them in *Setup > Other setup* if you do not want them. The Bookmarks
+module stays enabled; it is part of Dolibarr, not of the theme.
 
 ## License
 

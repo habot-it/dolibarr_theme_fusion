@@ -143,6 +143,56 @@ function fz_fusion_branding_delete_custom_files($file)
 }
 
 /**
+ * Enable or disable Dolibarr's Bookmarks module, as the Modules page does
+ * (activateModule() also creates its permissions and menus).
+ *
+ * @param	bool	$on		Enable (true) or disable (false)
+ * @return	int				<0 on error
+ */
+function fz_fusion_set_bookmarks($on)
+{
+	if ($on) {
+		$result = activateModule('modBookmark');
+		if (!empty($result['errors'])) {
+			setEventMessages('', $result['errors'], 'errors');
+			return -1;
+		}
+		return 1;
+	}
+	$error = unActivateModule('modBookmark');
+	if ($error) {
+		setEventMessages($error, null, 'errors');
+		return -1;
+	}
+	return 1;
+}
+
+/**
+ * Make the theme's constants visible in Setup > Other setup (admin/const.php lists
+ * visible = 1 only), with the note saying why each one (required, or the quick-add) is there. Up to v1.4.2,
+ * sql/activate_fusion.sql and this page wrote them hidden. Dolibarr's own constants
+ * (MAIN_THEME, the logos…) stay as core writes them.
+ *
+ * @return	int		<0 on error
+ */
+function fz_fusion_show_consts()
+{
+	global $db, $conf;
+
+	$res = 1;
+	foreach (fz_fusion_required_consts() as $name => $note) {
+		$sql = "UPDATE ".$db->prefix()."const SET visible = 1, note = '".$db->escape($note)."'";
+		$sql .= " WHERE name = '".$db->escape($name)."' AND entity = ".((int) $conf->entity);
+		$res = min($res, $db->query($sql) ? 1 : -1);
+	}
+	$sql = "UPDATE ".$db->prefix()."const SET visible = 1, note = '".$db->escape(fz_fusion_quickadd_note())."'";
+	$sql .= " WHERE name = 'MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN' AND entity = ".((int) $conf->entity);
+	$res = min($res, $db->query($sql) ? 1 : -1);
+	$sql = "UPDATE ".$db->prefix()."const SET visible = 1 WHERE name LIKE 'FUSION\\_%' AND visible = 0 AND entity = ".((int) $conf->entity);
+	return min($res, $db->query($sql) ? 1 : -1);
+}
+
+/**
  * After a change: point MAIN_FAVICON_URL at our endpoint when the favicon is ours,
  * give it back when it was ours and no longer is (a value set by someone else is
  * only replaced on an explicit choice), and bump the stylesheet revision, which
@@ -168,12 +218,26 @@ function fz_fusion_branding_saved()
 // Constants the theme needs and Setup > Display does not set (see fz_fusion_required_consts())
 if ($action == 'applyrequired') {
 	$error = 0;
-	foreach (fz_fusion_missing_consts() as $name => $value) {
-		if (dolibarr_set_const($db, $name, $value, 'chaine', 0, 'Fusion theme: required', $conf->entity) < 0) {
+	foreach (fz_fusion_missing_consts() as $name => $note) {
+		if (dolibarr_set_const($db, $name, '1', 'chaine', 1, $note, $conf->entity) < 0) {
 			$error++;
 		}
 	}
+	// The quick-add button is on by default: set it too, unless someone already chose
+	if (!isset($conf->global->MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN)
+		&& dolibarr_set_const($db, 'MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN', '1', 'chaine', 1, fz_fusion_quickadd_note(), $conf->entity) < 0) {
+		$error++;
+	}
+	// So are the bookmarks (the star of the sidebar). A module, not a constant: enabled the
+	// way the Modules page does it, so its permissions and menus exist. The warning only
+	// shows on a theme never set up, so this does not undo someone's choice to disable it.
+	if (!isModEnabled('bookmark') && fz_fusion_set_bookmarks(true) < 0) {
+		$error++;
+	}
 	dolibarr_set_const($db, 'MAIN_IHM_PARAMS_REV', getDolGlobalInt('MAIN_IHM_PARAMS_REV') + 1, 'chaine', 0, '', $conf->entity);
+	if (fz_fusion_show_consts() < 0) {
+		$error++;
+	}
 	if ($error) {
 		setEventMessages($langs->trans('Error'), null, 'errors');
 	} else {
@@ -194,13 +258,25 @@ if ($action == 'update') {
 	}
 
 	// Navigation history: on by default, 10 elements shown out of 30 kept
-	$res = GETPOST('FUSION_HISTORY_ENABLED', 'int') ? dolibarr_del_const($db, 'FUSION_HISTORY_DISABLED', $conf->entity) : dolibarr_set_const($db, 'FUSION_HISTORY_DISABLED', '1', 'chaine', 0, 'Fusion theme', $conf->entity);
+	$res = GETPOST('FUSION_HISTORY_ENABLED', 'int') ? dolibarr_del_const($db, 'FUSION_HISTORY_DISABLED', $conf->entity) : dolibarr_set_const($db, 'FUSION_HISTORY_DISABLED', '1', 'chaine', 1, 'Fusion theme', $conf->entity);
 	$historysize = max(1, min(30, GETPOSTINT('FUSION_HISTORY_SIZE') ?: 10));
 	$historykeep = max($historysize, min(100, GETPOSTINT('FUSION_HISTORY_KEEP') ?: 30));
 	foreach (array('FUSION_HISTORY_SIZE' => array($historysize, 10), 'FUSION_HISTORY_KEEP' => array($historykeep, 30)) as $const => $values) {
-		$res = min($res, ($values[0] == $values[1]) ? dolibarr_del_const($db, $const, $conf->entity) : dolibarr_set_const($db, $const, (string) $values[0], 'chaine', 0, 'Fusion theme', $conf->entity));
+		$res = min($res, ($values[0] == $values[1]) ? dolibarr_del_const($db, $const, $conf->entity) : dolibarr_set_const($db, $const, (string) $values[0], 'chaine', 1, 'Fusion theme', $conf->entity));
 	}
 	if ($res < 0) {
+		$error++;
+	}
+
+	// Quick-add button: Dolibarr renders that menu only with this constant. Stored as '0'
+	// when off, so that the choice survives sql/activate_fusion.sql (INSERT IGNORE).
+	if (dolibarr_set_const($db, 'MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN', GETPOST('MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN', 'int') ? '1' : '0', 'chaine', 1, fz_fusion_quickadd_note(), $conf->entity) < 0) {
+		$error++;
+	}
+
+	// Bookmarks: Dolibarr's module, switched only when the box changes its state
+	$bookmarks = (bool) GETPOST('FUSION_BOOKMARKS', 'int');
+	if ($bookmarks !== isModEnabled('bookmark') && fz_fusion_set_bookmarks($bookmarks) < 0) {
 		$error++;
 	}
 
@@ -242,16 +318,16 @@ if ($action == 'update') {
 			if ($previous !== $file) {
 				fz_fusion_branding_delete_custom_files($previous);
 			}
-			dolibarr_set_const($db, $const.'_FILE', $file, 'chaine', 0, 'Fusion theme', $conf->entity);
+			dolibarr_set_const($db, $const.'_FILE', $file, 'chaine', 1, 'Fusion theme', $conf->entity);
 			$value = 'custom';	// an image was just given for this place: use it
 		}
-		$res = ($value === '') ? dolibarr_del_const($db, $const, $conf->entity) : dolibarr_set_const($db, $const, $value, 'chaine', 0, 'Fusion theme', $conf->entity);
+		$res = ($value === '') ? dolibarr_del_const($db, $const, $conf->entity) : dolibarr_set_const($db, $const, $value, 'chaine', 1, 'Fusion theme', $conf->entity);
 		if ($res < 0) {
 			$error++;
 		}
 	}
 
-	if (fz_fusion_branding_saved() < 0) {
+	if (fz_fusion_branding_saved() < 0 || fz_fusion_show_consts() < 0) {
 		$error++;
 	}
 	if (!$error) {
@@ -366,6 +442,8 @@ print '<style>
 /* first column a little wider than the core titlefieldcreate (20 to 30%), so the longer
    labels (the workboard one) stay on one line; same width in every table, so they align */
 .fz-branding-table td.titlefieldcreate{width:36% !important}
+/* one table per block: a gap between them, so each block reads as its own card */
+.div-table-responsive-no-min:has(> table.fz-branding-table) + .div-table-responsive-no-min{margin-top:24px}
 /* every row centred vertically, whatever the height of its tallest cell; specific
    enough to beat the core alignment rules (div .tdtop:not(.tagtdnote)…) */
 html body div.fiche table.fz-branding-table > tbody > tr > td{vertical-align:middle !important}
@@ -425,6 +503,17 @@ $maxfilesizearray = getMaxFileSizeArray();
 $maxmin = $maxfilesizearray['maxmin'];
 $tooltiplogo = $langs->trans('AvailableFormats').' : png, jpg, jpeg';
 $tooltiplogo .= ($maxmin > 0) ? '<br>'.$langs->trans('MaxSize').' : '.$maxmin.' '.$langs->trans('Kb') : '';
+
+// ---- Sidebar tools --------------------------------------------------------------
+print '<div class="div-table-responsive-no-min"><table class="noborder centpercent fz-branding-table">';
+print '<tr class="liste_titre"><td class="titlefieldcreate">'.dol_escape_htmltag($words['tools']).'</td><td></td><td></td></tr>';
+print '<tr class="oddeven"><td><label for="MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN">'.$form->textwithpicto(dol_escape_htmltag($words['quickadd']), dol_escape_htmltag($words['quickaddnote'])).'</label></td><td>';
+print '<input type="checkbox" name="MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN" id="MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN" value="1"'.(getDolGlobalString('MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN') ? ' checked' : '').'>';
+print '</td><td></td></tr>';
+print '<tr class="oddeven"><td><label for="FUSION_BOOKMARKS">'.$form->textwithpicto(dol_escape_htmltag($words['bookmarksshow']), dol_escape_htmltag($words['bookmarksnote'])).'</label></td><td>';
+print '<input type="checkbox" name="FUSION_BOOKMARKS" id="FUSION_BOOKMARKS" value="1"'.(isModEnabled('bookmark') ? ' checked' : '').'>';
+print '</td><td></td></tr>';
+print '</table></div>';
 
 // ---- Home page ------------------------------------------------------------------
 print '<div class="div-table-responsive-no-min"><table class="noborder centpercent fz-branding-table">';

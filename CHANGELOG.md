@@ -4,6 +4,26 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
+## [1.4.3] — 2026-10-30
+
+### Added
+- **Sidebar tools** in the **Fusion theme** tab: *Show the quick-add button (+)*
+  (`MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN`) and *Show the bookmarks* (enables or disables Dolibarr's
+  Bookmarks module, through `activateModule()` so its permissions and menus exist). Both are on by
+  default: the *Apply the required settings* button turns them on, and `sql/activate_fusion.sql`
+  turns the quick-add on (`INSERT IGNORE`, so a choice made in the tab is kept).
+- A gap between the blocks of the **Fusion theme** tab, so each one reads as its own card.
+
+### Changed
+- `MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN` is no longer reported as required: it only shows the "+"
+  button, the theme works without it. Required: `ALLOW_THEME_JS` and
+  `MAIN_USE_TOP_MENU_SEARCH_DROPDOWN` (the all types search needs Dolibarr's search field).
+- The theme's constants are now visible in *Setup > Other setup* (`admin/const.php` lists only
+  visible ones), each required one with a note saying why, along with the quick-add one and the
+  theme's own `FUSION_*` settings. Those written hidden before are shown the next time the
+  **Fusion theme** tab is saved (or `sql/activate_fusion.sql` is run). Dolibarr's own constants
+  (`MAIN_THEME`, the logos…) stay as Dolibarr writes them.
+
 ## [1.4.2] — 2026-10-30
 
 ### Fixed
