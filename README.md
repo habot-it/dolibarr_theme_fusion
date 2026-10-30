@@ -25,6 +25,10 @@ follows you from one browser to another. Outside of *Customize*, each widget hea
 offers a button that opens it in a Dolibarr window at full size. On a narrow screen
 the board becomes a single column in reading order.
 
+Around that shell: a **navigation history** bar above the page, a **global search**
+across every type of element, and a settings tab for the logos, the favicon and these
+features.
+
 ## Contents
 
 The files Dolibarr itself looks for stay at the root of the theme; everything
@@ -122,7 +126,10 @@ same `vX.Y.Z` commit.
 
 - Dolibarr 22.x. Fusion does not load anything from another theme: its component
   base started as a copy of Eldy (Dolibarr 22.0.5) and is maintained within Fusion.
-- The theme JavaScript option enabled (constant `ALLOW_THEME_JS = 1`).
+- Three Dolibarr constants, set by the installation below: `ALLOW_THEME_JS = 1` (Dolibarr
+  loads `fusion.js`), `MAIN_USE_TOP_MENU_SEARCH_DROPDOWN = 1` and
+  `MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN = 1` (Dolibarr renders the search and quick-add
+  that Fusion moves into its sidebar).
 
 ## Installation
 
@@ -135,18 +142,28 @@ same `vX.Y.Z` commit.
    mysql dolibarr < theme/fusion/sql/activate_fusion.sql
    ```
 
-   **Or via the UI**: *Home > Setup > Display*, pick the "fusion" theme, then open the
-   **Fusion theme** tab. Choosing a theme only sets `MAIN_THEME`: the tab warns when the
-   constants Fusion needs are missing for the current entity (`ALLOW_THEME_JS`,
-   `MAIN_USE_TOP_MENU_SEARCH_DROPDOWN`, `MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN`) and its
-   *Apply the required settings* button sets them. Without them, Dolibarr does not load
-   `fusion.js` and the page keeps the plain component layout. With several entities
-   (multicompany), do it once per entity.
+   The script covers entity 1 only.
+
+   **Or via the UI**, as an administrator:
+
+   1. *Home > Setup > Display*: pick the "fusion" theme. This sets `MAIN_THEME` only —
+      Dolibarr has no option for the other constants, and without `ALLOW_THEME_JS` it does
+      not load `fusion.js`: the page keeps the plain component layout.
+   2. Open `https://<your-dolibarr>/theme/fusion/branding/setup.php` directly — the
+      **Fusion theme** tab is added to *Setup > Display* by `fusion.js`, so it only shows
+      once the constants are set. A warning lists the missing ones; click
+      *Apply the required settings*.
+
+   With several entities (multicompany), do it once per entity.
 
 ## Disabling
 
-In *Home > Setup > Display*, select the "eldy" theme again (or set the
-`MAIN_THEME` constant back to `eldy`).
+First set the favicon back to *Dolibarr default* in the **Fusion theme** tab, so that
+`MAIN_FAVICON_URL` stops pointing into this folder. Then, in *Home > Setup > Display*,
+select the "eldy" theme again (or set the `MAIN_THEME` constant back to `eldy`). Of the
+constants listed in *Requirements*, `ALLOW_THEME_JS` has no effect on Eldy (it has no
+script); the two `MAIN_USE_TOP_MENU_*` keep the search and quick-add dropdowns in Eldy's
+top bar — remove them in *Setup > Other setup* if you do not want them.
 
 ## License
 

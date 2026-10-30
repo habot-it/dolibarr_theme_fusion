@@ -4,6 +4,16 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
+## [1.4.2] — 2026-10-30
+
+### Fixed
+- README: the installation through the UI said to "enable the theme JavaScript" in *Setup >
+  Display*, an option Dolibarr does not have. It now gives the direct address of the **Fusion
+  theme** tab, which `fusion.js` only adds once the required constants are set, and notes that
+  the SQL script covers entity 1 only. The introduction mentions the history and the global
+  search, *Requirements* lists the three constants, and *Disabling* resets the favicon first and
+  says what the leftover constants do under Eldy.
+
 ## [1.4.1] — 2026-10-30
 
 ### Added
