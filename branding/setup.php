@@ -165,6 +165,24 @@ function fz_fusion_branding_saved()
 	return $res;
 }
 
+// Constants the theme needs and Setup > Display does not set (see fz_fusion_required_consts())
+if ($action == 'applyrequired') {
+	$error = 0;
+	foreach (fz_fusion_missing_consts() as $name => $value) {
+		if (dolibarr_set_const($db, $name, $value, 'chaine', 0, 'Fusion theme: required', $conf->entity) < 0) {
+			$error++;
+		}
+	}
+	dolibarr_set_const($db, 'MAIN_IHM_PARAMS_REV', getDolGlobalInt('MAIN_IHM_PARAMS_REV') + 1, 'chaine', 0, '', $conf->entity);
+	if ($error) {
+		setEventMessages($langs->trans('Error'), null, 'errors');
+	} else {
+		setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
+	}
+	header('Location: '.$_SERVER['PHP_SELF']);
+	exit;
+}
+
 if ($action == 'update') {
 	$error = 0;
 
@@ -387,6 +405,16 @@ html body div.fiche table.fz-branding-table > tbody > tr > td{vertical-align:mid
 	.fz-branding-preview.is-wide{width:100%;max-width:240px}
 }
 </style>';
+
+$missingConsts = fz_fusion_missing_consts();
+if ($missingConsts) {
+	print '<div class="warning">'.dol_escape_htmltag(sprintf($words['reqmissing'], implode(', ', array_keys($missingConsts))));
+	print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'" class="margintoponly">';
+	print '<input type="hidden" name="token" value="'.newToken().'">';
+	print '<input type="hidden" name="action" value="applyrequired">';
+	print '<input type="submit" class="button small" value="'.dol_escape_htmltag($words['reqapply']).'">';
+	print '</form></div>';
+}
 
 print '<form enctype="multipart/form-data" method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.newToken().'">';

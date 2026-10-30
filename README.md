@@ -135,8 +135,13 @@ same `vX.Y.Z` commit.
    mysql dolibarr < theme/fusion/sql/activate_fusion.sql
    ```
 
-   **Or via the UI**: *Home > Setup > Display*, pick the "fusion" theme and enable
-   the theme JavaScript.
+   **Or via the UI**: *Home > Setup > Display*, pick the "fusion" theme, then open the
+   **Fusion theme** tab. Choosing a theme only sets `MAIN_THEME`: the tab warns when the
+   constants Fusion needs are missing for the current entity (`ALLOW_THEME_JS`,
+   `MAIN_USE_TOP_MENU_SEARCH_DROPDOWN`, `MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN`) and its
+   *Apply the required settings* button sets them. Without them, Dolibarr does not load
+   `fusion.js` and the page keeps the plain component layout. With several entities
+   (multicompany), do it once per entity.
 
 ## Disabling
 

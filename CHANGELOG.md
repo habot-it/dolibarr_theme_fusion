@@ -4,6 +4,15 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
+## [1.4.1] — 2026-10-30
+
+### Added
+- The **Fusion theme** settings tab warns when a constant the theme needs is missing for the
+  current entity (`ALLOW_THEME_JS`, `MAIN_USE_TOP_MENU_SEARCH_DROPDOWN`,
+  `MAIN_USE_TOP_MENU_QUICKADD_DROPDOWN`), with a button that sets it. Choosing the theme in
+  *Setup > Display* only sets `MAIN_THEME`, so a theme enabled from the UI never loaded `fusion.js`
+  until `sql/activate_fusion.sql` was run.
+
 ## [1.4.0] — 2026-10-30
 
 ### Added
