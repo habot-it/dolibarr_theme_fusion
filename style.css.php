@@ -1370,35 +1370,30 @@ html.fusion table.table-fiche-title div.pagination{display:flex;align-items:cent
 html.fusion table.table-fiche-title div.pagination ul{display:inline-flex;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 html.fusion table.table-fiche-title div.pagination li{display:inline-flex;align-items:center}
 
-html.fusion div.fiche>form>div.div-table-responsive,
-html.fusion div.fiche>div.tabBar>form>div.div-table-responsive{
+/* .fz-list-frame: every list frame, marked by fusion.js (listFrames()) — core's list pages
+   and any frame holding a filter row (lists in tabs, sub-forms, modules) */
+html.fusion div.fz-list-frame{
 	max-height:calc(100vh - 145px);overflow:auto}  /* fallback: fusion.js sets the exact height per frame */
-/* The column titles stay visible while scrolling vertically inside the frame.
-   Opaque: core dims these cells (opacity .8), which let the scrolled rows show through. */
-html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>th,
-html.fusion div.fiche>form>div.div-table-responsive tr.liste_titre>td,
-html.fusion div.fiche>div.tabBar>form>div.div-table-responsive tr.liste_titre>th,
-html.fusion div.fiche>div.tabBar>form>div.div-table-responsive tr.liste_titre>td{
-	position:sticky;top:0;z-index:2;background:var(--colorbacktitle1);opacity:1 !important}
+/* The filter row and the column titles stay visible while scrolling inside the frame:
+   fusion.js moves them into the table's <thead>, which sticks as one block. Opaque: core
+   dims these cells (opacity .8), which let the scrolled rows show through. */
+html.fusion div.fz-list-frame thead.fz-sticky-head{position:sticky;top:0;z-index:3}
+html.fusion div.fz-list-frame thead.fz-sticky-head>tr>*{background:var(--colorbacktitle1);opacity:1 !important}
 /* The border belongs to the frame, not to the table: the table's own right and bottom
    edges only show once scrolled to its far end, so the frame looked open on two sides.
    The frame draws the full rectangle at any scroll position; the table inside drops its
    outer borders and bottom margin so no line is doubled. */
-html.fusion div.fiche>form>div.div-table-responsive,
-html.fusion div.fiche>div.tabBar>form>div.div-table-responsive{
+html.fusion div.fz-list-frame{
 	border:1px solid var(--colortopbordertitle1);border-radius:var(--fz-radius);
 	background:var(--colorbacktabcard1);margin-bottom:20px}
 /* Under the filter block (tags, sales representatives…), which already rounds its own top
    corners, the frame's top corners are square: both read as one card, without the notch
    two stacked roundings made at the joint. */
-html.fusion div.fiche>form>div.liste_titre_bydiv~div.div-table-responsive,
-html.fusion div.fiche>div.tabBar>form>div.liste_titre_bydiv~div.div-table-responsive{
+html.fusion div.liste_titre_bydiv~div.fz-list-frame{
 	border-top-left-radius:0;border-top-right-radius:0}
-html.fusion div.fiche>form>div.div-table-responsive>table,
-html.fusion div.fiche>div.tabBar>form>div.div-table-responsive>table{
+html.fusion div.fz-list-frame>table{
 	border-left:0;border-right:0;border-top:0;margin-bottom:0;border-radius:0}
-html.fusion div.fiche>form>div.div-table-responsive>table>tbody>tr:last-of-type>td,
-html.fusion div.fiche>div.tabBar>form>div.div-table-responsive>table>tbody>tr:last-of-type>td{
+html.fusion div.fz-list-frame>table>tbody>tr:last-of-type>td{
 	border-bottom:0}
 
 /* ====================================================================== *
@@ -1433,10 +1428,20 @@ html.fusion div.fiche>div.tabBar>form>div.div-table-responsive>table>tbody>tr:la
 	html.fusion.fz-frame.fz-has-history body#mainbody.bodyforlist #id-right{padding-top:0 !important}
 	/* the gutter closes the page: a list frame's bottom margin would only collapse out
 	   of the card and make the frame overflow by that much */
-	html.fusion.fz-frame div.fiche>form>div.div-table-responsive,
-	html.fusion.fz-frame div.fiche>div.tabBar>form>div.div-table-responsive{margin-bottom:0}
+	html.fusion.fz-frame div.fz-list-frame{margin-bottom:0}
 	/* the bar is above the frame now, it no longer needs to stick */
 	html.fusion.fz-frame body#mainbody > .breadCrumbHolder{position:relative}
+	/* The history bar and the page title stay at the top of the content frame while the
+	   page scrolls (cards, area pages: lists already scroll inside their own frame). The
+	   bar is see-through and spaced by margins: an opaque ground under its tint, and a
+	   spread shadow in the page color over its 10px / 6px margins, so nothing shows
+	   through or around it. The title sticks right under it: 10 + 34 + 6px. */
+	html.fusion.fz-frame #fz-history{position:sticky;top:10px;z-index:30;
+		background:linear-gradient(color-mix(in srgb,var(--fz-text-dim) 9%,transparent),color-mix(in srgb,var(--fz-text-dim) 9%,transparent)),var(--fz-content-bg);
+		box-shadow:0 0 0 10px var(--fz-content-bg)}
+	html.fusion.fz-frame :is(div.fiche,div.fiche>form)>table.table-fiche-title:first-of-type{
+		position:sticky;top:0;z-index:29;background:var(--fz-content-bg)}
+	html.fusion.fz-frame.fz-has-history :is(div.fiche,div.fiche>form)>table.table-fiche-title:first-of-type{top:50px}
 	/* A wide table outside the list frames (a card, a module page…) no longer scrolls
 	   in its own box, whose scrollbar sits under its last row, possibly far below the
 	   screen: it overflows into the frame, whose scrollbar is always on screen. Narrow

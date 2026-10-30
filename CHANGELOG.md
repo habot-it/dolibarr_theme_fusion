@@ -4,6 +4,23 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
+## [1.4.4] — 2026-10-30
+
+### Changed
+- Lists: the filter row now stays at the top of the list while it scrolls, with the column titles
+  right under it (only the titles stayed before, and the filters scrolled away). fusion.js moves
+  the heading rows, once, into the table's `<thead>`, which sticks as one block — nothing to
+  measure, and the rows keep their fields and handlers.
+- Lists everywhere get the list frame (sized to the screen, so the page itself does not scroll and
+  the title and the Breadcrumb bar stay in view): not only core's list pages, but any list with a
+  filter row — lists in tabs, in a sub-form, in modules. The frames are marked `.fz-list-frame` by
+  fusion.js instead of being matched by their position in the page.
+- On every page that scrolls (cards, area pages such as *Products and services*), the navigation
+  history bar and the page title now stay at the top of the content while it scrolls (landscape).
+  The bar gets an opaque ground and its margins are masked, so nothing shows through or around it;
+  the title (the first one of the page, in CSS alone) sticks right under it. Section titles further
+  down the page scroll as before.
+
 ## [1.4.3] — 2026-10-30
 
 ### Added

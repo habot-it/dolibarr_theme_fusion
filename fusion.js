@@ -355,7 +355,42 @@
 	// their horizontal scrollbar stays on screen. Whatever sits above the frame (title,
 	// filter rows, the Breadcrumb module's bar inserted after load…) varies per page,
 	// so measure the frame's real top instead of guessing it in CSS.
+
+	// A list is a frame placed as core's list pages place it, or any frame holding a
+	// search filter row (lists in tabs, in a sub-form, in modules). Marked .fz-list-frame,
+	// which the stylesheet styles; a frame nested in another one scrolls with it.
 	var LIST_FRAMES = "div.fiche>form>div.div-table-responsive, div.fiche>div.tabBar>form>div.div-table-responsive";
+	var FILTERED_FRAMES = "div.fiche div.div-table-responsive:has(tr.liste_titre_filter)";
+	function listFrames() {
+		var frames;
+		try { frames = $all(LIST_FRAMES + ", " + FILTERED_FRAMES); } catch (e) { frames = $all(LIST_FRAMES); }	// a browser without :has()
+		return frames.filter(function (frame) {
+			if (frame.parentNode.closest(".fz-list-frame")) return false;
+			if (!frame.classList.contains("fz-list-frame")) {
+				frame.classList.add("fz-list-frame");
+				stickHeaderRows(frame);
+			}
+			return true;
+		});
+	}
+	// The rows heading the table (the filter row, the column titles, in the page's order)
+	// move, once, into the table's <thead>, which the stylesheet keeps at the top of the
+	// frame: one sticky block, so nothing to measure. Moved, not copied: their fields and
+	// handlers stay as they are.
+	function stickHeaderRows(frame) {
+		var table = frame.querySelector("table");
+		if (!table) return;
+		var lead = [];
+		for (var i = 0; i < table.rows.length; i++) {
+			var row = table.rows[i];
+			if (!row.classList.contains("liste_titre") && !row.classList.contains("liste_titre_filter")) break;
+			lead.push(row);
+		}
+		if (!lead.length) return;
+		var head = table.tHead || table.createTHead();
+		lead.forEach(function (row) { if (row.parentNode !== head) head.appendChild(row); });
+		head.classList.add("fz-sticky-head");
+	}
 	var fzListFrame = 0;
 	function syncListHeights() {
 		fzListFrame = 0;
@@ -367,7 +402,8 @@
 		var origin = content ? content.getBoundingClientRect().top - content.scrollTop : -window.pageYOffset;
 		var right = $("#id-right");
 		var rightPad = right ? parseFloat(getComputedStyle(right).paddingBottom) || 0 : 0;
-		$all(LIST_FRAMES).forEach(function (frame) {
+		var frames = listFrames();
+		frames.forEach(function (frame) {
 			var rect = frame.getBoundingClientRect();
 			var top = rect.top - origin;
 			// what follows the frame inside the card (end of form…) must fit too, or the
@@ -383,7 +419,6 @@
 		// pixels, and the whole page shifts up when scrolled to the end: take exactly
 		// that off the last frame. Only a small miss: a page really longer than the
 		// screen (a card with more content under its list) keeps scrolling as it is.
-		var frames = $all(LIST_FRAMES);
 		var last = frames[frames.length - 1];
 		if (!last) return;
 		var scroller = content || document.documentElement;
@@ -398,7 +433,7 @@
 		fzListFrame = window.requestAnimationFrame ? window.requestAnimationFrame(syncListHeights) : setTimeout(syncListHeights, 0);
 	}
 	function initListHeights() {
-		if (!document.querySelector(LIST_FRAMES)) return;
+		if (!listFrames().length) return;
 		// Re-measure when something lands above the frame after load: the Breadcrumb
 		// module inserts its bar as a body child (before #id-container) without resizing
 		// the container, so watch body's children too. Re-measuring yields the same top
