@@ -4,6 +4,13 @@ All notable changes to the Fusion theme are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html), one `vX.Y.Z` commit per release.
 
+## [1.4.5] — 2026-11-25
+
+### Fixed
+- Autocomplete lists (product search on document lines, third-party search…) could run past the bottom
+  of the screen with no way to reach their end, since the content frame keeps the page from scrolling:
+  they are now fitted to the room below their field and scroll on their own.
+
 ## [1.4.4] — 2026-10-30
 
 ### Changed
@@ -195,13 +202,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
 
 ## [1.2.0] — 2026-09-29
 
-### Added
-- Edit mode now draws a ruler over the board: the fine 192-column / 8-pixel grid the layout is
-  actually stored in, plus dashed lines at the useful equal-width fractions — 1/5, 1/4, 1/3, 2/5,
-  1/2, 3/5, 2/3, 3/4 and 4/5 — each labelled in the gap above the board. The overlay is inert, so
-  dragging, resizing and the widget controls keep the whole pointer surface, and it disappears in
-  portrait, where the board collapses to a single column.
-
 ### Fixed
 - In dashboard edit mode, the move button now shows the move cursor and the remove button turns fully
   red on hover (white icon, no grey border). Both rules had always lost to the toolbar's generic
@@ -210,9 +210,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
   in the seven languages the theme carries.
 - The tooltip and accessible name of the four resize corners were English in every language; they now
   follow the user's language like the other dashboard controls.
-- The Remote Clocking dashboard widget now keeps the same 44px header height and typography as the
-  other widgets, truncates its title on one line in narrow cells, and centers its clock, status and
-  actions inside the height selected by the user.
 
 ### Changed
 - Files are grouped by role. Only what Dolibarr looks for by name stays at the root (`style.css.php`,
@@ -238,6 +235,48 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this p
   widget that watches its own size (each ClearView chart, Chart.js) re-measure and redraw a dozen
   times per fold. Only the rail animates now; the content takes its final width in a single step,
   so the widgets resize once.
+
+## [1.1.4] — 2026-09-28
+
+### Fixed
+- The Breadcrumb module's bar (inserted just before the content) no longer slides under the sidebar: it
+  takes the same offset, follows the rail when it folds, sits below the top bar in portrait and stays
+  on screen while the page scrolls.
+
+### Changed
+- Full-page lists: the frame's height is measured by `fusion.js` instead of guessed in CSS, so it fits
+  whatever sits above the list (title, filter rows, a bar inserted after load) and the page itself no
+  longer scrolls a little; the column titles are opaque, so scrolled rows no longer show through them.
+
+## [1.1.3] — 2026-09-28
+
+### Added
+- Full-page lists scroll inside their own frame, capped to the screen height, so their horizontal
+  scrollbar sits at the bottom of the screen instead of below the last row; column titles stay visible
+  while scrolling.
+
+### Changed
+- Long menu labels wrap on several lines in the expanded sidebar instead of being cut with an ellipsis,
+  and the section icons sit in a centred 16px box, closer to their label.
+- A user without a photo gets a centred user icon on a faint disc, in the same round slot as an avatar.
+
+## [1.1.2] — 2026-09-16
+
+### Added
+- Edit mode now draws a ruler over the board: the fine 192-column / 8-pixel grid the layout is
+  actually stored in, plus dashed lines at the useful equal-width fractions — 1/5, 1/4, 1/3, 2/5,
+  1/2, 3/5, 2/3, 3/4 and 4/5 — each labelled in the gap above the board. The overlay is inert, so
+  dragging, resizing and the widget controls keep the whole pointer surface, and it disappears in
+  portrait, where the board collapses to a single column.
+
+## [1.1.1] — 2026-08-19
+
+### Fixed
+- The Remote Clocking dashboard widget now keeps the same 44px header height and typography as the
+  other widgets, truncates its title on one line in narrow cells, and centers its clock, status and
+  actions inside the height selected by the user.
+
+### Performance
 - Main-menu chevrons no longer require downloading and parsing every module home page on startup.
   Only the section actually opened by the user is fetched; deeper contextual levels are discovered
   during browser idle time with at most two background requests at once.

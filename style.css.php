@@ -1323,6 +1323,12 @@ html.fusion #fz-history a:focus-visible{outline:2px solid var(--colortextlink,va
 	.fz-group.fz-loading > .fz-head .fz-chev{animation:none;opacity:.45}
 }
 
+/* jQuery UI autocomplete lists (product search on document lines, third-party search…)
+   have no height limit, and with the content frame the page no longer scrolls to reach
+   their end: they scroll on their own. fusion.js fits them to the space below their
+   field when they open; this is the no-JS cap. */
+html.fusion .ui-autocomplete{box-sizing:border-box;max-height:min(60vh,480px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+
 /* Title bar (page title, center tools, page size, view switch, "+"): a row that wraps
    instead of a table that cannot, so on a narrower screen (a 1024px tablet) the tools
    move to a second line, kept to the right, rather than spilling past the screen. */

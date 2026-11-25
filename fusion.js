@@ -318,6 +318,17 @@
 	function initContentFrame() {
 		if (!$("#id-right")) return;
 		ROOT.classList.add("fz-frame");
+		// jQuery UI autocomplete lists hang below their field and can be longer than the
+		// screen; the page no longer scrolls to reach their end, so each one gets the room
+		// left below its field (at least 160px) and scrolls inside it (style.css.php).
+		if (window.jQuery) {
+			window.jQuery(document).on("autocompleteopen.fusion", function (e) {
+				var menu = window.jQuery(e.target).autocomplete ? window.jQuery(e.target).autocomplete("widget")[0] : null;
+				if (!menu) return;
+				var room = document.documentElement.clientHeight - menu.getBoundingClientRect().top - 12;
+				menu.style.maxHeight = Math.max(160, Math.floor(room)) + "px";
+			});
+		}
 		// Dolibarr's "reposition" (lib_foot.js.php) reads and restores the WINDOW scroll,
 		// which no longer moves: carry its page_y over to the frame. Captured, so it runs
 		// before core's handler, which then finds a window scroll of 0 and does nothing.
